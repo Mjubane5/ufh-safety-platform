@@ -1,0 +1,32 @@
+# Java
+target/
+build/
+*.class
+*.jar
+
+# Node / frontend
+node_modules/
+dist/
+
+# C++
+*.o
+*.out
+cmake-build-*/
+
+# Python
+__pycache__/
+*.pyc
+venv/
+.venv/
+
+# Secrets — never commit these
+.env
+.env.*
+*.pem
+config.local.*
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
