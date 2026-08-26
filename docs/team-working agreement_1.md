@@ -34,8 +34,6 @@ mentoring the project brief asks for.
 | **C — Shell & Auth** | Scott, Nondumiso Mkhonto | Page layout, shared CSS, `api.js`, login/register |
 | **D — Incidents UI** | Mpilwenhle Jubane, Awethu Dyani    | Incident report form, student dashboard |
 
-*Adjust the pairings if the skill mix is uneven — put a stronger and a less
-experienced member together rather than stacking strengths in one pair.*
 
 
 ---
