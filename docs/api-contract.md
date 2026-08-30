@@ -1,6 +1,6 @@
 # API Contract — Campus Safety, Emergency & Wellness Platform
 
-**Status:** Draft v0.1 — to be reviewed and agreed by the full group before
+**Status:** Draft v0.2 — to be reviewed and agreed by the full group before
 frontend or backend implementation begins.
 
 **Owner:** Project Group Leader
@@ -174,8 +174,8 @@ Roles: `student`
 | --- | --- | --- | --- |
 | `type` | enum | yes | `sos`, `medical`, `fire`, `theft`, `assault`, `accident`, `suspicious`, `unsafe`, `other` |
 | `description` | string | yes if `type` is `other` | Max 1000 chars |
-| `latitude` | number | yes | Decimal degrees |
-| `longitude` | number | yes | Decimal degrees |
+| `latitude` | number | no | Decimal degrees. `null` if unavailable. |
+| `longitude` | number | no | Decimal degrees. `null` if unavailable. |
 | `accuracy` | number | no | Metres, from the browser. `null` if unavailable. |
 | `anonymous` | boolean | yes | If true, reporter identity is withheld from responders |
 
@@ -186,12 +186,27 @@ Roles: `student`
   "type": "medical",
   "status": "reported",
   "priority": 2,
+  "locationSource": "device",
   "createdAt": "2026-08-23T01:50:00Z"
 }
 ```
 
-**Errors:** 400 if coordinates are missing or out of range, or `description` is
-absent on an `other` report.
+`locationSource` is `"device"` when the report carried coordinates, `"none"`
+when it did not. It is set by the server from the coordinates it received, not
+by the client. A dispatcher reads this to tell a real fix from an absent one
+without having to test the coordinates for `null` themselves.
+
+**Errors:** 400 if coordinates are present but out of range, or if
+`description` is absent on an `other` report. Missing coordinates are allowed;
+out-of-range values are not.
+
+> **Why coordinates are optional.** A student whose browser has location
+> blocked, or who is indoors with no GPS fix, must still be able to file a
+> report. Refusing the submission would mean the system fails exactly when
+> someone needs it. For a safety system we prefer availability over data
+> completeness: take the report, mark it `locationSource: "none"`, and let a
+> human work out the location from the description. An incomplete report that
+> reaches campus control is worth more than a complete one that was never sent.
 
 ---
 
@@ -231,6 +246,7 @@ Roles: `student` (own incidents only), `responder` (assigned only),
   "latitude": -32.78331,
   "longitude": 26.84971,
   "accuracy": 18.5,
+  "locationSource": "device",
   "anonymous": false,
   "createdAt": "2026-08-23T01:50:00Z",
   "updatedAt": "2026-08-23T01:52:14Z",
@@ -249,6 +265,9 @@ Roles: `student` (own incidents only), `responder` (assigned only),
 
 `reporter` is `null` when `anonymous` is true.
 `assignedResponder` is `null` until assignment.
+`latitude`, `longitude` and `accuracy` are `null` when the reporter could not
+share a location. In that case `locationSource` is `"none"` and the incident
+must be triaged manually — see section 4.
 
 ---
 
@@ -329,6 +348,21 @@ Triggers responder selection and route calculation.
 
 Omit `responderId` to let the backend choose the nearest available responder.
 
+**Incidents with no coordinates cannot be auto-assigned.** When
+`locationSource` is `"none"` there is no position to measure distance from, so
+proximity selection is meaningless. Such an incident routes to campus control
+for manual triage instead:
+
+- `POST /api/incidents/{incidentId}/assign` **with no `responderId` must return
+  409**, not pick a responder. Choosing one without a location would be
+  choosing at random and presenting it as a nearest-responder result, which is
+  worse than returning nothing — it sends help to the wrong place while
+  looking correct.
+- The same call **with an explicit `responderId` succeeds**. A dispatcher who
+  has read the description and worked out where the student is may assign by
+  hand. The `route` object is `null` in that response, because a route cannot
+  be calculated to an unknown destination.
+
 **Response 200**
 ```json
 {
@@ -350,7 +384,8 @@ Omit `responderId` to let the backend choose the nearest available responder.
 `points` is an ordered polyline the frontend draws on the map. This is where
 the C++ shortest-path work surfaces in the product.
 
-**Errors:** 409 if already assigned, 404 if no responder available.
+**Errors:** 409 if already assigned, 409 if auto-assignment was requested for
+an incident with `locationSource: "none"`, 404 if no responder available.
 
 ---
 
@@ -661,3 +696,4 @@ The contract will change — that is fine, as long as it changes deliberately.
 | Version | Date | Change |
 | --- | --- | --- |
 | 0.1 | 2026-08-23 | Initial draft for group review |
+| 0.2 | 2026-08-30 | Coordinates optional; `locationSource` added; manual triage for location-less incidents |
