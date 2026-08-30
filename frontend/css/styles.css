@@ -1,0 +1,839 @@
+/* ===========================================================================
+   styles.css — the single shared stylesheet for the whole frontend.
+
+   Plain CSS. No framework, no build step. Link it from any page in frontend/:
+
+       <link rel="stylesheet" href="./css/styles.css">
+
+   ---------------------------------------------------------------------------
+   HOW TO CHANGE THINGS — read this before editing anything below
+   ---------------------------------------------------------------------------
+
+   Every colour, space and font size in this file comes from a custom property
+   (a "CSS variable") defined once in the :root block in section 1. Change the
+   value there and it updates everywhere. Do NOT hardcode a hex colour or a
+   pixel value further down the file — if you find yourself wanting to, add a
+   new custom property instead so the next person can find it.
+
+   Naming, so you can guess a variable without scrolling:
+
+     --color-*     Colours. --color-text, --color-surface, --color-primary...
+     --space-*     Spacing scale, used for margin, padding and gap.
+     --text-*      Font sizes.
+     --radius-*    Corner rounding.
+     --shadow-*    Box shadows.
+
+   The spacing scale is a 4px step: --space-1 is 4px, --space-2 is 8px, and so
+   on. Use the scale rather than arbitrary numbers — it is what keeps the
+   spacing on different pages looking like one product instead of eight.
+
+   Font sizes are in rem, not px. 1rem is whatever the student has set as their
+   browser font size, so a student who has enlarged their text gets a bigger
+   layout instead of being ignored. Never set a font size in px.
+
+   ---------------------------------------------------------------------------
+   MOBILE-FIRST
+   ---------------------------------------------------------------------------
+
+   Everything outside the media query at the bottom IS the phone layout. That
+   is the default. Section 8 is a single @media (min-width: 768px) block that
+   adds the desktop layout on top.
+
+   When you add a new component, write the phone version up here first, then
+   add desktop overrides in section 8. Do not write a desktop layout and then
+   try to shrink it — that is how you end up with a form nobody can use on the
+   bus.
+
+   ---------------------------------------------------------------------------
+   ACCESSIBILITY — this is a safety application, so this part is not optional
+   ---------------------------------------------------------------------------
+
+   1. Contrast. Every text/background pairing in this file meets WCAG AA
+      (4.5:1 for body text, 3:1 for large text and for the outline of any
+      control you can interact with). If you change a colour, re-check it with
+      a contrast checker before you commit. The ratio of each pairing is noted
+      in a comment next to the variable.
+
+   2. Never signal meaning with colour alone. A student with red-green colour
+      blindness, or one looking at a phone in direct sunlight, must be able to
+      tell an emergency from an all-clear. So every state in this file carries
+      at least two signals:
+
+        - colour, AND
+        - a text label (never remove the text from a status pill), AND
+        - a shape or icon difference (a border, a glyph, a size change).
+
+      This is why .banner has an icon glyph and .sos-button is physically
+      larger than every other button. Those are not decoration — they are the
+      fallback when the colour does not land.
+
+   3. Touch targets are at least 44px tall. A student pressing SOS may be
+      running, shaking, or using one hand.
+
+   4. Inputs are 1rem (16px) or larger. Anything smaller makes iOS Safari zoom
+      in when the field is focused, which shoves the rest of the form off
+      screen.
+   =========================================================================== */
+
+/* ===========================================================================
+   1. CUSTOM PROPERTIES
+   Change values here, not further down the file.
+   =========================================================================== */
+
+:root {
+  /* --- Surfaces and text ------------------------------------------------ */
+  --color-surface: #ffffff;          /* page and card background            */
+  --color-surface-sunken: #f2f4f7;   /* page behind cards, skeleton base    */
+  --color-text: #1a1d21;             /* body text          — 16.1:1 on white */
+  --color-text-muted: #5c6470;       /* secondary/meta text — 5.9:1 on white */
+  --color-text-inverse: #ffffff;     /* text on a dark or saturated fill    */
+
+  /* --- Borders ----------------------------------------------------------
+     Two weights. Use -strong on anything the student interacts with (inputs,
+     buttons): WCAG requires 3:1 for the boundary of a control. Use the light
+     one only for decorative dividers, which are exempt. */
+  --color-border: #d7dbe0;           /* decorative dividers, card outline   */
+  --color-border-strong: #767e8a;    /* input + button borders — 4.1:1      */
+
+  /* --- Brand / primary action ------------------------------------------- */
+  --color-primary: #1a4f8a;          /* white text on this  — 8.3:1         */
+  --color-primary-dark: #12385f;     /* hover / active state                */
+  --color-primary-tint: #eaf1f9;     /* selected row, subtle fill           */
+
+  /* --- Emergency -------------------------------------------------------
+     Reserved for SOS and priority 1. Do not use this red for an ordinary
+     delete button — if everything is an emergency, nothing is. */
+  --color-emergency: #b3001b;        /* white text on this  — 7.2:1         */
+  --color-emergency-dark: #8c0014;   /* hover / active, and banner text     */
+  --color-emergency-tint: #fdecee;   /* error banner background             */
+
+  /* --- Success ---------------------------------------------------------- */
+  --color-success: #0f6b3f;          /* white text on this  — 6.6:1         */
+  --color-success-dark: #0b5132;     /* banner text — 8.4:1 on its tint     */
+  --color-success-tint: #e9f6ef;     /* success banner background           */
+
+  /* --- Priority scale (1 = most urgent, per the API contract) -----------
+     Each of these is a background with white text on top. All five pass AA.
+     The badge always prints "P1".."P5" as well, so the number carries the
+     meaning if the colour cannot. */
+  --color-priority-1: #b3001b;       /* 7.2:1 with white                    */
+  --color-priority-2: #8f3a00;       /* 7.6:1 with white                    */
+  --color-priority-3: #7a5200;       /* 6.9:1 with white                    */
+  --color-priority-4: #1a4f8a;       /* 8.3:1 with white                    */
+  --color-priority-5: #4a5260;       /* 7.9:1 with white                    */
+
+  /* --- Focus ring -------------------------------------------------------
+     Keyboard users navigate the whole app with this. Never set
+     `outline: none` anywhere without putting an equally visible ring back. */
+  --color-focus: #1a4f8a;
+
+  /* --- Spacing scale (4px step) ----------------------------------------- */
+  --space-1: 0.25rem;   /*  4px */
+  --space-2: 0.5rem;    /*  8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.5rem;    /* 24px */
+  --space-6: 2rem;      /* 32px */
+  --space-7: 3rem;      /* 48px */
+
+  /* --- Font sizes -------------------------------------------------------
+     --text-base is the body size. Do not go below --text-sm for anything a
+     student has to read; small print on a cracked phone screen is unusable. */
+  --text-sm: 0.875rem;  /* 14px — meta, timestamps, helper text */
+  --text-base: 1rem;    /* 16px — body, form inputs             */
+  --text-lg: 1.125rem;  /* 18px — card titles                   */
+  --text-xl: 1.375rem;  /* 22px — page headings on phone        */
+  --text-2xl: 1.75rem;  /* 28px — SOS button, hero numbers      */
+
+  /* --- Shape ------------------------------------------------------------ */
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-pill: 999px;
+
+  /* --- Shadows ---------------------------------------------------------- */
+  --shadow-card: 0 1px 3px rgba(26, 29, 33, 0.12);
+  --shadow-raised: 0 4px 12px rgba(26, 29, 33, 0.18);
+
+  /* --- Layout ----------------------------------------------------------- */
+  --touch-target: 44px;   /* minimum height of anything tappable */
+  --page-max-width: 70rem;
+}
+
+/* ===========================================================================
+   2. MINIMAL RESET
+   Only what we actually need. Not a full normalize.css.
+   =========================================================================== */
+
+/* border-box means padding and border count INSIDE the width you set. Without
+   it, a 100%-wide input with padding overflows its parent on a narrow phone. */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* Respect the student's own browser font-size setting. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body,
+h1, h2, h3, h4,
+p,
+figure,
+blockquote,
+dl, dd,
+ul, ol {
+  margin: 0;
+  padding: 0;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+/* Form controls do not inherit fonts by default. Make them match the page. */
+input,
+select,
+textarea,
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* Kill the horizontal-scroll bug you get when one wide element escapes. */
+html, body {
+  overflow-x: hidden;
+}
+
+/* ===========================================================================
+   3. BASE TYPOGRAPHY
+   Tuned for a phone held at arm's length.
+   =========================================================================== */
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  font-size: var(--text-base);
+  /* 1.6 is generous on purpose: easier to keep your place while walking. */
+  line-height: 1.6;
+  color: var(--color-text);
+  background-color: var(--color-surface-sunken);
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  line-height: 1.25;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+h1 { font-size: var(--text-xl); }
+h2 { font-size: var(--text-lg); }
+h3 { font-size: var(--text-base); }
+
+p {
+  /* Long lines are hard to track back from. Cap the measure. */
+  max-width: 65ch;
+}
+
+a {
+  color: var(--color-primary);
+  /* Underlined, not just coloured — colour alone is not a link signal. */
+  text-decoration: underline;
+}
+
+a:hover {
+  color: var(--color-primary-dark);
+}
+
+small,
+.text-meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* Page shell. Wrap page content in <main class="page"> */
+.page {
+  padding: var(--space-4);
+  margin: 0 auto;
+  width: 100%;
+  max-width: var(--page-max-width);
+}
+
+.page > * + * {
+  margin-top: var(--space-4);
+}
+
+/* Visible to screen readers, invisible on screen. Use this to label a
+   spinner: <span class="visually-hidden">Loading incidents</span> */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ===========================================================================
+   4. FORMS
+   Labels, inputs, select, textarea, buttons, errors, disabled, focus.
+   =========================================================================== */
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* Always use a real <label for="..."> — placeholder text is not a label.
+   It disappears the moment the student starts typing. */
+.label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Mark required fields in text, not with a bare red asterisk. */
+.label-required::after {
+  content: " (required)";
+  font-weight: 400;
+  color: var(--color-text-muted);
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: var(--space-3);
+  font-size: var(--text-base);   /* 16px minimum stops iOS zooming in */
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.textarea {
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.select {
+  /* Leave room for the native dropdown arrow. */
+  padding-right: var(--space-6);
+}
+
+.input::placeholder,
+.textarea::placeholder {
+  color: var(--color-text-muted);   /* 5.9:1 — placeholders must be legible */
+  opacity: 1;                       /* Firefox dims placeholders by default */
+}
+
+/* --- Focus ---------------------------------------------------------------
+   :focus-visible shows the ring for keyboard users without flashing it at
+   mouse users. Inputs also get :focus so the field reads as active either
+   way. The ring sits OUTSIDE the control (outline-offset) so it never
+   overlaps the text inside. */
+.input:focus,
+.select:focus,
+.textarea:focus,
+.btn:focus-visible,
+a:focus-visible,
+.card:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+  border-color: var(--color-focus);
+}
+
+/* --- Invalid state -------------------------------------------------------
+   Red border AND the .field-error message below it. The border alone is not
+   enough — pair it with .field-error every time. */
+.input-invalid,
+.input[aria-invalid="true"],
+.select[aria-invalid="true"],
+.textarea[aria-invalid="true"] {
+  border-color: var(--color-emergency);
+  border-width: 2px;
+}
+
+/* Error text under a field. The API's error shape carries `field`, which
+   names the input this belongs to — see the standard error shape in
+   docs/api-contract.md. */
+.field-error {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-emergency-dark);   /* 9.7:1 on white */
+}
+
+/* Glyph, so the message is not identifiable by its colour alone. */
+.field-error::before {
+  content: "\26A0";   /* ⚠ */
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
+/* Helper text under a field, for hints rather than errors. */
+.field-hint {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* --- Buttons ------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: var(--touch-target);
+  padding: var(--space-3) var(--space-5);
+  font-size: var(--text-base);
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+}
+
+.btn-primary {
+  color: var(--color-text-inverse);
+  background-color: var(--color-primary);
+}
+
+.btn-primary:hover {
+  background-color: var(--color-primary-dark);
+}
+
+.btn-secondary {
+  color: var(--color-primary);
+  background-color: var(--color-surface);
+  border-color: var(--color-border-strong);
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-primary-tint);
+}
+
+/* On phones a form's submit button should span the width — it is the easiest
+   thing in the world to hit. */
+.btn-block {
+  width: 100%;
+}
+
+/* --- SOS ------------------------------------------------------------------
+   Deliberately unlike every other control in the app: twice the height, a
+   thick dark ring, uppercase, and the largest type on the page. Turn the
+   screen greyscale and it is still obviously the emergency control — that is
+   the point. Do not shrink it to fit a layout. */
+.sos-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 96px;
+  padding: var(--space-5);
+  font-size: var(--text-2xl);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-inverse);
+  background-color: var(--color-emergency);
+  border: 4px solid var(--color-emergency-dark);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised);
+  cursor: pointer;
+}
+
+.sos-button:hover {
+  background-color: var(--color-emergency-dark);
+}
+
+.sos-button:focus-visible {
+  outline: 4px solid var(--color-text);
+  outline-offset: 3px;
+}
+
+/* --- Disabled -------------------------------------------------------------
+   Applies to any control. Kept legible rather than faded into nothing: a
+   student needs to understand WHY they cannot press it, so always pair a
+   disabled control with .field-hint explaining what to do. */
+.btn:disabled,
+.input:disabled,
+.select:disabled,
+.textarea:disabled,
+.sos-button:disabled,
+[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.6;
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  box-shadow: none;
+}
+
+.btn:disabled:hover,
+.sos-button:disabled:hover {
+  background-color: var(--color-surface-sunken);
+}
+
+/* ===========================================================================
+   5. CARDS / PANELS
+   The dashboard list item. One card per incident summary.
+   =========================================================================== */
+
+.card {
+  padding: var(--space-4);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
+}
+
+.card + .card {
+  margin-top: var(--space-3);
+}
+
+.card-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.card-list .card + .card {
+  margin-top: 0;   /* the gap handles spacing inside a list */
+}
+
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.card-title {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.card-meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+/* A whole card that is clickable. Keep a real <a> inside for the title so
+   keyboard and screen-reader users get a proper link. */
+.card-clickable {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.card-clickable:hover {
+  border-color: var(--color-border-strong);
+  box-shadow: var(--shadow-raised);
+}
+
+/* An incident card that needs to stand out in a long list. The thick left
+   bar is a shape cue, so it survives greyscale. */
+.card-emergency {
+  border-left: 6px solid var(--color-emergency);
+}
+
+/* --- Status pill ----------------------------------------------------------
+   Status values come from the contract: reported, triaged, assigned,
+   en_route, on_scene, resolved, cancelled. ALWAYS print the status word
+   inside the pill. The background is a second signal, never the only one. */
+.pill {
+  display: inline-block;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-strong);
+  background-color: var(--color-surface-sunken);
+  color: var(--color-text);
+}
+
+.pill-active {
+  /* in-flight statuses: assigned, en_route, on_scene */
+  background-color: var(--color-primary-tint);
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+.pill-resolved {
+  background-color: var(--color-success-tint);
+  border-color: var(--color-success);
+  color: var(--color-success-dark);
+}
+
+.pill-cancelled {
+  /* the false-alarm path — the record is retained, never deleted */
+  color: var(--color-text-muted);
+  border-style: dashed;   /* shape cue, distinct from resolved */
+}
+
+/* --- Priority badge -------------------------------------------------------
+   Contract: integer 1 to 5, 1 is MOST urgent. Print the number in the badge
+   ("P1"), so the meaning survives without colour. */
+.priority {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2.25rem;
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-sm);
+}
+
+.priority-1 { background-color: var(--color-priority-1); }
+.priority-2 { background-color: var(--color-priority-2); }
+.priority-3 { background-color: var(--color-priority-3); }
+.priority-4 { background-color: var(--color-priority-4); }
+.priority-5 { background-color: var(--color-priority-5); }
+
+/* P1 also gets a ring, so the most urgent item is not colour-only. */
+.priority-1 {
+  box-shadow: 0 0 0 2px var(--color-emergency-dark);
+}
+
+/* ===========================================================================
+   6. LOADING
+   Spinner and skeleton. Every request shows one of these.
+   =========================================================================== */
+
+/* Usage — the text is what a screen reader announces:
+     <div class="spinner-row" role="status">
+       <span class="spinner"></span>
+       <span class="visually-hidden">Loading incidents</span>
+     </div>                                                                  */
+.spinner {
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spinner-rotate 0.8s linear infinite;
+}
+
+.spinner-lg {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-width: 4px;
+}
+
+.spinner-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  color: var(--color-text-muted);
+}
+
+@keyframes spinner-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* Skeleton placeholder — a grey block the shape of the content that is
+   coming. Use it for the incident list so the page does not jump when the
+   real cards arrive. */
+.skeleton {
+  background-color: var(--color-surface-sunken);
+  background-image: linear-gradient(
+    90deg,
+    var(--color-surface-sunken) 0%,
+    #e3e7ec 50%,
+    var(--color-surface-sunken) 100%
+  );
+  background-size: 200% 100%;
+  border-radius: var(--radius-sm);
+  animation: skeleton-shimmer 1.4s ease-in-out infinite;
+}
+
+.skeleton-text {
+  height: 0.875rem;
+  margin-bottom: var(--space-2);
+}
+
+.skeleton-title {
+  height: 1.25rem;
+  width: 60%;
+  margin-bottom: var(--space-3);
+}
+
+.skeleton-card {
+  height: 6rem;
+}
+
+@keyframes skeleton-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+/* Some students get motion sickness or migraines from movement, and the OS
+   lets them say so. Honour it: hold the shapes, drop the animation. */
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 2s;
+  }
+
+  .skeleton {
+    background-image: none;
+    animation: none;
+  }
+}
+
+/* ===========================================================================
+   7. BANNERS
+   Page-level error and success messages.
+   =========================================================================== */
+
+/* Shared shape. Both variants get a glyph and a thick left bar, so error and
+   success are told apart by symbol and position, not only by red vs green. */
+.banner {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid;
+  border-left-width: 6px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-base);
+}
+
+.banner::before {
+  flex-shrink: 0;
+  font-size: var(--text-lg);
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.banner-title {
+  display: block;
+  font-weight: 700;
+  margin-bottom: var(--space-1);
+}
+
+/* Error. Put the server's `message` from the standard error shape in here —
+   the contract guarantees every non-2xx response carries one. */
+.banner-error {
+  color: var(--color-emergency-dark);      /* 8.6:1 on its tint */
+  background-color: var(--color-emergency-tint);
+  border-color: var(--color-emergency);
+}
+
+.banner-error::before {
+  content: "\26A0";   /* ⚠ warning triangle */
+}
+
+/* Success. */
+.banner-success {
+  color: var(--color-success-dark);        /* 8.4:1 on its tint */
+  background-color: var(--color-success-tint);
+  border-color: var(--color-success);
+}
+
+.banner-success::before {
+  content: "\2713";   /* ✓ check mark */
+}
+
+/* ===========================================================================
+   8. DESKTOP LAYER
+   Everything above is the phone. This block is the override.
+   Nothing below this line should be needed for a phone to work.
+   =========================================================================== */
+
+@media (min-width: 768px) {
+  /* Slightly larger type once there is room for it. */
+  :root {
+    --text-xl: 1.75rem;
+    --text-2xl: 2.25rem;
+  }
+
+  .page {
+    padding: var(--space-6) var(--space-5);
+  }
+
+  .page > * + * {
+    margin-top: var(--space-5);
+  }
+
+  /* Forms: put short fields side by side instead of one long column. */
+  .form {
+    gap: var(--space-5);
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
+  }
+
+  /* A full-width submit button looks wrong on a wide screen. */
+  .btn-block {
+    width: auto;
+    min-width: 12rem;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: var(--space-3);
+    justify-content: flex-end;
+  }
+
+  /* Dashboard: cards in a grid rather than a single stack. */
+  .card-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+    gap: var(--space-4);
+  }
+
+  .card {
+    padding: var(--space-5);
+  }
+
+  /* SOS stays large and obvious, but does not need to span a 1400px screen. */
+  .sos-button {
+    width: auto;
+    min-width: 20rem;
+    margin-inline: auto;
+  }
+
+  /* Two-column shell: map or detail panel beside a list. */
+  .layout-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
+    gap: var(--space-5);
+    align-items: start;
+  }
+}
