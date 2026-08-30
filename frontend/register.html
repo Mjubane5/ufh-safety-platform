@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Create an account — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <main class="page">
+    <h1>Create an account</h1>
+    <p class="text-meta">
+      Student registration. Staff and responder accounts are created by an
+      administrator.
+    </p>
+
+    <!-- auth.js inserts the error banner here. See the note in login.html
+         for why the slot starts empty rather than hidden. -->
+    <div id="banner-slot"></div>
+
+    <form class="form" id="register-form" novalidate>
+      <div class="field" id="field-studentNumber">
+        <label class="label label-required" for="studentNumber">Student number</label>
+        <input
+          class="input"
+          id="studentNumber"
+          name="studentNumber"
+          type="text"
+          autocomplete="username"
+          inputmode="numeric"
+          placeholder="202512345"
+          required>
+        <p class="field-hint">Digits only, as printed on your student card.</p>
+      </div>
+
+      <div class="field" id="field-fullName">
+        <label class="label label-required" for="fullName">Full name</label>
+        <input
+          class="input"
+          id="fullName"
+          name="fullName"
+          type="text"
+          autocomplete="name"
+          required>
+      </div>
+
+      <div class="field" id="field-email">
+        <label class="label label-required" for="email">Email</label>
+        <input
+          class="input"
+          id="email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          inputmode="email"
+          placeholder="202512345@ufh.ac.za"
+          required>
+      </div>
+
+      <div class="field" id="field-password">
+        <label class="label label-required" for="password">Password</label>
+        <input
+          class="input"
+          id="password"
+          name="password"
+          type="password"
+          autocomplete="new-password"
+          required>
+        <p class="field-hint">At least 8 characters.</p>
+      </div>
+
+      <div class="field" id="field-phone">
+        <label class="label label-required" for="phone">Phone number</label>
+        <input
+          class="input"
+          id="phone"
+          name="phone"
+          type="tel"
+          autocomplete="tel"
+          inputmode="tel"
+          placeholder="0821234567"
+          required>
+        <p class="field-hint">
+          Used to contact you about an incident you report.
+        </p>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary btn-block" id="submit-button" type="submit">
+          Create account
+        </button>
+      </div>
+    </form>
+
+    <p class="text-meta">
+      Already registered? <a href="./login.html">Sign in</a>
+    </p>
+  </main>
+
+  <script type="module" src="./js/auth.js"></script>
+</body>
+</html>

@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <main class="page">
+    <h1>Sign in</h1>
+    <p class="text-meta">
+      Use the email address you registered with.
+    </p>
+
+    <!-- auth.js inserts the error banner here. The slot starts empty:
+         the .banner class sets display:flex, which would beat the browser's
+         own [hidden] rule, so we add and remove the element instead of
+         hiding it. -->
+    <div id="banner-slot"></div>
+
+    <!-- novalidate turns OFF the browser's built-in validation bubbles so our
+         own checks run instead and errors appear in the .field-error style
+         used everywhere else. The required/type attributes stay because
+         screen readers announce them. -->
+    <form class="form" id="login-form" novalidate>
+      <div class="field" id="field-email">
+        <label class="label label-required" for="email">Email</label>
+        <input
+          class="input"
+          id="email"
+          name="email"
+          type="email"
+          autocomplete="email"
+          inputmode="email"
+          placeholder="202512345@ufh.ac.za"
+          required>
+      </div>
+
+      <div class="field" id="field-password">
+        <label class="label label-required" for="password">Password</label>
+        <input
+          class="input"
+          id="password"
+          name="password"
+          type="password"
+          autocomplete="current-password"
+          required>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary btn-block" id="submit-button" type="submit">
+          Sign in
+        </button>
+      </div>
+    </form>
+
+    <p class="text-meta">
+      No account yet? <a href="./register.html">Create one</a>
+    </p>
+  </main>
+
+  <script type="module" src="./js/auth.js"></script>
+</body>
+</html>
