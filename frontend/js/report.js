@@ -26,7 +26,9 @@
 // character counter reports a length, not the content.
 // ===========================================================================
 
-import { submitIncident, ApiError } from './api.js';
+import { submitIncident, isLoggedIn, logout, ApiError } from './api.js';
+
+const LOGIN_URL = './login.html';
 
 /** The nine values from docs/api-contract.md. Must match report.html. */
 const INCIDENT_TYPES = [
@@ -160,6 +162,19 @@ function clearBanner() {
   if (slot) slot.replaceChildren();
 }
 
+/** Reads aria-describedby as a list of ids. Empty when the attribute is absent. */
+function describedByIds(input) {
+  return (input.getAttribute('aria-describedby') || '').split(/\s+/).filter(Boolean);
+}
+
+function writeDescribedBy(input, ids) {
+  if (ids.length === 0) {
+    input.removeAttribute('aria-describedby');
+  } else {
+    input.setAttribute('aria-describedby', ids.join(' '));
+  }
+}
+
 /** Marks one input invalid and writes the message below it. */
 function setFieldError(inputId, message) {
   const input = document.getElementById(inputId);
@@ -178,6 +193,13 @@ function setFieldError(inputId, message) {
   error.id = `${inputId}-error`;
   error.textContent = message;
 
+  // aria-describedby takes a LIST of ids, and the textarea already points at
+  // its hint and its character counter. Add to that list rather than
+  // replacing it, or fixing an error would silence the other two.
+  const ids = describedByIds(input);
+  if (!ids.includes(error.id)) ids.push(error.id);
+  writeDescribedBy(input, ids);
+
   field.appendChild(error);
 }
 
@@ -188,7 +210,10 @@ function clearFieldError(inputId) {
   input.classList.remove('input-invalid');
   input.removeAttribute('aria-invalid');
 
-  const existing = document.getElementById(`${inputId}-error`);
+  const errorId = `${inputId}-error`;
+  writeDescribedBy(input, describedByIds(input).filter((id) => id !== errorId));
+
+  const existing = document.getElementById(errorId);
   if (existing) existing.remove();
 }
 
@@ -372,7 +397,7 @@ function showLocationFallback(canRetry) {
   }
 
   const label = document.createElement('label');
-  label.className = 'label';
+  label.className = 'checkbox';
   label.setAttribute('for', 'without-location');
 
   const checkbox = document.createElement('input');
@@ -383,7 +408,8 @@ function showLocationFallback(canRetry) {
     clearBanner();
   });
 
-  const text = document.createTextNode(' Send this report without my location');
+  const text = document.createElement('span');
+  text.textContent = 'Send this report without my location';
 
   label.appendChild(checkbox);
   label.appendChild(text);
@@ -536,15 +562,33 @@ function validate({ type, description }) {
  * plainly. It comes from the server, so like every other server value it goes
  * on the page with textContent.
  */
-function showConfirmation(incident) {
+function showConfirmation(incident, button) {
   const form = document.getElementById('report-form');
 
-  showBanner(
-    'success',
-    'Report sent',
-    `Your reference number is ${incident.incidentId}. `
-    + 'Campus control has received this report. Write the number down.',
-  );
+  // Take the button out of its loading state before disabling it. Without
+  // this the spinner keeps turning under a "Report sent" banner, which reads
+  // as though the report is still in flight.
+  if (button) {
+    button.replaceChildren();
+    button.textContent = 'Report sent';
+  }
+
+  const reference = incident?.incidentId;
+  let message = reference === null || reference === undefined
+    ? 'Campus control has received this report.'
+    : `Your reference number is ${reference}. `
+      + 'Campus control has received this report. Write the number down.';
+
+  // Contract v0.2: the server reports whether it got coordinates. When it did
+  // not, say so here rather than letting the student assume someone is
+  // already walking towards them.
+  if (incident?.locationSource === 'none') {
+    message += ' This report has no location attached, so campus control will '
+      + 'work out where you are from your description. If you can, call them '
+      + 'as well.';
+  }
+
+  showBanner('success', 'Report sent', message);
 
   if (form) {
     // Disable everything so the same report cannot be sent twice.
@@ -620,8 +664,18 @@ function initForm() {
         anonymous,
       });
 
-      showConfirmation(incident);
+      showConfirmation(incident, button);
     } catch (err) {
+      // An expired token is not something the student can fix on this form.
+      // Send them to sign in again rather than showing an error they cannot
+      // act on. The typed report is lost, which is bad, but a token good for
+      // eight hours expiring mid-form is rare.
+      if (err instanceof ApiError && err.status === 401) {
+        logout();
+        window.location.replace(LOGIN_URL);
+        return;
+      }
+
       if (err instanceof ApiError) {
         // `field` names the input at fault, so mark it as well as showing the
         // banner — otherwise the student has to guess which box is wrong.
@@ -653,26 +707,34 @@ function initForm() {
 //
 // Module scripts are deferred, so the DOM is parsed by the time this runs.
 
-initDescriptionCounter();
-initTypeBehaviour();
-initForm();
-requestLocation();
+// Guard first. POST /api/incidents is a student-role endpoint, so a signed-out
+// visitor cannot file anything. Better to send them to sign in now than to let
+// them type a report and lose it at submit.
+//
+// Reporting anonymously still needs an account. `anonymous` withholds the
+// reporter's identity from responders; it does not make the request itself
+// unauthenticated. Contract section 9 has that as an open question.
+if (!isLoggedIn()) {
+  window.location.replace(LOGIN_URL);
+} else {
+  initDescriptionCounter();
+  initTypeBehaviour();
+  initForm();
+  requestLocation();
+}
 
 // ---------------------------------------------------------------------------
 // NOTES FOR THE TEAM
 //
-// 1. CONTRACT CONFLICT — needs a group decision.
-//    docs/api-contract.md marks `latitude` and `longitude` as REQUIRED and
-//    says the server returns 400 when coordinates are missing. This page can
-//    send a report with both as null, because the brief for it was that a
-//    denied permission must not block a student from reporting.
-//    Those two positions cannot both hold. Either the contract changes to
-//    allow null coordinates, or this page must stop offering the option.
-//    Raise it as an issue before the backend implements POST /api/incidents.
+// 1. The coordinates question is settled. Contract v0.2 (PR #4) makes
+//    `latitude` and `longitude` optional and adds `locationSource`, which the
+//    server sets to "device" or "none" from the coordinates it received. A
+//    report with no location is accepted and routed to campus control for
+//    manual triage instead of being auto-assigned. showConfirmation() reads
+//    that field and tells the student when no location went with the report.
 //
-// 2. The anonymous toggle and the "without location" checkbox use the
-//    browser's native checkbox, because styles.css has no checkbox or toggle
-//    style and this file is not allowed to add CSS. They work and they are
-//    accessible, they just will not match the rest of the form. Whoever owns
-//    the stylesheet may want to add one.
+// 2. Both checkboxes now use the .checkbox class from styles.css, which sets
+//    accent-color and makes the whole row a 44px touch target. It is still
+//    the browser's native control underneath, so focus and high-contrast mode
+//    keep working.
 // ---------------------------------------------------------------------------
