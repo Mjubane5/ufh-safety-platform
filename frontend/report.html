@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Report an incident — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <main class="page">
+    <h1>Report an incident</h1>
+    <p class="text-meta">
+      Campus control receives this immediately. If you are in danger and cannot
+      wait, call your local emergency number as well.
+    </p>
+
+    <!-- report.js inserts the error and confirmation banners here. The slot
+         starts empty rather than hidden: .banner sets display:flex, which
+         beats the browser's built-in [hidden] rule, so we add and remove the
+         element instead. -->
+    <div id="banner-slot"></div>
+
+    <!-- novalidate switches off the browser's own validation bubbles so our
+         checks run instead and errors use the .field-error style. -->
+    <form class="form" id="report-form" novalidate>
+
+      <div class="field" id="field-type">
+        <label class="label label-required" for="type">What is happening?</label>
+        <select class="select" id="type" name="type" required>
+          <option value="">Choose the closest match…</option>
+          <option value="sos">SOS — I am in immediate danger</option>
+          <option value="medical">Medical emergency</option>
+          <option value="fire">Fire</option>
+          <option value="theft">Theft</option>
+          <option value="assault">Assault</option>
+          <option value="accident">Accident</option>
+          <option value="suspicious">Suspicious behaviour</option>
+          <option value="unsafe">Unsafe condition</option>
+          <option value="other">Other</option>
+        </select>
+        <p class="field-hint" id="type-hint">
+          Pick the closest match. Responders use this to decide how urgently to
+          respond.
+        </p>
+      </div>
+
+      <div class="field" id="field-description">
+        <label class="label" for="description">Description</label>
+        <textarea
+          class="textarea"
+          id="description"
+          name="description"
+          maxlength="1000"
+          aria-describedby="description-hint description-counter"></textarea>
+        <p class="field-hint" id="description-hint">
+          Optional for most types, but include anything that helps responders
+          find you — a building name, a landmark, what people are wearing.
+        </p>
+        <p class="field-hint" id="description-counter">0 / 1000 characters</p>
+      </div>
+
+      <div class="field" id="field-location">
+        <span class="label">Your location</span>
+        <p class="field-hint" id="location-status">Preparing to find your location…</p>
+        <div id="location-actions"></div>
+      </div>
+
+      <div class="field" id="field-anonymous">
+        <!-- The stylesheet has no checkbox style, so this is the browser's
+             native control. See the note at the end of report.js. -->
+        <label class="label" for="anonymous">
+          <input type="checkbox" id="anonymous" name="anonymous">
+          Report anonymously
+        </label>
+        <p class="field-hint">
+          Your name is withheld from responders. Campus control still receives
+          the report, but nobody can call you back about it.
+        </p>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary btn-block" id="submit-button" type="submit">
+          Send report
+        </button>
+      </div>
+    </form>
+  </main>
+
+  <script type="module" src="./js/report.js"></script>
+</body>
+</html>
