@@ -7,6 +7,25 @@
   <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./dashboard.html">
+        <!-- Swap for the real logo once it is in frontend/assets/:
+             <img class="brand-logo" src="./assets/ufh-logo.svg" alt="University of Fort Hare"> -->
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Campus emergency &amp; wellness</span>
+        </span>
+      </a>
+
+      <!-- A link, not a sign-out button. Someone part-way through reporting an
+           incident is far more likely to want their report list than to want
+           to sign out. -->
+      <a class="btn btn-ghost" href="./dashboard.html">My reports</a>
+    </div>
+  </header>
+
   <main class="page">
     <h1>Report an incident</h1>
     <p class="text-meta">
@@ -66,11 +85,9 @@
       </div>
 
       <div class="field" id="field-anonymous">
-        <!-- The stylesheet has no checkbox style, so this is the browser's
-             native control. See the note at the end of report.js. -->
-        <label class="label" for="anonymous">
+        <label class="checkbox" for="anonymous">
           <input type="checkbox" id="anonymous" name="anonymous">
-          Report anonymously
+          <span>Report anonymously</span>
         </label>
         <p class="field-hint">
           Your name is withheld from responders. Campus control still receives
