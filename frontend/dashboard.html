@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your reports — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./dashboard.html">
+        <!-- Swap for the real logo once it is in frontend/assets/:
+             <img class="brand-logo" src="./assets/ufh-logo.svg" alt="University of Fort Hare"> -->
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Campus emergency &amp; wellness</span>
+        </span>
+      </a>
+
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype for CSC 200 / CSC 300. Not connected to any live emergency
+      service. All data shown here is synthetic.
+    </p>
+
+    <!-- dashboard.js writes the student's name in here once GET /auth/me
+         returns. It starts as the generic heading so the page is readable
+         before that call finishes. -->
+    <h1 id="greeting">Your reports</h1>
+
+    <p class="text-meta">
+      Every incident you have reported, most recent first.
+    </p>
+
+    <div class="card">
+      <h2>Need help now?</h2>
+      <p class="text-meta">
+        Campus control receives your report immediately. If you are in danger
+        and cannot wait, call your local emergency number as well.
+      </p>
+      <p>
+        <a class="btn btn-primary btn-block btn-lg" href="./report.html">
+          Report an incident
+        </a>
+      </p>
+    </div>
+
+    <!-- dashboard.js inserts the error banner here. Same pattern as the other
+         pages: the slot starts empty because .banner sets display:flex and
+         would override [hidden]. -->
+    <div id="banner-slot"></div>
+
+    <h2 id="filter-heading">Filter by status</h2>
+
+    <!-- group, not toolbar: these are a set of related toggles rather than a
+         strip of separate commands. dashboard.js builds the buttons so the
+         status list is defined in one place next to the contract's values. -->
+    <div class="chips" id="status-filter" role="group" aria-labelledby="filter-heading"></div>
+
+    <!-- aria-live so a screen reader hears the list change after a filter or a
+         page change. polite, not assertive: it should wait for a pause rather
+         than cut across whatever is being read. -->
+    <section id="incident-list" aria-live="polite" aria-busy="true"></section>
+
+    <div id="pagination"></div>
+  </main>
+
+  <script type="module" src="./js/dashboard.js"></script>
+</body>
+</html>

@@ -95,10 +95,20 @@
   --color-border: #d7dbe0;           /* decorative dividers, card outline   */
   --color-border-strong: #767e8a;    /* input + button borders — 4.1:1      */
 
-  /* --- Brand / primary action ------------------------------------------- */
-  --color-primary: #1a4f8a;          /* white text on this  — 8.3:1         */
-  --color-primary-dark: #12385f;     /* hover / active state                */
-  --color-primary-tint: #eaf1f9;     /* selected row, subtle fill           */
+  /* --- Brand: University of Fort Hare ------------------------------------
+     UFH's identity is blue, white and gold. These are our own accessible
+     approximations. When Comms sends the CI manual, replace the three hexes
+     here and re-check every ratio noted in this block. Nothing else in the
+     file hardcodes a brand colour. */
+  --color-primary: #00447c;          /* white text on this  — 9.9:1         */
+  --color-primary-dark: #002f56;     /* hover / active      — 13.6:1        */
+  --color-primary-tint: #e8f0f8;     /* selected row, subtle fill           */
+
+  /* Gold is a surface colour. Gold text on white is 1.8:1 and unreadable,
+     so put dark text on a gold fill, or use --color-gold-dark for text. */
+  --color-gold: #f7b500;             /* --color-text on this — 9.2:1        */
+  --color-gold-dark: #8a6100;        /* gold text on white   — 5.5:1        */
+  --color-gold-tint: #fff6dd;
 
   /* --- Emergency -------------------------------------------------------
      Reserved for SOS and priority 1. Do not use this red for an ordinary
@@ -119,13 +129,16 @@
   --color-priority-1: #b3001b;       /* 7.2:1 with white                    */
   --color-priority-2: #8f3a00;       /* 7.6:1 with white                    */
   --color-priority-3: #7a5200;       /* 6.9:1 with white                    */
-  --color-priority-4: #1a4f8a;       /* 8.3:1 with white                    */
+  --color-priority-4: #00447c;       /* 9.9:1 with white                    */
   --color-priority-5: #4a5260;       /* 7.9:1 with white                    */
 
   /* --- Focus ring -------------------------------------------------------
      Keyboard users navigate the whole app with this. Never set
      `outline: none` anywhere without putting an equally visible ring back. */
-  --color-focus: #1a4f8a;
+  --color-focus: #00447c;
+  /* On the blue header a blue ring is invisible, so anything sitting on
+     --color-primary uses this instead. */
+  --color-focus-inverse: #ffc94d;
 
   /* --- Spacing scale (4px step) ----------------------------------------- */
   --space-1: 0.25rem;   /*  4px */
@@ -434,6 +447,50 @@ a:focus-visible,
 
 .btn-secondary:hover {
   background-color: var(--color-primary-tint);
+}
+
+/* Low-emphasis button for a toolbar or a header, where a filled button would
+   compete with the real action on the page. */
+.btn-ghost {
+  color: var(--color-primary);
+  background-color: transparent;
+  border-color: transparent;
+}
+
+.btn-ghost:hover {
+  background-color: var(--color-primary-tint);
+}
+
+/* --- Checkbox -------------------------------------------------------------
+   accent-color tints the native control instead of rebuilding it. A custom
+   checkbox means reimplementing focus, the indeterminate state and Windows
+   high-contrast mode, and we would get at least one of those wrong.
+
+   Wrap it: <label class="checkbox"><input type="checkbox"><span>Label</span></label> */
+.checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  /* 44px tall so the whole row is a touch target, not just the box. */
+  min-height: var(--touch-target);
+  padding: var(--space-2) 0;
+  font-size: var(--text-base);
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.checkbox input[type="checkbox"] {
+  flex-shrink: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.checkbox input[type="checkbox"]:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
 }
 
 /* On phones a form's submit button should span the width — it is the easiest
@@ -768,12 +825,249 @@ a:focus-visible,
 }
 
 /* ===========================================================================
-   8. DESKTOP LAYER
+   8. APP SHELL
+   The header bar that sits above <main class="page"> on every signed-in page.
+   =========================================================================== */
+
+/* Not position:sticky. html/body already set overflow-x:hidden, which turns
+   them into scroll containers and stops sticky working in some browsers.
+   Making it sticky means changing that too, so leave it for now. */
+.app-header {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  /* Gold rule under the bar. It carries the third brand colour without
+     putting gold anywhere that has to hold text. */
+  border-bottom: 4px solid var(--color-gold);
+}
+
+.app-header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: 100%;
+  max-width: var(--page-max-width);
+  margin: 0 auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand:hover {
+  color: inherit;
+}
+
+.brand:focus-visible {
+  outline: 3px solid var(--color-focus-inverse);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* The real coat of arms goes here. Drop the file into frontend/assets/ and
+   swap the .brand-mark span in the HTML for the <img> line above it. */
+.brand-logo {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+/* Monogram placeholder, used until the official logo file is in the repo. */
+.brand-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  font-size: var(--text-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--color-text);
+  background-color: var(--color-gold);
+  border-radius: var(--radius-sm);
+}
+
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.brand-name {
+  font-weight: 700;
+}
+
+.brand-sub {
+  font-size: var(--text-sm);
+  color: #cfe0f0;   /* 7.3:1 on the header blue */
+}
+
+/* The header sits on blue, so the ghost button needs a visible outline and a
+   focus ring that is not also blue. */
+.app-header .btn-ghost {
+  color: var(--color-text-inverse);
+  border-color: rgba(255, 255, 255, 0.45);
+}
+
+.app-header .btn-ghost:hover {
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.app-header .btn:focus-visible {
+  outline-color: var(--color-focus-inverse);
+}
+
+/* Standing notice, not an alert. Used for the "this is a prototype" line, so
+   it must not look like the error banner. */
+.notice {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-gold-dark);            /* 5.1:1 on the tint */
+  background-color: var(--color-gold-tint);
+  border: 1px solid var(--color-gold);
+  border-radius: var(--radius-md);
+}
+
+.notice::before {
+  content: "\2139";   /* ℹ */
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+/* ===========================================================================
+   9. DASHBOARD
+   Status filter, incident list, empty state, pagination.
+   =========================================================================== */
+
+.btn-lg {
+  min-height: 56px;
+  font-size: var(--text-lg);
+}
+
+/* Row of status filters. Eight of them will not fit across a phone, and
+   wrapping pushes the list itself off screen, so they scroll sideways. */
+.chips {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  scrollbar-width: thin;
+}
+
+.chip {
+  flex-shrink: 0;
+  min-height: var(--touch-target);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--color-text);
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+}
+
+.chip:hover {
+  background-color: var(--color-primary-tint);
+}
+
+/* aria-pressed already carries the state for screen readers, so hang the
+   styling off it rather than a second class we would have to keep in step. */
+.chip[aria-pressed="true"] {
+  color: var(--color-text-inverse);
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.chip:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.incident-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.incident-type {
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.incident-ref {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
+
+.incident-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.empty-state {
+  padding: var(--space-7) var(--space-4);
+  text-align: center;
+  background-color: var(--color-surface);
+  /* Dashed, so an empty list does not read as a card that failed to load. */
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+}
+
+.empty-state p {
+  margin-inline: auto;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.pagination-status {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+/* ===========================================================================
+   10. DESKTOP LAYER
    Everything above is the phone. This block is the override.
    Nothing below this line should be needed for a phone to work.
    =========================================================================== */
 
 @media (min-width: 768px) {
+  .app-header {
+    padding: var(--space-4) var(--space-5);
+  }
+
+  .brand-logo,
+  .brand-mark {
+    width: 52px;
+    height: 52px;
+  }
+
+  .brand-name {
+    font-size: var(--text-lg);
+  }
+
   /* Slightly larger type once there is room for it. */
   :root {
     --text-xl: 1.75rem;
