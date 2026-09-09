@@ -30,3 +30,6 @@ config.local.*
 .vscode/
 .DS_Store
 Thumbs.db
+# Spring Boot / Maven
+backend/target/
+backend/.env
