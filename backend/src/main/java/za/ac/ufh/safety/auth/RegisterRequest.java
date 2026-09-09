@@ -19,8 +19,12 @@ public record RegisterRequest(
     @Size(max = 160, message = "Email is too long.")
     String email,
 
+    // Two rules rather than one @Size, so a very long password is not told it
+    // is too short. The 72 is BCrypt's limit: it ignores anything past 72 bytes,
+    // and silently accepting a longer one would mean only the first 72 count.
     @NotBlank(message = "Password is required.")
-    @Size(min = 8, max = 72, message = "Password must be at least 8 characters.")
+    @Size(min = 8, message = "Password must be at least 8 characters.")
+    @Size(max = 72, message = "Password must be 72 characters or fewer.")
     String password,
 
     @Size(max = 30, message = "Phone number is too long.")

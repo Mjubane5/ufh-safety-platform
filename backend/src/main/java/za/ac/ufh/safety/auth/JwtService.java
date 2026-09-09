@@ -23,7 +23,10 @@ public class JwtService {
         @Value("${app.jwt.expiration-minutes:120}") long expirationMinutes
     ) {
         if (secret == null || secret.length() < 32) {
-            throw new IllegalArgumentException("app.jwt.secret must be at least 32 characters long.");
+            throw new IllegalStateException(
+                "JWT_SECRET is missing or shorter than 32 characters, so the backend cannot sign tokens. "
+                    + "Set it before starting: PowerShell $env:JWT_SECRET=\"<at least 32 characters>\". "
+                    + "It is deliberately not stored in application.properties.");
         }
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMinutes = expirationMinutes;

@@ -35,10 +35,16 @@ public class SecurityConfig {
             .csrf(csrf -> csrf.disable())
             .cors(cors -> {})
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+            // Deny by default. Registration and login are the only public
+            // endpoints; everything added later is protected until someone
+            // deliberately opens it up. Incidents and GBV cases arrive on this
+            // chain next, and GBV content is restricted by role.
             .authorizeHttpRequests(auth -> auth
+                // The browser sends its CORS preflight without the
+                // Authorization header, so it has to pass without a token.
+                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
-                .requestMatchers("/api/auth/me").authenticated()
-                .anyRequest().permitAll()
+                .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
                 response.setStatus(401);

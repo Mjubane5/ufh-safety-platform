@@ -1,0 +1,4 @@
+# mvnw is a shell script. With core.autocrlf=true a fresh clone on Windows
+# would give it CRLF endings, which Git Bash and WSL refuse to run.
+mvnw text eol=lf
+mvnw.cmd text eol=crlf
