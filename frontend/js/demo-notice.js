@@ -16,9 +16,14 @@
 import { MOCK } from './config.js';
 
 // Real services, for anyone who arrived here by mistake. Verify these before
-// each submission - a wrong number here is worse than no number.
+// each submission - a wrong number here is worse than no number. Checked
+// against saps.gov.za and gbvf.org.za on 10 September 2026.
 const EMERGENCY_CONTACTS = [
-  { label: 'Police / ambulance (SAPS)', number: '10111' },
+  // 112 first: it reaches every emergency service from any mobile, and it
+  // connects with no airtime and no SIM. Someone in trouble may have neither.
+  { label: 'Any emergency, from a mobile', number: '112' },
+  { label: 'Police (SAPS)', number: '10111' },
+  { label: 'Ambulance and fire', number: '10177' },
   { label: 'GBV Command Centre', number: '0800 428 428' },
   { label: 'Childline South Africa', number: '116' },
 ];
@@ -112,8 +117,8 @@ function buildBanner() {
   banner.setAttribute('role', 'note');
   banner.innerHTML =
     '<strong>Demonstration only.</strong> Reports filed here reach nobody. ' +
-    'In an emergency call <a href="tel:10111">10111</a>, or the GBV Command ' +
-    'Centre on <a href="tel:0800428428">0800&nbsp;428&nbsp;428</a>.';
+    'In an emergency call <a href="tel:112">112</a> from any mobile, or the ' +
+    'GBV Command Centre on <a href="tel:0800428428">0800&nbsp;428&nbsp;428</a>.';
   return banner;
 }
 
