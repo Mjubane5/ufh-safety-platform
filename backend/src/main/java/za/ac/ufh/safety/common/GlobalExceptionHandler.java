@@ -3,10 +3,13 @@ package za.ac.ufh.safety.common;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -40,6 +43,26 @@ public class GlobalExceptionHandler {
                 "VALIDATION_FAILED",
                 "That email or student number is already registered.",
                 null));
+    }
+
+    // A URL with no handler is the client asking for something that does not
+    // exist, so it is a 404. Without this it fell through to the catch-all
+    // below and came back as 500, which tells the frontend team the backend
+    // crashed when in fact they had the wrong path or the endpoint is not
+    // built yet.
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<ErrorResponse> handleNotFound(NoResourceFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(new ErrorResponse("NOT_FOUND", "That endpoint does not exist.", null));
+    }
+
+    // A body Jackson cannot read is bad client data, not a server fault: a
+    // malformed JSON document, or a value outside an enum such as a status of
+    // "en-route". The contract calls that 400.
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<ErrorResponse> handleUnreadableBody(HttpMessageNotReadableException ex) {
+        return ResponseEntity.badRequest()
+            .body(new ErrorResponse("VALIDATION_FAILED", "The request body could not be read.", null));
     }
 
     // The stack trace is logged and not returned: it can name internal classes
