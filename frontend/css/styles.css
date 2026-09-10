@@ -1131,3 +1131,112 @@ a:focus-visible,
     align-items: start;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Demonstration notice
+   ---------------------------------------------------------------------------
+   Shown only when config.js has MOCK = true, which is the public build. See
+   js/demo-notice.js for why this exists.
+
+   Colours reuse the emergency tokens already defined above rather than
+   introducing new ones, so contrast stays at the ratios documented there.
+   --------------------------------------------------------------------------- */
+
+.demo-locked {
+  overflow: hidden;
+}
+
+.demo-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 65%);
+}
+
+.demo-dialog {
+  width: min(32rem, 100%);
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  border-top: 6px solid var(--color-emergency);
+  border-radius: 12px;
+  background: var(--color-surface);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 35%);
+}
+
+.demo-dialog h2 {
+  margin: 0 0 0.75rem;
+  color: var(--color-emergency-dark);
+  font-size: var(--text-xl);
+  line-height: 1.25;
+}
+
+.demo-dialog p {
+  margin: 0 0 0.75rem;
+}
+
+.demo-contacts {
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+}
+
+.demo-contacts li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.demo-contacts li:last-child {
+  border-bottom: 0;
+}
+
+.demo-contacts a {
+  color: var(--color-emergency-dark);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.demo-banner {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--color-emergency);
+  background: var(--color-emergency-tint);
+  color: var(--color-emergency-dark);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  text-align: center;
+}
+
+/* The copy above the submit button is not a page-wide strip, so it gets the
+   card treatment instead of running edge to edge. */
+#submit-button + .demo-banner,
+.demo-banner + #submit-button {
+  margin-top: 0.75rem;
+}
+
+.demo-banner a {
+  color: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .demo-dialog {
+    animation: demo-dialog-in 160ms ease-out;
+  }
+}
+
+@keyframes demo-dialog-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
