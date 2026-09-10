@@ -28,7 +28,7 @@ public class Incident {
     private Long reporterUserId;
 
     @Column(nullable = false, length = 20)
-    private String type;
+    private IncidentType type;
 
     @Column(length = 1000)
     private String description;
@@ -51,7 +51,7 @@ public class Incident {
     private Boolean anonymous;
 
     @Column(nullable = false, length = 20)
-    private String status;
+    private IncidentStatus status;
 
     @Column(nullable = false)
     private Integer priority;
@@ -74,7 +74,7 @@ public class Incident {
         Instant now = Instant.now();
         if (createdAt == null) createdAt = now;
         updatedAt = now;
-        if (status == null) status = "reported";
+        if (status == null) status = IncidentStatus.REPORTED;
         if (anonymous == null) anonymous = Boolean.FALSE;
         applyLocationSource();
     }
@@ -94,8 +94,8 @@ public class Incident {
     public Long getReporterUserId() { return reporterUserId; }
     public void setReporterUserId(Long reporterUserId) { this.reporterUserId = reporterUserId; }
 
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
+    public IncidentType getType() { return type; }
+    public void setType(IncidentType type) { this.type = type; }
 
     public String getDescription() { return description; }
     public void setDescription(String description) { this.description = description; }
@@ -115,8 +115,8 @@ public class Incident {
     public Boolean getAnonymous() { return anonymous; }
     public void setAnonymous(Boolean anonymous) { this.anonymous = anonymous; }
 
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
+    public IncidentStatus getStatus() { return status; }
+    public void setStatus(IncidentStatus status) { this.status = status; }
 
     public Integer getPriority() { return priority; }
     public void setPriority(Integer priority) { this.priority = priority; }
