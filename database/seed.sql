@@ -10,6 +10,9 @@
 --
 -- Prerequisites:
 --   1. Run 01-create-database.sql first.
+--   1a. The staff rows below have no student number, which needs the nullable
+--       student_number change. On an existing database also run
+--       02-alter-users-student-number-nullable.sql.
 --   2. Start the backend once (./mvnw spring-boot:run) so JPA creates the
 --      `users` table, then stop it. This file inserts rows, it does not
 --      create tables.
@@ -46,21 +49,26 @@ VALUES
      '$2a$10$Ezl58jBrPHWIubIXTl5d4erGXblaHIOtIo31eH3JCBGs7s2PG1f.a',
      NULL, 'student', '2026-02-11 14:05:00'),
 
-    ('STAFF-0001', 'Nomsa Khumalo', 'nomsa.khumalo@example.ac.za',
+    (NULL, 'Nomsa Khumalo', 'nomsa.khumalo@example.ac.za',
      '$2a$10$x/0Xu.YLL5kIUye4kYaaBOpUpg3b4Kn1ozbgSXl4PoLnz.C8dzYuW',
      '+27720000001', 'responder', '2026-01-20 07:00:00'),
 
-    ('STAFF-0002', 'Johan van Wyk', 'johan.vanwyk@example.ac.za',
+    (NULL, 'Johan van Wyk', 'johan.vanwyk@example.ac.za',
      '$2a$10$F8YSrdOwH97oqjTi9fVDPOL03uPJypG7FZuAa1azneVSO9GD93bbi',
      '+27720000002', 'campus_control', '2026-01-20 07:05:00'),
 
-    ('STAFF-0003', 'Lerato Mahlangu', 'lerato.mahlangu@example.ac.za',
+    (NULL, 'Lerato Mahlangu', 'lerato.mahlangu@example.ac.za',
      '$2a$10$P/RgpD27UsV.Mb2MlOvxkeLP7rjJjGM1e1FGc5bYlNc1OsdjV9.uG',
      '+27720000003', 'gbv_officer', '2026-01-20 07:10:00');
 
 -- Note: `phone` is nullable, so Aphiwe Ngcobo above has none. That row is
 -- deliberate — the frontend must render a missing phone as absent rather than
 -- printing "null", and this gives you a row to test that against.
+
+-- The staff rows have no student number on purpose. A responder or a GBV
+-- officer is not a student, so inventing a number for them would put false
+-- data in the table. MySQL allows many NULLs in a unique index, so all three
+-- can be null while real student numbers stay unique.
 
 -- Incident seed rows are not here yet. The `incidents` table does not exist
 -- on this branch; it arrives with the Incident entity in PR #10. Add them in a
