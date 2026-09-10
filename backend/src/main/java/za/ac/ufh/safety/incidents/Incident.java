@@ -85,6 +85,10 @@ public class Incident {
         applyLocationSource();
     }
 
+    // Kept in step with the coordinates as they are set, not only when the row
+    // is written. The service reads locationSource straight off the entity to
+    // build its 201 response, and a value that only appears at persist time
+    // would be null there.
     private void applyLocationSource() {
         locationSource = (latitude != null && longitude != null) ? "device" : "none";
     }
@@ -101,10 +105,16 @@ public class Incident {
     public void setDescription(String description) { this.description = description; }
 
     public Double getLatitude() { return latitude; }
-    public void setLatitude(Double latitude) { this.latitude = latitude; }
+    public void setLatitude(Double latitude) {
+        this.latitude = latitude;
+        applyLocationSource();
+    }
 
     public Double getLongitude() { return longitude; }
-    public void setLongitude(Double longitude) { this.longitude = longitude; }
+    public void setLongitude(Double longitude) {
+        this.longitude = longitude;
+        applyLocationSource();
+    }
 
     public Double getAccuracy() { return accuracy; }
     public void setAccuracy(Double accuracy) { this.accuracy = accuracy; }
