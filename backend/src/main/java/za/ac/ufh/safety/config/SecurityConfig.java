@@ -15,6 +15,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import za.ac.ufh.safety.common.ErrorResponse;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Configuration
@@ -43,6 +44,13 @@ public class SecurityConfig {
                 // The browser sends its CORS preflight without the
                 // Authorization header, so it has to pass without a token.
                 .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                // The hosted build serves the pages from this same
+                // application, and deny-by-default covers them too. Without
+                // this rule the login page itself answers 401, so nobody can
+                // reach the form that would get them a token. Only static
+                // files are opened up; every /api path below stays protected.
+                .requestMatchers(HttpMethod.GET,
+                    "/", "/*.html", "/css/**", "/js/**", "/assets/**", "/favicon.ico").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
                 .anyRequest().authenticated()
             )
@@ -58,11 +66,18 @@ public class SecurityConfig {
 
     @Bean
     CorsConfigurationSource corsConfigurationSource() {
+        // Hosted, the pages come from this same application, so requests are
+        // same-origin and never reach this list at all. It exists for local
+        // development, where the pages are served from port 5500 and the
+        // backend from 8080. CORS_ALLOWED_ORIGINS can add more without a
+        // rebuild - a comma-separated list, exact origins only, no wildcard.
+        String configured = System.getenv("CORS_ALLOWED_ORIGINS");
+        List<String> origins = (configured == null || configured.isBlank())
+            ? List.of("http://localhost:5500", "http://127.0.0.1:5500")
+            : Arrays.stream(configured.split(",")).map(String::trim).filter(o -> !o.isEmpty()).toList();
+
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(List.of(
-            "http://localhost:5500",
-            "http://127.0.0.1:5500"
-        ));
+        config.setAllowedOrigins(origins);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
         config.setAllowCredentials(false);
