@@ -28,7 +28,11 @@
 
   <main class="page">
     <h1>Report an incident</h1>
-    <p class="text-meta">
+    <!-- data-live-claim holds the text demo-notice.js swaps in when MOCK is
+         true. The promise below is true of the finished system and false of a
+         demonstration build, and leaving it would undo the notice. -->
+    <p class="text-meta"
+       data-live-claim="This is a demonstration. Nothing you submit here is sent to campus control or stored anywhere. If you are in danger, call 10111.">
       Campus control receives this immediately. If you are in danger and cannot
       wait, call your local emergency number as well.
     </p>
@@ -103,6 +107,7 @@
     </form>
   </main>
 
+  <script type="module" src="./js/demo-notice.js"></script>
   <script type="module" src="./js/report.js"></script>
 </body>
 </html>
