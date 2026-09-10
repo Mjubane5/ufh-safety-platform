@@ -64,6 +64,11 @@ Final submission: 18 September 2026.
 - Never commit secrets, `.env` files, or API keys.
 - Commit messages are short and in present tense: "Add incident submission
   endpoint".
+- **Never add an AI tool as a commit co-author.** No `Co-Authored-By: Claude`
+  trailer, no "Generated with Claude Code" line in commits or pull request
+  descriptions, no AI mentioned in `--author`. We are graded on our own
+  understanding and the commit history is part of what the panel reviews.
+  Every commit is authored by the student who owns the work.
 
 ## How to help this team
 
