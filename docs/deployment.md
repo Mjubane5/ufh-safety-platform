@@ -164,6 +164,18 @@ exit 0
 
 ## 5. Target 3 — what public deployment would require
 
+> **Status, updated 10 September 2026.** Most of this list is now closed and
+> `docs/hosting-railway.md` is the runbook for actually doing it. What changed:
+>
+> | Item | Status |
+> | --- | --- |
+> | 5.1 Demo status unmissable | **Done.** `frontend/js/demo-notice.js`, keyed to `IS_PROTOTYPE` rather than `MOCK` so it survives being pointed at a real database. |
+> | 5.2 Transport security | **Done by the host.** Railway terminates TLS and redirects HTTP, and `BASE_URL` is now a same-origin `/api` rather than a hardcoded `http://` URL. |
+> | 5.3 Database | **Partly.** The hosted database has real generated credentials, not a blank root password. `ddl-auto` is still `update`, not `validate`, and there are no backups. Everything in it is synthetic and re-seedable. |
+> | 5.4 Authentication abuse | **Not done.** There is still no rate limiting on `POST /api/auth/login`, so nothing slows an attacker guessing passwords. This is the one item on the list that is genuinely still open, and it is the reason the hosted build should be treated as a demonstration with a known weakness rather than as something safe. |
+> | 5.5 CORS | **Moot.** The pages ship inside the jar, so the hosted build is same-origin and makes no cross-origin request. The allow-list now reads `CORS_ALLOWED_ORIGINS` and only applies locally. |
+
+
 Not a to-do list to work through casually. Every item is a reason the system is
 not ready, and the first one is not a technical control.
 

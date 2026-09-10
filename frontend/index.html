@@ -5,16 +5,17 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>UFH Safety Platform — demonstration</title>
 
-  <!-- GitHub Pages serves this repository from its root, so the root URL would
-       otherwise be a 404. Sending people straight to the login page. -->
-  <meta http-equiv="refresh" content="0; url=./frontend/login.html">
-  <link rel="canonical" href="./frontend/login.html">
+  <!-- The hosted build serves this whole folder from the site root, so this
+       is what a visitor to the bare URL gets. Sending them to the login page,
+       but saying what this is first in case the redirect is blocked. -->
+  <meta http-equiv="refresh" content="0; url=./login.html">
+  <link rel="canonical" href="./login.html">
 
   <!-- Not a real service. Keeping it out of search results means nobody
        arrives here looking for help. -->
   <meta name="robots" content="noindex, nofollow">
 
-  <link rel="stylesheet" href="./frontend/css/styles.css">
+  <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
   <main class="page">
@@ -25,7 +26,7 @@
     <p>In an emergency call <a href="tel:112">112</a> from any mobile — it works
        without airtime — or the GBV Command Centre on
        <a href="tel:0800428428">0800&nbsp;428&nbsp;428</a>.</p>
-    <p><a class="btn btn-primary" href="./frontend/login.html">Continue to the demonstration</a></p>
+    <p><a class="btn btn-primary" href="./login.html">Continue to the demonstration</a></p>
   </main>
 </body>
 </html>

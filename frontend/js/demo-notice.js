@@ -8,12 +8,15 @@
 // So before anyone can file anything, we say so, and we give them numbers that
 // do work.
 //
-// The trigger is MOCK. When MOCK is true there is no backend at all and
-// nothing is stored anywhere, so that flag is exactly the condition this
-// notice describes. Nothing extra to configure and nothing to forget: the
-// public build is a mock build, and a mock build always says so.
+// The trigger is IS_PROTOTYPE, not MOCK. Those look interchangeable and are
+// not. MOCK only says "there is no backend today"; the hosted build has a real
+// backend and a real database, so MOCK is false there. Keying the notice to
+// MOCK would switch it off at exactly the moment it matters most - the point
+// where reports start being *stored* and still reach nobody, which is worse
+// than mock mode, not better. IS_PROTOTYPE stays true until campus control has
+// agreed to receive these reports and somebody is on the other end.
 
-import { MOCK } from './config.js';
+import { IS_PROTOTYPE } from './config.js';
 
 // Real services, for anyone who arrived here by mistake. Verify these before
 // each submission - a wrong number here is worse than no number. Checked
@@ -134,7 +137,7 @@ function correctMisleadingCopy() {
 }
 
 function init() {
-  if (!MOCK) return;
+  if (!IS_PROTOTYPE) return;
 
   document.body.classList.add('is-demo');
   correctMisleadingCopy();
