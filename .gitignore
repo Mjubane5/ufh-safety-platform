@@ -33,3 +33,6 @@ Thumbs.db
 # Spring Boot / Maven
 backend/target/
 backend/.env
+
+# Claude Code local settings
+.claude/
