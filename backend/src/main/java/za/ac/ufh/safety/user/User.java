@@ -16,7 +16,16 @@ public class User {
     @Column(name = "user_id")
     private Long userId;
 
-    @Column(name = "student_number", nullable = false, length = 20)
+    /**
+     * Null for staff accounts. Responders, campus control, GBV officers and
+     * admins are not students and have no student number, so requiring one
+     * would force us to invent fake numbers for real staff rows.
+     *
+     * Still unique when present, and still required when a student registers
+     * through /api/auth/register — that check lives in RegisterRequest, which
+     * only ever creates the student role.
+     */
+    @Column(name = "student_number", length = 20)
     private String studentNumber;
 
     @Column(name = "full_name", nullable = false, length = 120)
