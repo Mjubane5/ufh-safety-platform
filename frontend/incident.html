@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Incident — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./dashboard.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Campus emergency &amp; wellness</span>
+        </span>
+      </a>
+
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype for CSC 200 / CSC 300. Not connected to any live emergency
+      service. All data shown here is synthetic.
+    </p>
+
+    <p><a class="btn btn-ghost" href="./dashboard.html">&larr; Back to your reports</a></p>
+
+    <!-- Same banner pattern as dashboard.html: the slot starts empty because
+         .banner sets display:flex and would override [hidden]. -->
+    <div id="banner-slot"></div>
+
+    <!-- incident.js replaces the heading once GET /incidents/{id} returns.
+         It starts generic so the page reads sensibly before that finishes. -->
+    <h1 id="incident-heading">Incident</h1>
+
+    <!-- aria-busy starts true: the page is loading from the first paint, and
+         a screen reader should be told that rather than meeting an empty
+         region. incident.js clears it when the detail renders or fails. -->
+    <section id="incident-detail" aria-live="polite" aria-busy="true"></section>
+
+    <!-- The cancel control lives outside the detail region so that re-rendering
+         the detail does not destroy the button mid-click. incident.js unhides
+         it only when cancelling is actually allowed - see the notes in that
+         file for which statuses qualify. -->
+    <section id="cancel-slot" hidden></section>
+  </main>
+
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/incident.js"></script>
+</body>
+</html>

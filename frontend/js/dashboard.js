@@ -11,6 +11,7 @@ import { getCurrentUser, getIncidents, isLoggedIn, logout, ApiError } from './ap
 
 const LOGIN_URL = './login.html';
 const REPORT_URL = './report.html';
+const INCIDENT_URL = './incident.html';
 
 // The seven status values from docs/api-contract.md, plus an "everything"
 // option that sends no status parameter at all.
@@ -242,6 +243,19 @@ function incidentCard(incident) {
   }
 
   card.appendChild(badges);
+
+  // A real link rather than a click handler on the whole card: it opens in a
+  // new tab on a long press, it is reachable by keyboard, and a screen reader
+  // announces it as a link. Only rendered when there is an id to link to,
+  // because a card with no reference number has nothing to open.
+  if (ref !== null && ref !== undefined) {
+    const open = el('a', 'btn btn-ghost', 'View details');
+    open.href = `${INCIDENT_URL}?id=${encodeURIComponent(ref)}`;
+    // "View details" repeated down a list says nothing about which incident.
+    open.setAttribute('aria-label', `View details for incident ${ref}`);
+    card.appendChild(open);
+  }
+
   return card;
 }
 
