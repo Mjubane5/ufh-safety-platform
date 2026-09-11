@@ -564,3 +564,60 @@ export async function cancelIncident(incidentId, reason = null) {
     auth: true,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Responders
+// ---------------------------------------------------------------------------
+
+/**
+ * The responders a dispatcher can currently send.
+ *
+ * Roles: campus_control and admin only. A student calling this gets 403 —
+ * where every responder on campus is standing is not student-facing data.
+ *
+ * Every field except `responderId`, `team` and `status` can be null:
+ *
+ *   fullName    null if the duty row outlived the account
+ *   latitude    null if the responder has never checked in
+ *   longitude   same
+ *   lastSeenAt  same
+ *
+ * So do not plot a marker without checking the coordinates first. Plotting
+ * null as 0 puts the responder in the Gulf of Guinea.
+ *
+ * @returns {Promise<{items: object[]}>}
+ */
+export async function getAvailableResponders() {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+
+    // Deliberately includes one responder with no position, so the dispatcher
+    // screen gets tested against the null case from the first render rather
+    // than the first time a real responder forgets to check in.
+    return {
+      items: [
+        {
+          responderId: 5,
+          fullName: 'Nomsa Khumalo',
+          team: 'campus_security',
+          status: 'available',
+          latitude: -32.78210,
+          longitude: 26.84800,
+          lastSeenAt: '2026-08-23T01:49:30Z',
+        },
+        {
+          responderId: 8,
+          fullName: 'Pieter Botha',
+          team: 'campus_security',
+          status: 'available',
+          latitude: null,
+          longitude: null,
+          lastSeenAt: null,
+        },
+      ],
+    };
+  }
+
+  return request('/responders/available', { auth: true });
+}
