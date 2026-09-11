@@ -1,15 +1,14 @@
 package za.ac.ufh.safety.responders;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
 /**
  * Picks which responder to send when the dispatcher does not name one.
  *
- * SCAFFOLD — the selection rule is not implemented yet. Owner: nondumisombuli.
- *
  * ---------------------------------------------------------------------------
- * What this has to do, from docs/api-contract.md section 4
+ * What this does, from docs/api-contract.md section 4
  * ---------------------------------------------------------------------------
  *
  * 1. Only a responder who is AVAILABLE and has a known position can be
@@ -52,8 +51,7 @@ import java.util.Optional;
  * module. This class only chooses *who*; the route between them comes later.
  *
  * ---------------------------------------------------------------------------
- * Tests are already written for this in NearestResponderSelectorTest, marked
- * @Disabled. Delete the annotations one at a time and make each pass.
+ * The specification is NearestResponderSelectorTest, written before this code.
  * ---------------------------------------------------------------------------
  */
 public final class NearestResponderSelector {
@@ -69,7 +67,37 @@ public final class NearestResponderSelector {
     public static Optional<Responder> choose(List<Responder> candidates,
                                              double latitude,
                                              double longitude) {
-        throw new UnsupportedOperationException(
-            "NearestResponderSelector.choose is not implemented yet — see the notes above.");
+        return candidates.stream()
+            .filter(Responder::isLocatable)
+            .min(Comparator.comparingDouble(
+                candidate -> distanceSquared(candidate, latitude, longitude)));
+    }
+
+    /**
+     * Squared distance from a responder to a point, in latitude-degrees.
+     *
+     * Squared, not the true distance: whichever candidate is nearest by the
+     * square is nearest by the root, so the Math.sqrt per candidate buys
+     * nothing. The value is only ever compared, never shown to anyone.
+     *
+     * The longitude difference is scaled by cos(latitude) because degrees of
+     * longitude converge towards the poles. At Alice, roughly 32.8 degrees
+     * south, one degree of longitude covers about 0.84 of the ground one
+     * degree of latitude does. Skip the scaling and the map is stretched
+     * east-west, which picks the wrong responder whenever two are at similar
+     * distances on different bearings.
+     *
+     * Only safe to call on a responder that isLocatable() — the coordinates
+     * are unboxed here and a null would throw.
+     */
+    private static double distanceSquared(Responder responder,
+                                          double latitude,
+                                          double longitude) {
+        double longitudeScale = Math.cos(Math.toRadians(latitude));
+
+        double deltaLatitude = responder.getLatitude() - latitude;
+        double deltaLongitude = (responder.getLongitude() - longitude) * longitudeScale;
+
+        return deltaLatitude * deltaLatitude + deltaLongitude * deltaLongitude;
     }
 }
