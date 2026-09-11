@@ -31,4 +31,27 @@ public class IncidentController {
                                      @RequestParam(required = false) Integer pageSize) {
         return incidentService.list(authentication.getName(), status, page, pageSize);
     }
+
+    @GetMapping("/{incidentId}")
+    public IncidentDetail detail(Authentication authentication,
+                                 @PathVariable Long incidentId) {
+        return incidentService.get(authentication.getName(), incidentId);
+    }
+
+    @PatchMapping("/{incidentId}/status")
+    public IncidentDetail updateStatus(Authentication authentication,
+                                       @PathVariable Long incidentId,
+                                       @Valid @RequestBody UpdateStatusRequest request) {
+        return incidentService.updateStatus(authentication.getName(), incidentId, request);
+    }
+
+    // A cancel with no body at all is allowed: reason is optional, and the
+    // point of this endpoint is to stop an alarm quickly.
+    @PostMapping("/{incidentId}/cancel")
+    public IncidentDetail cancel(Authentication authentication,
+                                 @PathVariable Long incidentId,
+                                 @Valid @RequestBody(required = false) CancelIncidentRequest request) {
+        CancelIncidentRequest body = request == null ? new CancelIncidentRequest(null) : request;
+        return incidentService.cancel(authentication.getName(), incidentId, body);
+    }
 }

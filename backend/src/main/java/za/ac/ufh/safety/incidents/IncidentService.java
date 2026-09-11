@@ -116,6 +116,136 @@ public class IncidentService {
         };
     }
 
+    @Transactional(readOnly = true)
+    public IncidentDetail get(String email, Long incidentId) {
+        User caller = requireUser(email);
+        Incident incident = requireIncident(incidentId);
+        requireCanView(caller, incident);
+        return toDetail(incident);
+    }
+
+    /**
+     * PATCH /api/incidents/{incidentId}/status.
+     *
+     * Campus control and admin can move any incident. A responder can only
+     * move one that is assigned to them, so a responder cannot reach into
+     * somebody else's call and mark it resolved.
+     */
+    @Transactional
+    public IncidentDetail updateStatus(String email, Long incidentId, UpdateStatusRequest request) {
+        User caller = requireUser(email);
+        Incident incident = requireIncident(incidentId);
+
+        switch (caller.getRole()) {
+            case "campus_control", "admin" -> { }
+            case "responder" -> {
+                if (!caller.getUserId().equals(incident.getAssignedResponderId())) {
+                    throw new ApiException(403, "FORBIDDEN",
+                        "This incident is not assigned to you.", null);
+                }
+            }
+            default -> throw new ApiException(403, "FORBIDDEN",
+                "Your role cannot change an incident status.", null);
+        }
+
+        IncidentStatus target = request.status();
+        IncidentStatus current = incident.getStatus();
+
+        // Asking for the status it already has is not an error, it is a no-op.
+        // A responder tapping "en route" twice on a bad signal should not see
+        // a failure.
+        if (current == target) {
+            return toDetail(incident);
+        }
+
+        if (StatusTransitions.isTerminal(current)) {
+            throw new ApiException(409, "CONFLICT",
+                "This incident is already " + current.wireValue() + " and cannot change.", "status");
+        }
+        if (!StatusTransitions.isLegal(current, target)) {
+            throw new ApiException(409, "CONFLICT",
+                "Cannot move an incident from " + current.wireValue()
+                    + " to " + target.wireValue() + ".", "status");
+        }
+
+        incident.setStatus(target);
+        return toDetail(incidents.save(incident));
+    }
+
+    /**
+     * POST /api/incidents/{incidentId}/cancel — the false-alarm path.
+     *
+     * Student-only and own-incident-only by contract. The row is kept and the
+     * status set to cancelled; incidents are never hard-deleted, because a
+     * report that vanishes is a report nobody can review afterwards.
+     */
+    @Transactional
+    public IncidentDetail cancel(String email, Long incidentId, CancelIncidentRequest request) {
+        User caller = requireUser(email);
+        Incident incident = requireIncident(incidentId);
+
+        if (!"student".equals(caller.getRole())) {
+            throw new ApiException(403, "FORBIDDEN",
+                "Only the student who reported an incident can cancel it.", null);
+        }
+        if (!caller.getUserId().equals(incident.getReporterUserId())) {
+            throw new ApiException(403, "FORBIDDEN",
+                "You can only cancel an incident you reported.", null);
+        }
+
+        IncidentStatus current = incident.getStatus();
+        if (current == IncidentStatus.CANCELLED) {
+            return toDetail(incident);
+        }
+        if (StatusTransitions.isTerminal(current)) {
+            throw new ApiException(409, "CONFLICT",
+                "This incident is already " + current.wireValue() + " and cannot be cancelled.", null);
+        }
+
+        incident.setStatus(IncidentStatus.CANCELLED);
+        return toDetail(incidents.save(incident));
+    }
+
+    /**
+     * Who may read one incident. Same rule as the list, restated for a single
+     * row: a student sees only their own, a responder only their assignment.
+     *
+     * A caller who is not allowed to see the incident gets 404, not 403. 403
+     * would confirm that an incident with that id exists, which lets somebody
+     * count incidents by walking ids.
+     */
+    private void requireCanView(User caller, Incident incident) {
+        boolean allowed = switch (caller.getRole()) {
+            case "campus_control", "admin" -> true;
+            case "student" -> caller.getUserId().equals(incident.getReporterUserId());
+            case "responder" -> caller.getUserId().equals(incident.getAssignedResponderId());
+            default -> false;
+        };
+        if (!allowed) {
+            throw new ApiException(404, "NOT_FOUND", "No such incident.", null);
+        }
+    }
+
+    private Incident requireIncident(Long incidentId) {
+        return incidents.findById(incidentId)
+            .orElseThrow(() -> new ApiException(404, "NOT_FOUND", "No such incident.", null));
+    }
+
+    /**
+     * Loads the two people named on an incident so the detail response can
+     * carry their names. Both lookups tolerate a missing row and pass null,
+     * because the response shape allows null for either.
+     */
+    private IncidentDetail toDetail(Incident incident) {
+        User reporter = incident.getReporterUserId() == null
+            ? null
+            : users.findById(incident.getReporterUserId()).orElse(null);
+        User responder = incident.getAssignedResponderId() == null
+            ? null
+            : users.findById(incident.getAssignedResponderId()).orElse(null);
+        return IncidentDetail.of(incident, reporter, responder);
+    }
+
     private void validate(CreateIncidentRequest request) {
         // "other" carries no meaning on its own. Without a description the
         // dispatcher has a report they cannot act on.
