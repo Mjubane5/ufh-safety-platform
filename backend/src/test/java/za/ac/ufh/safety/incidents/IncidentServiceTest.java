@@ -11,6 +11,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.test.util.ReflectionTestUtils;
 import za.ac.ufh.safety.common.ApiException;
 import za.ac.ufh.safety.user.User;
+import za.ac.ufh.safety.responders.ResponderRepository;
 import za.ac.ufh.safety.user.UserRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -25,13 +26,15 @@ class IncidentServiceTest {
 
     private IncidentRepository incidents;
     private UserRepository users;
+    private ResponderRepository responders;
     private IncidentService service;
 
     @BeforeEach
     void setUp() {
         incidents = mock(IncidentRepository.class);
         users = mock(UserRepository.class);
-        service = new IncidentService(incidents, users, new PriorityCalculator());
+        responders = mock(ResponderRepository.class);
+        service = new IncidentService(incidents, users, responders, new PriorityCalculator());
         when(incidents.save(any(Incident.class))).thenAnswer(call -> call.getArgument(0));
     }
 
