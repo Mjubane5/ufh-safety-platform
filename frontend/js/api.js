@@ -450,32 +450,117 @@ export async function getIncident(incidentId) {
     await delay();
     requireMockToken();
 
-    // One realistic detail record. Note the two nullable objects are populated
-    // here - test your null handling by setting either to null.
-    return {
-      incidentId,
-      type: 'medical',
-      description: 'Someone collapsed outside the library.',
-      status: 'assigned',
-      priority: 2,
-      latitude: -32.78331,
-      longitude: 26.84971,
-      accuracy: 18.5,
-      anonymous: false,
-      createdAt: '2026-08-23T01:50:00Z',
-      updatedAt: '2026-08-23T01:52:14Z',
-      reporter: {
-        userId: 17,
-        fullName: 'A Student',
-      },
-      assignedResponder: {
-        responderId: 5,
-        fullName: 'A Responder',
-        latitude: -32.78210,
-        longitude: 26.84800,
-      },
-    };
+    return mockIncidentDetail(incidentId);
   }
 
   return request(`/incidents/${encodeURIComponent(incidentId)}`, { auth: true });
+}
+
+// ---------------------------------------------------------------------------
+// Incident lifecycle
+// ---------------------------------------------------------------------------
+
+/**
+ * One realistic detail record for mock mode.
+ *
+ * GET /incidents/{id}, PATCH .../status and POST .../cancel all return this
+ * same shape, so they share one builder. If they each had their own copy they
+ * would drift, and a page that works after a status change would break after
+ * a plain reload.
+ *
+ * The two nullable objects are populated here on purpose - set either to null
+ * to test your null handling.
+ */
+function mockIncidentDetail(incidentId, overrides = {}) {
+  return {
+    incidentId,
+    type: 'medical',
+    description: 'Someone collapsed outside the library.',
+    status: 'assigned',
+    priority: 2,
+    latitude: -32.78331,
+    longitude: 26.84971,
+    accuracy: 18.5,
+    locationSource: 'device',
+    anonymous: false,
+    createdAt: '2026-08-23T01:50:00Z',
+    updatedAt: '2026-08-23T01:52:14Z',
+    reporter: {
+      userId: 17,
+      fullName: 'A Student',
+    },
+    assignedResponder: {
+      responderId: 5,
+      fullName: 'A Responder',
+      latitude: -32.78210,
+      longitude: 26.84800,
+    },
+    ...overrides,
+  };
+}
+
+/**
+ * Moves an incident along the lifecycle.
+ *
+ *   reported -> triaged -> assigned -> en_route -> on_scene -> resolved
+ *
+ * Roles: responder (own assignment only), campus_control, admin.
+ *
+ * The server rejects an illegal jump with 409 - for example resolved back to
+ * reported. Catch it and show `err.message`; it names both statuses.
+ *
+ * @param {number} incidentId
+ * @param {string} status   one of the wire values above
+ * @param {string|null} note  optional, max 500 characters
+ * @returns {Promise<object>} the full incident
+ */
+export async function updateIncidentStatus(incidentId, status, note = null) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+
+    // Keep the list in step so a dashboard behind this call does not show a
+    // stale status after the detail page has moved on.
+    const listed = MOCK_INCIDENT_SUMMARIES.find((i) => i.incidentId === incidentId);
+    if (listed) listed.status = status;
+
+    return mockIncidentDetail(incidentId, { status });
+  }
+
+  return request(`/incidents/${encodeURIComponent(incidentId)}/status`, {
+    method: 'PATCH',
+    body: { status, note },
+    auth: true,
+  });
+}
+
+/**
+ * The false-alarm path. Sets status to `cancelled` and keeps the record -
+ * incidents are never deleted.
+ *
+ * Roles: student, and only on an incident they reported themselves.
+ *
+ * `reason` is optional. Do not make a student who pressed SOS by accident
+ * write an explanation before the alarm stops.
+ *
+ * @param {number} incidentId
+ * @param {string|null} reason  optional, max 500 characters
+ * @returns {Promise<object>} the full incident, now cancelled
+ */
+export async function cancelIncident(incidentId, reason = null) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+
+    const listed = MOCK_INCIDENT_SUMMARIES.find((i) => i.incidentId === incidentId);
+    if (listed) listed.status = 'cancelled';
+
+    return mockIncidentDetail(incidentId, { status: 'cancelled' });
+  }
+
+  return request(`/incidents/${encodeURIComponent(incidentId)}/cancel`, {
+    method: 'POST',
+    body: { reason },
+    auth: true,
+  });
 }
