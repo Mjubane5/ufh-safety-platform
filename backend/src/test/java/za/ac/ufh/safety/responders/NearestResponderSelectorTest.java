@@ -2,7 +2,6 @@ package za.ac.ufh.safety.responders;
 
 import java.util.List;
 import java.util.Optional;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -10,8 +9,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * The specification for NearestResponderSelector, written before the code.
  *
- * Every test here is @Disabled. Remove one annotation, run it, watch it fail,
- * then make it pass. When the last annotation is gone the class is finished.
+ * These were written before the code, as the specification NearestResponderSelector
+ * had to satisfy. They all pass now.
  *
  * Coordinates are around the Alice campus. Incident sits at the library.
  */
@@ -31,7 +30,6 @@ class NearestResponderSelectorTest {
     }
 
     @Test
-    @Disabled("nondumisombuli: start here")
     void picksTheCloserOfTwoAvailableResponders() {
         Responder near = responder(1, ResponderStatus.AVAILABLE, -32.78340, 26.84980);
         Responder far  = responder(2, ResponderStatus.AVAILABLE, -32.79500, 26.86000);
@@ -43,7 +41,6 @@ class NearestResponderSelectorTest {
     }
 
     @Test
-    @Disabled("nondumisombuli")
     void ignoresResponderaWhoAreNotAvailable() {
         Responder busyButClose = responder(1, ResponderStatus.ASSIGNED, -32.78332, 26.84972);
         Responder freeButFar   = responder(2, ResponderStatus.AVAILABLE, -32.79500, 26.86000);
@@ -55,7 +52,6 @@ class NearestResponderSelectorTest {
     }
 
     @Test
-    @Disabled("nondumisombuli")
     void ignoresOffDutyResponders() {
         Responder offDuty = responder(1, ResponderStatus.OFF_DUTY, -32.78332, 26.84972);
 
@@ -68,7 +64,6 @@ class NearestResponderSelectorTest {
     // A responder who has never checked in has no position, so there is no
     // distance to compare. They are not a candidate, however free they are.
     @Test
-    @Disabled("nondumisombuli")
     void ignoresAnAvailableResponderWithNoKnownPosition() {
         Responder noPosition = responder(1, ResponderStatus.AVAILABLE, null, null);
         Responder located    = responder(2, ResponderStatus.AVAILABLE, -32.79500, 26.86000);
@@ -80,7 +75,6 @@ class NearestResponderSelectorTest {
     }
 
     @Test
-    @Disabled("nondumisombuli")
     void returnsEmptyWhenNobodyQualifies() {
         Optional<Responder> chosen =
             NearestResponderSelector.choose(List.of(), LIBRARY_LAT, LIBRARY_LON);
@@ -100,7 +94,6 @@ class NearestResponderSelectorTest {
      * If this fails and the others pass, the cosine factor is missing.
      */
     @Test
-    @Disabled("nondumisombuli: last one, and the interesting one")
     void accountsForLongitudeDegreesBeingNarrowerThisFarSouth() {
         Responder east  = responder(1, ResponderStatus.AVAILABLE, LIBRARY_LAT, LIBRARY_LON + 0.0100);
         Responder south = responder(2, ResponderStatus.AVAILABLE, LIBRARY_LAT - 0.0095, LIBRARY_LON);
