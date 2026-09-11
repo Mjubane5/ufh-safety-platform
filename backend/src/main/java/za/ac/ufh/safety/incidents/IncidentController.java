@@ -10,9 +10,12 @@ import org.springframework.web.bind.annotation.*;
 public class IncidentController {
 
     private final IncidentService incidentService;
+    private final IncidentAssignmentService assignmentService;
 
-    public IncidentController(IncidentService incidentService) {
+    public IncidentController(IncidentService incidentService,
+                              IncidentAssignmentService assignmentService) {
         this.incidentService = incidentService;
+        this.assignmentService = assignmentService;
     }
 
     // authentication.getName() is the email the JWT filter put there. The
@@ -53,5 +56,16 @@ public class IncidentController {
                                  @Valid @RequestBody(required = false) CancelIncidentRequest request) {
         CancelIncidentRequest body = request == null ? new CancelIncidentRequest(null) : request;
         return incidentService.cancel(authentication.getName(), incidentId, body);
+    }
+
+    // Body is optional: no responderId means "you choose". See
+    // IncidentAssignmentService for why that is refused on an incident with
+    // no coordinates.
+    @PostMapping("/{incidentId}/assign")
+    public AssignmentResponse assign(Authentication authentication,
+                                     @PathVariable Long incidentId,
+                                     @RequestBody(required = false) AssignIncidentRequest request) {
+        AssignIncidentRequest body = request == null ? new AssignIncidentRequest(null) : request;
+        return assignmentService.assign(authentication.getName(), incidentId, body);
     }
 }
