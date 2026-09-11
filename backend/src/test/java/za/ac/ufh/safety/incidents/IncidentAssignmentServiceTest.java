@@ -3,7 +3,6 @@ package za.ac.ufh.safety.incidents;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.util.ReflectionTestUtils;
 import za.ac.ufh.safety.common.ApiException;
@@ -22,11 +21,9 @@ import static org.mockito.Mockito.when;
 /**
  * The specification for IncidentAssignmentService, written before the code.
  *
- * Every test is @Disabled. Remove one annotation, run it, watch it fail, then
- * make it pass. When the last annotation is gone the endpoint is finished.
- *
- * Suggested order is top to bottom — the later tests assume the earlier
- * behaviour already works.
+ * These were written @Disabled, one annotation removed at a time. They all
+ * run now, so any change to the service that breaks one of these rules fails
+ * the build rather than being found during a demonstration.
  */
 class IncidentAssignmentServiceTest {
 
@@ -100,7 +97,6 @@ class IncidentAssignmentServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @Disabled("nondumisombuli: start here")
     void aStudentCannotAssignAnybody() {
         User student = user(7, "student", "A Student");
         locatedIncident(42);
@@ -111,7 +107,6 @@ class IncidentAssignmentServiceTest {
     }
 
     @Test
-    @Disabled("nondumisombuli")
     void aResponderCannotAssignThemselves() {
         User responderUser = user(5, "responder", "A Responder");
         locatedIncident(42);
@@ -126,7 +121,6 @@ class IncidentAssignmentServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @Disabled("nondumisombuli")
     void campusControlCanAssignANamedResponder() {
         User control = user(2, "campus_control", "Control Room");
         user(5, "responder", "Nomsa Khumalo");
@@ -144,7 +138,6 @@ class IncidentAssignmentServiceTest {
     // All three writes matter. Miss the third and the same person is picked
     // for every incident on campus.
     @Test
-    @Disabled("nondumisombuli")
     void assigningMarksTheIncidentAndTakesTheResponderOutOfThePool() {
         User control = user(2, "campus_control", "Control Room");
         user(5, "responder", "Nomsa Khumalo");
@@ -159,7 +152,6 @@ class IncidentAssignmentServiceTest {
     }
 
     @Test
-    @Disabled("nondumisombuli")
     void anIncidentThatIsAlreadyAssignedIsRefused() {
         User control = user(2, "campus_control", "Control Room");
         Incident incident = locatedIncident(42);
@@ -177,7 +169,6 @@ class IncidentAssignmentServiceTest {
     // -----------------------------------------------------------------------
 
     @Test
-    @Disabled("nondumisombuli")
     void autoAssignmentPicksTheNearestAvailableResponder() {
         User control = user(2, "campus_control", "Control Room");
         user(5, "responder", "Near Responder");
@@ -195,7 +186,6 @@ class IncidentAssignmentServiceTest {
     }
 
     @Test
-    @Disabled("nondumisombuli")
     void autoAssignmentWithNobodyAvailableIsRefused() {
         User control = user(2, "campus_control", "Control Room");
         locatedIncident(42);
@@ -216,12 +206,15 @@ class IncidentAssignmentServiceTest {
      * help to the wrong place while the screen looked right.
      */
     @Test
-    @Disabled("nondumisombuli: the important one")
     void autoAssignmentIsRefusedWhenTheIncidentHasNoLocation() {
         User control = user(2, "campus_control", "Control Room");
         unlocatedIncident(42);
-        when(responders.findByStatus(ResponderStatus.AVAILABLE))
-            .thenReturn(List.of(responder(5, ResponderStatus.AVAILABLE, -32.78210, 26.84800)));
+
+        // Built on its own line, not inside the when(...) below. The helper
+        // stubs findById, and Mockito rejects a stub that starts while
+        // another one is still open.
+        Responder available = responder(5, ResponderStatus.AVAILABLE, -32.78210, 26.84800);
+        when(responders.findByStatus(ResponderStatus.AVAILABLE)).thenReturn(List.of(available));
 
         assertThatThrownBy(() -> service.assign(control.getEmail(), 42L,
             new AssignIncidentRequest(null)))
@@ -236,7 +229,6 @@ class IncidentAssignmentServiceTest {
      * The route is null: there is still no destination to route to.
      */
     @Test
-    @Disabled("nondumisombuli: and its pair")
     void anExplicitResponderIsAcceptedEvenWithNoLocationButCarriesNoRoute() {
         User control = user(2, "campus_control", "Control Room");
         user(5, "responder", "Nomsa Khumalo");
