@@ -1,124 +1,132 @@
 # UFH Safety Platform - Deployment Guide
 
-This guide walks you through deploying the UFH Safety Platform to the cloud for full production use.
+This guide reflects how the platform is actually deployed. It replaces an
+earlier draft written before the [Dockerfile](Dockerfile) was changed to bundle the
+frontend into the backend jar (see "Architecture" below) — that draft described
+a three-service setup and a manual `frontend/js/config.js` edit that no longer
+apply.
 
-## Architecture Overview
+**Currently live at:** https://ufh-safety-platform-production.up.railway.app
 
-Your application has three components:
-- **Frontend**: Static HTML/CSS/JavaScript
-- **Backend**: Java Spring Boot REST API
+## Architecture
+
+The app is **one deployable unit**, not three. The [Dockerfile](Dockerfile) copies
+`frontend/` into the Spring Boot jar's `static/` folder at build time, so the
+same container answers both `https://host/login.html` and
+`https://host/api/incidents`. One origin means no CORS to configure, and one
+push updates both halves at once.
+
+That leaves two things to run:
+- **App**: the Docker image built from the repo root `Dockerfile`
 - **Database**: MySQL
 
-All three need to be running for the application to work.
+`frontend/js/config.js` needs **no manual edit for deployment**. It detects
+`window.location.hostname` at load time: on `localhost`/`127.0.0.1` it talks to
+`http://localhost:8080/api` with `MOCK` on; anywhere else it uses the relative
+path `/api` (same origin) with `MOCK` off automatically. See the comments in
+that file for the full reasoning.
 
 ---
 
-## Option 1: Railway (Recommended - Easiest)
-
-Railway is the simplest option for deploying both backend and database with automatic updates from GitHub.
+## Option 1: Railway (what's actually deployed)
 
 ### Prerequisites
-- Railway account (create at https://railway.app)
-- GitHub account with this repository
+- A Railway account (https://railway.app) — sign-up/login happens in your own
+  browser; an agent cannot create the account or authorize the GitHub
+  connection for you.
+- [Railway CLI](https://docs.railway.app/guides/cli): `npm install -g @railway/cli`
 
 ### Steps
 
-#### 1. Connect Repository to Railway
-1. Go to [https://railway.app/dashboard](https://railway.app/dashboard)
-2. Click "New Project" → "Deploy from GitHub repo"
-3. Select `Mjubane5/ufh-safety-platform`
-4. Authorize Railway to access your GitHub account
+#### 1. Authenticate and link
 
-#### 2. Create Backend Service
-1. In Railway, click "Add Service" → "Docker"
-2. Set Dockerfile path to: `Dockerfile`
-3. Set port to: `8080`
-
-#### 3. Add MySQL Database
-1. Click "Add Service" → "MySQL"
-2. Railway creates a MySQL instance automatically
-3. Copy the connection details from Railway's UI
-
-#### 4. Configure Environment Variables
-In the Backend service settings, add these variables:
-
-```
-DB_URL=mysql://user:password@host:port/ufh_safety_platform
-DB_USERNAME=root
-DB_PASSWORD=<your-railway-mysql-password>
-JWT_SECRET=<generate-a-random-string-32-chars-minimum>
-SPRING_DATASOURCE_URL=jdbc:mysql://host:port/ufh_safety_platform?useSSL=false&serverTimezone=UTC
-```
-
-You can find these values in the MySQL service variables on Railway.
-
-#### 5. Deploy Frontend
-1. Click "Add Service" → "Static Site"
-2. Point to `frontend` directory
-3. Build command: (leave empty - it's static HTML)
-4. Publish directory: `frontend`
-
-#### 6. Update Frontend Configuration
-Once deployed, edit `frontend/js/config.js`:
-
-```javascript
-// Change from:
-export const BASE_URL = 'http://localhost:8080/api';
-export const MOCK = true;
-
-// To:
-export const BASE_URL = 'https://<your-railway-backend-url>/api';
-export const MOCK = false;
-```
-
-Then commit and push:
 ```bash
-git add frontend/js/config.js
-git commit -m "Update API endpoint for production"
-git push
+railway login              # opens a browser to sign in
+railway link -p <project>  # or omit -p and pick interactively
 ```
 
-**Automatic redeploy**: Railway watches your GitHub repo. Every push to `main` automatically rebuilds and deploys.
+#### 2. Add MySQL
+
+```bash
+railway add --database mysql
+```
+
+No manual connection-string copying needed — the app reads it via a Railway
+variable reference (step 4).
+
+#### 3. Connect the app service to GitHub, tracking `main`
+
+```bash
+railway service source connect --repo Mjubane5/ufh-safety-platform --branch main --service ufh-safety-platform
+```
+
+Railway auto-detects the root `Dockerfile` and builds with it. Every push to
+`main` (i.e. every merged PR — see [CLAUDE.md](Claude.md)'s git rules) redeploys
+automatically.
+
+#### 4. Set environment variables on the app service
+
+```bash
+railway variable set 'DB_URL=jdbc:mysql://${{MySQL.RAILWAY_PRIVATE_DOMAIN}}:3306/ufh_safety_platform?useSSL=false&allowPublicKeyRetrieval=true&createDatabaseIfNotExist=true&serverTimezone=Africa/Johannesburg' --service ufh-safety-platform
+railway variable set 'DB_USERNAME=${{MySQL.MYSQLUSER}}' --service ufh-safety-platform
+railway variable set 'DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}' --service ufh-safety-platform
+railway variable set JWT_SECRET --stdin --service ufh-safety-platform   # paste/pipe a random 32+ char value
+```
+
+Two things worth calling out:
+- The `${{MySQL.XYZ}}` syntax is a **live Railway variable reference**, not a
+  value you copy-paste. It always points at the MySQL service's current
+  credentials, even if they rotate.
+- `RAILWAY_PRIVATE_DOMAIN` keeps the database connection on Railway's internal
+  network — it is never reachable from the public internet. Don't add a public
+  TCP proxy to the MySQL service unless you have a specific reason to reach it
+  from outside Railway (e.g. a one-off manual query), and remove the proxy
+  again afterward.
+- `createDatabaseIfNotExist=true` means the `ufh_safety_platform` schema is
+  created automatically on first connect — you do not need to run
+  `database/01-create-database.sql` by hand. Hibernate (`ddl-auto=update`,
+  see `application-prod.properties`) then creates the tables on first boot.
+
+**Never run `database/seed.sql` against this database.** Every seeded account
+shares one publicly known password (`DevPassword123!`) — the file's own header
+says local dev only. Real accounts go through `/api/auth/register`.
+
+#### 5. Generate a public domain and deploy
+
+```bash
+railway domain --service ufh-safety-platform --port 8080
+railway redeploy --service ufh-safety-platform --from-source --yes
+```
+
+#### 6. Verify
+
+```bash
+railway logs --service ufh-safety-platform --deployment --lines 60
+curl -s -o /dev/null -w '%{http_code}\n' https://<your-domain>/
+```
+
+Look for `Started UfhSafetyApplication` and a Hikari pool connection message
+in the logs, and a `200` from curl.
 
 ---
 
-## Option 2: Render (Alternative)
+## Option 2: Render (untested alternative)
 
-Render has a free tier and simple GitHub integration.
+Same single-Docker-image architecture applies — there is no separate frontend
+service to configure.
 
-### Steps
+1. **New Web Service** → connect the repo → Render detects the root
+   `Dockerfile` and builds it directly (no build/start command needed).
+2. **New MySQL** instance, then set `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`,
+   `JWT_SECRET` on the web service the same way as the Railway table below.
+3. No frontend step — it ships inside the same image.
 
-#### 1. Deploy Backend
-1. Go to [https://render.com](https://render.com)
-2. Click "New +" → "Web Service"
-3. Connect your GitHub repository
-4. Configure:
-   - **Name**: ufh-safety-backend
-   - **Build command**: `mvn clean package -f backend/pom.xml -DskipTests`
-   - **Start command**: `java -jar backend/target/*.jar`
-   - **Plan**: Free
-5. Add environment variables (same as Railway above)
-
-#### 2. Deploy Database
-1. Click "New +" → "MySQL"
-2. Create a MySQL instance
-3. Copy connection details
-
-#### 3. Deploy Frontend
-1. Click "New +" → "Static Site"
-2. Connect your repository
-3. **Build command**: (empty - static HTML)
-4. **Publish directory**: `frontend`
-
-Then update `frontend/js/config.js` with your Render backend URL.
+This repo has not actually been deployed to Render; treat this section as a
+starting point, not a verified path.
 
 ---
 
-## Option 3: Docker Compose (For Testing Locally)
-
-Test the full stack locally before cloud deployment:
-
-### Create `docker-compose.yml` in project root:
+## Option 3: Docker Compose (for testing locally)
 
 ```yaml
 version: '3.8'
@@ -138,7 +146,7 @@ services:
       timeout: 5s
       retries: 10
 
-  backend:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
@@ -148,98 +156,78 @@ services:
       DB_URL: jdbc:mysql://mysql:3306/ufh_safety_platform?useSSL=false&serverTimezone=UTC
       DB_USERNAME: root
       DB_PASSWORD: root
-      JWT_SECRET: your-secret-key-min-32-chars-change-this
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/ufh_safety_platform?useSSL=false&serverTimezone=UTC
+      JWT_SECRET: local-only-secret-min-32-characters-change-this
     depends_on:
       mysql:
         condition: service_healthy
-    networks:
-      - ufh-network
-
-  frontend:
-    image: nginx:alpine
-    ports:
-      - "80:80"
-    volumes:
-      - ./frontend:/usr/share/nginx/html:ro
-    depends_on:
-      - backend
-    networks:
-      - ufh-network
 
 networks:
-  ufh-network:
+  default:
     driver: bridge
 ```
 
-Run locally:
-```bash
-docker-compose up -d
-```
-
-Access at `http://localhost`
-
----
-
-## Critical Configuration Checklist
-
-Before deploying to production:
-
-- [ ] **JWT_SECRET**: At least 32 random characters (not committed to git)
-- [ ] **CORS**: Backend must allow frontend's production domain
-- [ ] **Database**: Created and accessible from backend service
-- [ ] **Frontend config**: `MOCK = false` and correct `BASE_URL`
-- [ ] **Database initialization**: SQL scripts in `database/` folder run on first start
-- [ ] **SSL/TLS**: Use HTTPS (Railway and Render provide free SSL)
+Run with `docker-compose up -d`, then open `http://localhost:8080`. There is
+one service to reach, not a separate frontend origin — the container serves
+both.
 
 ---
 
 ## Environment Variables Reference
 
-| Variable | Example | Required |
+| Variable | Purpose | Required |
 |----------|---------|----------|
-| `DB_URL` | `jdbc:mysql://localhost:3306/ufh_safety_platform` | Yes |
-| `DB_USERNAME` | `root` | Yes |
-| `DB_PASSWORD` | `password123` | Yes |
-| `JWT_SECRET` | Random 32+ char string | Yes |
-| `SPRING_DATASOURCE_URL` | Same as DB_URL | Yes |
-| `MOCK` | `false` | No (frontend only) |
-| `BASE_URL` | `https://your-backend.com/api` | No (frontend only) |
+| `DB_URL` | JDBC connection string. Include `createDatabaseIfNotExist=true` if the schema doesn't exist yet | Yes |
+| `DB_USERNAME` | MySQL user | Yes |
+| `DB_PASSWORD` | MySQL password | Yes |
+| `JWT_SECRET` | Random 32+ char string, distinct per environment (never reuse your local dev secret) | Yes |
+| `PORT` | Defaults to `8080`; Railway/Render set this automatically | No |
+
+`SPRING_DATASOURCE_URL`/`_USERNAME`/`_PASSWORD` from the old guide are **not
+needed** — `application.properties` already reads `DB_URL`/`DB_USERNAME`/
+`DB_PASSWORD` directly (`spring.datasource.url=${DB_URL:...}` etc).
+
+There is nothing to set on the frontend side — `MOCK` and `BASE_URL` are
+derived automatically from the hostname at page load (see
+`frontend/js/config.js`).
+
+---
+
+## Critical Configuration Checklist
+
+- [ ] `JWT_SECRET` set, 32+ random characters, not committed to git, not reused from local dev
+- [ ] Database created and reachable from the app service (private network preferred over a public proxy)
+- [ ] `database/seed.sql` has **not** been run against this database
+- [ ] HTTPS in place (Railway/Render provide this automatically)
 
 ---
 
 ## Monitoring & Logs
 
-**Railway**: Logs visible in Dashboard → select service → "Logs" tab
-**Render**: Logs visible in Dashboard → select service → "Logs" tab
+**Railway CLI**: `railway logs --service ufh-safety-platform --deployment --lines 100`
+**Railway dashboard**: select the service → "Logs" tab
 
 ---
 
 ## Making Changes & Auto-Deployment
 
-Once deployed:
-
-1. Make code changes locally
-2. Commit and push to GitHub
-3. Watch your platform redeploy automatically (takes 2-5 minutes)
-
-No manual intervention needed! This is the key to keeping it "fully operational" as you make changes.
+1. Branch, commit, open a PR against `main` (never commit directly to `main` — see [CLAUDE.md](Claude.md))
+2. Once merged, Railway detects the push to `main` and rebuilds/redeploys automatically (2-5 minutes)
 
 ---
 
 ## Troubleshooting
 
-**Backend won't start**: Check that `JWT_SECRET` is set and has 32+ characters
+**Backend won't start**: check `JWT_SECRET` is set (the app refuses to start without it — see `backend/README-BACKEND.md`)
 
-**Database connection fails**: Verify `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` are correct
+**Database connection fails**: confirm `DB_URL` points at the MySQL service's `RAILWAY_PRIVATE_DOMAIN` (not a stale public proxy host) and that the MySQL service is running
 
-**Frontend can't reach backend**: Ensure `BASE_URL` in `frontend/js/config.js` matches your deployed backend URL
+**"Unknown database" error**: `DB_URL` is missing `createDatabaseIfNotExist=true` and the schema was never created
 
-**CORS errors**: Backend is blocking requests from your frontend domain - add to `SecurityConfig.java`
+**Frontend shows blank page**: this only happens if `BASE_URL`/`MOCK` were hardcoded somewhere outside `config.js`'s auto-detection — check nothing overrides it
 
 ---
 
 For questions, refer to:
 - Railway docs: https://docs.railway.app
-- Render docs: https://render.com/docs
+- Railway CLI reference: https://docs.railway.app/reference/cli-api
 - Spring Boot: https://spring.io/projects/spring-boot
