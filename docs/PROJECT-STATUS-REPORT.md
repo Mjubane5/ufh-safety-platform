@@ -288,11 +288,11 @@ Checked line by line against every endpoint and page named in
 
 ## 7. Screenshots, API payloads, and wireframes
 
-Captured against a local copy of `frontend/` running in its own `MOCK`
-mode (`python -m http.server 5500`, no backend needed, which is the
-documented way to run it without live data), using a headless Chrome
-instance driven by Puppeteer so what's below is an actual render of the
-current code, not a mockup. Files live in `docs/screenshots/`.
+The screenshots below are real renders of the current code, captured
+against a local copy of `frontend/` running in its own `MOCK` mode
+(`python -m http.server 5500`, no backend needed, which is the documented
+way to run it without live data), not mockups or drawings of what the
+pages are meant to look like.
 
 **Login (`/login.html`).** On first load an interstitial dialog blocks the
 page: "This is a demonstration, not a real safety service," with SAPS
