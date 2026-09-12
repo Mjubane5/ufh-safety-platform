@@ -16,6 +16,61 @@
 
 ---
 
+## AI assistance disclosure
+
+On 2026-09-12, project lead Mpilwenhle Jubane wrote to the department
+(Mr. Oluwatobi John Aduradola) to ask whether AI coding assistants were
+permitted on this capstone and how their use should be disclosed. The
+department's answer, quoted here in full: "Kindly disclose in a written
+report for purposes of accountability, recording and transparency." This
+section is that disclosure, for the parts of the project an AI assistant
+was actually involved in.
+
+**Tool used.** Claude Code (Anthropic), running the Claude Sonnet 5 model,
+used interactively by Mpilwenhle Jubane in a chat session.
+
+**What it did**, scoped to what's actually verifiable from that session's
+own history rather than a general claim:
+
+- Deployed the application to Railway: provisioned the MySQL database,
+  configured the environment variables, generated the production
+  `JWT_SECRET`, and set up the live domain. This is infrastructure and
+  configuration work, not application code.
+- Rewrote `DEPLOYMENT.md` and `AGENT-DEPLOYMENT-INSTRUCTIONS.md` (PR #22)
+  once they'd gone stale against the architecture actually deployed.
+- Compiled this status report (PRs #27, #28, #29): ran the git, GitHub,
+  and test-suite commands that produced the real numbers throughout it,
+  drafted the prose, and corrected several parts of it based on direct
+  review and follow-up questions.
+- Added the cross-pair contribution note and the record of Sinesipho
+  Malgas's repository status to `docs/team-working agreement_1.md`.
+- Drafted, but has not yet built, an implementation design for a campus
+  control dashboard, a responder view, a GBV reporting module, and an
+  incident chat feature. None of that is in the codebase yet.
+
+**What it explicitly did not do**, as far as this session can verify: no
+commit touching `backend/src/main/java` or `frontend/` anywhere in this
+repository's history was authored with this assistant's involvement. Every
+incident, responder, and auth feature described in section 6 above was
+written by team members directly, as the contribution matrix in section
+13 shows.
+
+**A limit worth stating plainly.** This disclosure can only account for
+what one assistant, in the sessions it was actually part of, has visibility
+into. If AI tools were used elsewhere in the project's history in ways this
+session has no record of, that use needs disclosing by whoever did it,
+for the same reason this note exists: a disclosure is only useful if it's
+complete, not just the part that was easy to write down.
+
+**On commit attribution specifically.** This repository has a standing
+rule against adding an AI assistant as a co-author on commits or pull
+requests. That predates this disclosure and stays in place. Disclosure
+lives here, in the written report, matching the department's specific
+guidance, rather than scattered across commit metadata that most readers
+of this report will never open.
+
+---
+
 ## 1. Problem statement, audience, and objectives
 
 **The problem.** Students at Fort Hare have no single, fast way to report a
