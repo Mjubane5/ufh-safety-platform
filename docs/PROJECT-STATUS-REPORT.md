@@ -503,9 +503,7 @@ table:
   Beyond the ones matched above, `SIBONGAKONKE651`, `XhantiMakeleni26`,
   `Gobongowandile`, `Ibongwe05`, `Nombulelo24`, `AsehGatsheni0920`,
   `SisonkeN14`, and `somilamathinjwa6-sudo` are all collaborators with zero
-  commits under their own accounts. Could be classmates or helpers added
-  for visibility rather than code. Worth the team checking this list
-  directly if any of those names ring a bell.
+  commits under their own accounts.
 - `docs/team-working agreement_1.md` has been updated (2026-09-12) to say
   outright that pairs describe primary ownership, not a hard boundary,
   since the table above shows contributions crossing pair lines more than
