@@ -34,7 +34,25 @@ mentoring the project brief asks for.
 | **C — Shell & Auth** | Scott, Nondumiso Mkhonto | Page layout, shared CSS, `api.js`, login/register |
 | **D — Incidents UI** | Mpilwenhle Jubane, Awethu Dyani    | Incident report form, student dashboard |
 
+**A note on overlap, added 2026-09-12.** These pairs describe primary
+ownership, not a locked boundary. Checking the actual repository history
+against this table (see the individual contribution matrix in
+`docs/PROJECT-STATUS-REPORT.md`) shows contributions crossing pair lines
+more than once: work landing in another pair's owned area, or a pull
+request credited to someone outside the pair it belongs to. That's not a
+process failure. Letting people help wherever the work needs doing, rather
+than sitting idle because a task technically belongs to someone else, is
+normal practice on real software teams, and it's being written down here
+explicitly so nobody reads a crossed line as against the rules. Rule 5
+below (post in the group chat before touching another pair's files) still
+applies: overlap is fine, silent overlap is not.
 
+**Sinesipho Malgas is not a collaborator on the GitHub repository.** No
+commits, no pull requests, no account added to the repo at all, checked
+directly against the collaborator list. Recorded here rather than left
+unexplained, since it means her contribution to the project, if any,
+happened entirely outside version control and won't show up in any git- or
+GitHub-based accounting of the work.
 
 ---
 
