@@ -58,14 +58,14 @@ of this report will never open.
 
 ## 1. Problem statement, audience, and objectives
 
-**The problem.** Students at Fort Hare have no single, fast way to report a
+**The problem:** Students at Fort Hare have no single, fast way to report a
 safety incident, reach campus control, or find wellness support when
 something goes wrong. What exists today is spread across phone numbers,
 offices and word of mouth, which is slow exactly when speed matters most.
 Gender-based violence cases need an even more careful path: confidential,
 and handled by people trained for it, not whoever happens to pick up first.
 
-**Who it's for.** Students filing reports, campus control staff triaging
+**Who it's for:** Students filing reports, campus control staff triaging
 and dispatching them, on-campus responders (security and medical) acting on
 them, and GBV officers handling confidential cases separately. Four roles,
 one system, very different access to the same underlying data.
