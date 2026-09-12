@@ -459,46 +459,55 @@ As a checklist of weekly deliverables rather than names attached to tasks:
 
 `docs/team-working agreement_1.md` names eight people across four pairs.
 This section lines that roster up against what's actually visible in git
-and GitHub, using `git shortlog -sne --all` and `gh pr list --state
-merged`. A few of the matches below are confident and a couple are
-educated guesses based on the content of the commits, clearly marked as
-such. None of it is a judgment about who worked hardest. Pairing, review,
-and planning done together at one screen leave no trace in git at all, and
-that matters a lot for reading this table honestly.
+and GitHub: `git shortlog -sne --all` and `gh pr list --state merged` for
+primary authorship, and, because this repo actually uses them for pairing,
+`Co-Authored-By` trailers in commit messages too. The first pass at this
+table missed those trailers entirely and undercounted three people as a
+result. A couple of the matches below are still educated guesses based on
+what the commits touch, clearly marked as such, and none of this is a
+ranking of who worked hardest. Review and planning done together at one
+screen leaves no trace in git at all, which matters for reading this table
+honestly.
 
 | Roster member | Pair and assigned area | Git identity found | Commits | Merged PRs | Notes |
 |---|---|---|---|---|---|
-| Mpilwenhle Jubane | D, incident report form and student dashboard | `Mjubane5` (two emails, same person) | 74 | 23 | Work goes far past Pair D's assigned area: auth, incident endpoints, responders, deployment, most of the documentation. This looks like the bulk of the whole repository |
-| Nkosinathi Mbewana | B, incident endpoints and status lifecycle | `Nkosinathi-Mbewana` | 1 | 1 | The one PR under this name is "Add authentication backend with MySQL and JWT," which is Pair A's area, not Pair B's |
+| Mpilwenhle Jubane | D, incident report form and student dashboard | `Mjubane5` (two emails, same person) | 74 as primary author | 23 | Work goes far past Pair D's assigned area: auth, incident endpoints, responders, deployment, most of the documentation. This looks like the bulk of the whole repository |
+| Nkosinathi Mbewana | B, incident endpoints and status lifecycle | `Nkosinathi-Mbewana`, primary author on one commit, co-author on another | 1 primary + 1 co-authored | 1 | The commit under this name alone is "Add authentication backend with MySQL and JWT," Pair A's area, not Pair B's. The co-authored one ("Harden auth security defaults and add auth tests") is also auth work |
 | Brains Nkosi (unconfirmed) | B, incident endpoints and status lifecycle | `SiyabongaNkosi23`, surname matches, first name doesn't | 2 | 2 | "Create seed.sql" and "Add Incident entity with attributes and methods." Both land close to Pair B's territory, which supports the guess, but it isn't confirmed |
-| Awethu Dyani (unconfirmed) | D, incident report form and student dashboard | 5 commits under the display name `Mjubane5` but a different personal email (`andilentombela4@gmail.com`), no PRs of their own found | 5 | 0 | The commits themselves, "Add student dashboard," a report-form fix, and one auth-hardening change, mostly match Pair D's owned area. Reads like someone working on a shared machine whose git name never got changed |
-| Sinesipho Malgas | A, database schema and auth endpoints | none found | 0 | 0 | |
-| Nondumiso Mbuli | A, database schema and auth endpoints | none found | 0 | 0 | |
-| Scott | C, page layout, shared CSS, api.js, login/register | none found | 0 | 0 | |
-| Nondumiso Mkhonto | C, page layout, shared CSS, api.js, login/register | none found | 0 | 0 | |
+| Nondumiso Mbuli | A, database schema and auth endpoints | `Co-Authored-By: Nondumiso Mbuli <274277612+nondumisombuli16@users.noreply.github.com>` on "Implement nearest responder selection" | 1 co-authored commit | 0 solo | Missed in the first pass because co-authors don't show up in `git shortlog`. Nearest-responder selection is backend algorithm work, not really Pair A's assigned schema/auth territory, so this is a cross-pair contribution rather than what the roster describes |
+| Nondumiso Mkhonto | C, page layout, shared CSS, api.js, login/register | `Co-Authored-By: Andiswa Nondumiso Mkhonto <nondumisoandiswa969@gmail.com>` on "Add mobile-first base stylesheet" | 1 co-authored commit | 0 solo | This one lines up exactly with Pair C's assigned area |
+| Scott | C, page layout, shared CSS, api.js, login/register | none found anywhere | 0 | 0 | Checked the author field and the full text of every commit message across every branch, nothing under "Scott" or any obvious variant. Worth checking whether Scott used a different name or handle |
+| Sinesipho Malgas | A, database schema and auth endpoints | none found | 0 | 0 | Same exhaustive search as Scott, nothing found |
+| Awethu Dyani | D, incident report form and student dashboard | `Co-Authored-By: Awethu Dyani <awethudyani51@gmail.com>` on "Add login and register pages" | 1 co-authored commit | 0 solo | That page is Pair C's assigned area, not Pair D's, so this is also cross-pair. An earlier version of this report guessed this identity might be a set of five commits under `andilentombela4@gmail.com` instead. That guess was wrong, those actually belong to a different real name, corrected below |
+| Andile Ntombela, not on the roster | not listed in the working agreement | `andilentombela4@gmail.com`, primary author on 5 commits, co-author on one more ("Add incident report form") | 6 | 0 solo (commits landed inside PRs opened and merged under `Mjubane5`) | This person isn't one of the eight names in `docs/team-working agreement_1.md` at all. Either the roster is missing someone, or this is a nickname/second account for someone already on it, worth asking about directly rather than guessing further |
 
-A few things stand out worth saying directly rather than leaving buried in
-the table:
+A few things worth saying plainly instead of leaving them buried in the
+table:
 
-- **Pair C's entire assigned area exists and works** (`frontend/js/api.js`,
-  `frontend/css/styles.css`, the login and register pages), but there is no
-  commit under any of the four Pair A or Pair C names anywhere near it.
-  Either that work happened through pairing on someone else's account, or
-  the roster and what actually happened have drifted apart. Worth the team
-  saying out loud which one it is before submission, since a panel could
-  easily ask a Pair C member to explain code with no record of them having
-  touched it.
+- Once the co-author trailers are counted, six of the eight roster names
+  have some real footprint in the repository. Only Scott and Sinesipho
+  Malgas show nothing at all, and both were checked as thoroughly as the
+  tools allow: author field and full commit body, every branch.
+- Pair C's assigned area (`frontend/js/api.js`, `frontend/css/styles.css`,
+  login and register pages) does have real commits behind it now, just not
+  from three of Pair C and D's four members acting inside their own pair's
+  lane. Nondumiso Mkhonto's co-authored commit matches Pair C's area
+  exactly. Awethu Dyani's co-authored commit is Pair C's area despite being
+  on Pair D. Worth the team confirming out loud whether that's just normal
+  cross-pair help or a sign the pairing didn't hold the way the agreement
+  describes.
 - One PR ("Add authentication backend with MySQL and JWT," #8) is credited
-  to a Pair B member for what the working agreement assigns to Pair A.
-  Could just mean people helped across pairs when needed, which is normal
-  and fine, but it's a real mismatch between the plan and the paper trail.
-- If the "unconfirmed" identities above are actually Brains Nkosi and
-  Awethu Dyani, then six of the eight roster members have some visible
-  footprint in the repository, just very unevenly. If they aren't, only
-  four do. Either way, one person's git identity accounts for the large
-  majority of commits and merged PRs, and that's worth a real conversation
-  among the eight of you about how the rest of the work actually got done,
-  not just a number in a report.
+  to a Pair B member for work the agreement assigns to Pair A. Could easily
+  be someone helping out where needed, which is normal, but it's still a
+  real mismatch between the plan on paper and what the history shows.
+- One contributor, Andile Ntombela, has a real and fairly substantial
+  footprint (6 commits) under a name that doesn't appear in the working
+  agreement at all. That's worth resolving directly with the team rather
+  than guessing further in a document like this one.
+- Even with all of that counted, one person's git identity still accounts
+  for the large majority of commits and every merged pull request. That's
+  the conversation worth having among the eight of you, not something a
+  table like this can settle on its own.
 
 ---
 
