@@ -58,14 +58,14 @@ of this report will never open.
 
 ## 1. Problem statement, audience, and objectives
 
-**The problem.** Students at Fort Hare have no single, fast way to report a
+**The problem:** Students at Fort Hare have no single, fast way to report a
 safety incident, reach campus control, or find wellness support when
 something goes wrong. What exists today is spread across phone numbers,
 offices and word of mouth, which is slow exactly when speed matters most.
 Gender-based violence cases need an even more careful path: confidential,
 and handled by people trained for it, not whoever happens to pick up first.
 
-**Who it's for.** Students filing reports, campus control staff triaging
+**Who it's for:** Students filing reports, campus control staff triaging
 and dispatching them, on-campus responders (security and medical) acting on
 them, and GBV officers handling confidential cases separately. Four roles,
 one system, very different access to the same underlying data.
@@ -288,35 +288,43 @@ Checked line by line against every endpoint and page named in
 
 ## 7. Screenshots, API payloads, and wireframes
 
-Captured this session against a local copy of `frontend/` running in its
-own `MOCK` mode (`python -m http.server 5500`, no backend needed, which is
-the documented way to run it without live data), and checked against the
-live Railway URL too. Binary image files aren't embedded in this Markdown
-version. What's below should be enough to stand in until real screenshots
-land in a `docs/screenshots/` folder, or in a Word version of this report
-if one gets produced.
+The screenshots below are real renders of the current code, captured
+against a local copy of `frontend/` running in its own `MOCK` mode
+(`python -m http.server 5500`, no backend needed, which is the documented
+way to run it without live data), not mockups or drawings of what the
+pages are meant to look like.
 
-- **Login (`/login.html`).** On first load an interstitial dialog blocks
-  the page: "This is a demonstration, not a real safety service," with SAPS
-  10111, ambulance/fire 10177, the GBV Command Centre 0800 428 428, and
-  Childline 116 listed, and it needs an explicit "I understand this is a
-  demonstration" click before it goes away. A red banner with the same
-  message stays pinned above the form after that. Confirms that
-  `docs/deployment.md` §5.1 is actually built, not just written down.
-- **Dashboard (`/dashboard.html`, mock data).** "Your reports, A" as the
-  heading, a "Report an incident" button, status filter chips running from
-  All through Cancelled, and incident cards like "Medical emergency,
-  Reference 42" and "SOS, Reference 41," the second one with a red
-  emergency accent bar.
-- **Report form (`/report.html`).** An incident-type dropdown, a
-  1000-character description field with a live counter, and, captured
-  live rather than staged, the actual permission-denied fallback: "Location
-  permission was blocked. The browser will not ask again... You can send
-  your report without it."
-- **Incident detail (`/incident.html?id=42`).** Confirms the PR #25
-  scaffold exactly as described in its own commit message: the header, the
-  demo banner, and a "back to your reports" link all render, but the
-  content area is empty because rendering hasn't been written yet.
+**Login (`/login.html`).** On first load an interstitial dialog blocks the
+page: "This is a demonstration, not a real safety service," with SAPS
+10111, ambulance/fire 10177, the GBV Command Centre 0800 428 428, and
+Childline 116 listed, and it needs an explicit "I understand this is a
+demonstration" click before it goes away. Confirms that
+`docs/deployment.md` §5.1 is actually built, not just written down.
+
+![Login page with the demonstration interstitial open](screenshots/login-demo-notice.png)
+
+**Dashboard (`/dashboard.html`, mock data).** "Your reports, A" as the
+heading, a "Report an incident" button, status filter chips running from
+All through Cancelled, and incident cards like "Medical emergency,
+Reference 42" and "SOS, Reference 41," the second one with a red
+emergency accent bar.
+
+![Student dashboard showing mock incident data](screenshots/dashboard-mock.png)
+
+**Report form (`/report.html`).** An incident-type dropdown, a
+1000-character description field with a live counter, and, captured live
+rather than staged, the actual permission-denied fallback: "Location
+permission was blocked. The browser will not ask again... You can send
+your report without it."
+
+![Incident report form, showing the location-permission-blocked fallback](screenshots/report-form.png)
+
+**Incident detail (`/incident.html?id=42`).** Confirms the PR #25 scaffold
+exactly as described in its own commit message: the header, the demo
+banner, and a "back to your reports" link all render, but the content area
+is empty because rendering hasn't been written yet.
+
+![Incident detail page, header rendering, body still empty per the PR #25 scaffold](screenshots/incident-detail-scaffold.png)
 
 Real API payload, captured against the live deployment:
 
