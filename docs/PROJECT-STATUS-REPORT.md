@@ -1,88 +1,94 @@
-# UFH Safety Platform — Project Status Report
+# UFH Safety Platform: Project Status Report
 
 **Prepared:** 2026-09-12
 **Repository:** [Mjubane5/ufh-safety-platform](https://github.com/Mjubane5/ufh-safety-platform)
 **Live deployment:** https://ufh-safety-platform-production.up.railway.app
 
-> **A date discrepancy to resolve as a team, not silently picked for you:**
-> `CLAUDE.md` and `docs/team-working agreement_1.md` both still say final
-> submission is **18 September 2026**, with presentations **21–23 September**.
-> This report was requested on the basis that the submission date has moved
-> to **23 September 2026**. This document uses 23 September, but that gap
-> should be closed — either the working-agreement/CLAUDE.md need updating, or
-> "23 September" is actually the last presentation day being used loosely as
-> "the deadline." Recommend confirming with whoever moved the date.
+> **Date conflict, flagged rather than quietly resolved.** `CLAUDE.md` and
+> `docs/team-working agreement_1.md` both still say final submission is on
+> **18 September 2026**, with presentations on **21 to 23 September**. This
+> report was written using **23 September 2026** because that's the date we
+> were given in conversation. Somebody needs to check which one is right:
+> either the working agreement and CLAUDE.md are out of date, or "23
+> September" is really the last day of presentations being used loosely as
+> "the deadline." Please confirm with whoever moved the date before this
+> goes anywhere official.
 
 ---
 
 ## 1. Problem statement, audience, and objectives
 
-**Problem.** University students face safety, emergency, and gender-based
-violence (GBV) situations with no single, fast way to report an incident,
-reach campus control, or find wellness support — existing channels are
-fragmented across phone numbers, offices, and word of mouth.
+**The problem.** Students at Fort Hare have no single, fast way to report a
+safety incident, reach campus control, or find wellness support when
+something goes wrong. What exists today is spread across phone numbers,
+offices and word of mouth, which is slow exactly when speed matters most.
+Gender-based violence cases need an even more careful path: confidential,
+and handled by people trained for it, not whoever happens to pick up first.
 
-**Target audience.** University of Fort Hare students (primary reporters),
-campus control/dispatch staff, on-campus responders (security, medical), and
-GBV officers, as four distinct roles with different access to the same
-underlying incident data.
+**Who it's for.** Students filing reports, campus control staff triaging
+and dispatching them, on-campus responders (security and medical) acting on
+them, and GBV officers handling confidential cases separately. Four roles,
+one system, very different access to the same underlying data.
 
-**Objectives**, as stated in `CLAUDE.md` and `docs/api-contract.md`:
-- Let a student report an incident (including a one-tap SOS) in under a
-  minute, with or without location access.
-- Get that report to the right person — campus control for general
-  incidents, a GBV officer for confidential cases — without exposing it to
-  the wrong role.
-- Track an incident through a real lifecycle (`reported → triaged → assigned
-  → en_route → on_scene → resolved`, or `cancelled` for a false alarm) rather
-  than a fire-and-forget submission.
-- Do this as a **prototype**: synthetic data only, explicit and unmissable
-  that no report reaches a real emergency service, safe to demonstrate
-  publicly without the risk of someone in genuine distress relying on it.
+**What it's trying to do**, per `CLAUDE.md` and `docs/api-contract.md`:
 
-This is a CSC 200/CSC 300 capstone at the University of Fort Hare — a team
-of eight, four nominally on frontend and four on backend, graded in part on
-being able to explain the system's own design decisions to a panel.
+- Let a student file a report, including a one-tap SOS, in under a minute,
+  whether or not they can share their location.
+- Route it to the right person. Campus control for general incidents, a GBV
+  officer for confidential ones, and never the wrong role.
+- Track it through a proper lifecycle (`reported` through `triaged`,
+  `assigned`, `en_route`, `on_scene`, `resolved`, or `cancelled` for a false
+  alarm) instead of treating a report as a one-way message into a void.
+- Stay honest about being a prototype. Synthetic data only, and it needs to
+  be unmissable that no report here reaches a real emergency service, so it
+  can be demonstrated publicly without the risk of someone in genuine
+  distress trusting it.
+
+This is a CSC 200/CSC 300 capstone at the University of Fort Hare, a team of
+eight split roughly four and four across frontend and backend, and part of
+the grading is being able to explain your own design decisions out loud to
+a panel.
 
 ---
 
 ## 2. Scope changes, feature additions, and de-scoping
 
-Compiled from `docs/team-working agreement_1.md`'s decision log, plus
-decisions made in the two most recent work sessions (deployment and this
-report's own scoping conversation).
+Pulled from the decision log in `docs/team-working agreement_1.md`, plus
+what got decided in the two most recent sessions: the Railway deployment
+and the scoping conversation for this report.
 
 | Date | Change | Why |
 |---|---|---|
-| pre-2026-09-10 | Real-time updates: **5-second polling**, not WebSockets | Team decision log — no new dependency, matches the "flag new libraries" rule in `CLAUDE.md` |
-| pre-2026-09-10 | Map provider: **Leaflet + OpenStreetMap**, not Google Maps | No API key, no billing, per decision log |
-| pre-2026-09-10 | Evidence storage: **filepath in MySQL**, not BLOB | Decision log |
-| 2026-09-10 | Frontend bundled into the backend jar — **one Docker service**, not three | `feature/host-single-service` (PR #19): same-origin means no CORS to configure in production, one push updates both halves |
-| 2026-09-10 | Demonstration interstitial required before any public hosting | `feature/demo-notice` (PR #18) and `docs/deployment.md` §5.1 — a safety prototype that looks real is a real hazard if someone in distress finds it |
-| 2026-09-11 | Hosting target: **Railway**, not Render | `docs/hosting-railway.md` — Render's free MySQL doesn't exist (Postgres only) and its free tier sleeps; Railway runs the Dockerfile directly with managed MySQL |
-| 2026-09-11 | Deployment docs (`DEPLOYMENT.md`, `AGENT-DEPLOYMENT-INSTRUCTIONS.md`) rewritten | They still described the pre-2026-09-10 three-service architecture; PR #22 |
-| 2026-09-12 (planned) | GBV module: **text-only reports + officer queue** for this pass; **evidence upload deferred** | Multipart upload + EXIF-stripping is separate, non-trivial security work; scoping it out keeps the rest of the GBV flow (which carries "a significant part of the Security mark" per the working agreement) achievable in the time left |
-| 2026-09-12 (planned) | Incident chat scoped to **non-anonymous flows only** | GBV reports are anonymous-by-design (`referenceCode`, no account, `contactPreference` must be `none` when anonymous) — a generic chat feature would conflict with that unless the contract is changed first, which needs team agreement, not a silent workaround |
+| pre-2026-09-10 | Real-time updates use 5-second polling, not WebSockets | Decision log. No new dependency, and it matches CLAUDE.md's rule about flagging new libraries |
+| pre-2026-09-10 | Maps run on Leaflet + OpenStreetMap, not Google Maps | No API key, no billing, per the decision log |
+| pre-2026-09-10 | Evidence is stored as a filepath in MySQL, not a BLOB | Decision log |
+| 2026-09-10 | Frontend bundled into the backend jar. One Docker service instead of three | `feature/host-single-service`, PR #19. Same origin means no CORS to configure in production, and one push updates both halves at once |
+| 2026-09-10 | A demonstration interstitial is now required before public hosting | `feature/demo-notice`, PR #18, and `docs/deployment.md` §5.1. A safety prototype that looks real is a genuine hazard if the wrong person finds it |
+| 2026-09-11 | Hosting target is Railway, not Render | `docs/hosting-railway.md`. Render's free tier only offers Postgres, not MySQL, and it sleeps after 15 minutes idle. Railway runs the Dockerfile as-is with managed MySQL |
+| 2026-09-11 | Deployment docs rewritten | `DEPLOYMENT.md` and `AGENT-DEPLOYMENT-INSTRUCTIONS.md` still described the old three-service setup after the Dockerfile changed. Fixed in PR #22 |
+| 2026-09-12 (planned) | GBV module scoped to text-only reports plus the officer queue for now. Evidence upload deferred | Multipart upload with EXIF stripping is its own chunk of security work. Cutting it keeps the rest of the GBV flow, which the working agreement says carries a significant part of the Security mark, achievable in the time left |
+| 2026-09-12 (planned) | Incident chat limited to non-anonymous reports | GBV reports are anonymous by design: a reference code instead of an account, and `contactPreference` has to be `none` when `anonymous` is true. A generic chat feature would break that unless the contract changes first, and that needs the team's sign-off, not a workaround nobody agreed to |
 
-**Also worth recording as a scope-relevant fact, not a decision:** Railway's
-new-account trial credit is $5, valid 30 days from when the project was
-created (2026-09-11) — it does **not** run indefinitely for free. After the
-trial, keeping the demo live costs $5/month on the Hobby plan. Someone on the
-team needs to own that, or the plan should be to keep a recording as the
-fallback demonstration once the trial lapses (see `docs/hosting-railway.md`).
+One more thing worth writing down, not really a decision but a fact that
+affects scope: Railway gives a new account a one-off $5 trial credit that
+lasts 30 days from when the project was created (2026-09-11). It doesn't
+run free forever. Once the trial runs out, keeping the demo live costs
+$5/month on the Hobby plan. Someone needs to own that cost, or the fallback
+plan should be a recorded demo once the trial lapses (see
+`docs/hosting-railway.md`).
 
 ---
 
 ## 3. System architecture
 
-### 3.1 Client–server data flow
+### 3.1 Client-server data flow
 
 ```mermaid
 flowchart LR
     subgraph Client
         Browser["Browser\n(student / campus control / responder / GBV officer)"]
     end
-    subgraph Railway["Railway — one Docker service"]
+    subgraph Railway["Railway, one Docker service"]
         App["Spring Boot app\nserves static pages from the jar\n+ /api/* endpoints"]
     end
     DB[("MySQL\nprivate network only")]
@@ -91,11 +97,11 @@ flowchart LR
     App -- "JDBC, RAILWAY_PRIVATE_DOMAIN\n(never a public address)" --> DB
 ```
 
-One origin, one deployable, no cross-origin request in production — the
-pages and the API are served by the same jar (`Dockerfile` copies
-`frontend/` into `src/main/resources/static` at build time).
+One origin, one deployable, and nothing cross-origin in production. The
+pages and the API ship inside the same jar because the Dockerfile copies
+`frontend/` into `src/main/resources/static` at build time.
 
-### 3.2 Request lifecycle (how a role gets enforced)
+### 3.2 Request lifecycle, or how a role actually gets enforced
 
 ```mermaid
 sequenceDiagram
@@ -124,13 +130,14 @@ sequenceDiagram
     Ctrl-->>C: 200 JSON ({error,message,field} shape on failure)
 ```
 
-There is no `@PreAuthorize` or centralized route-based role gate —
-`SecurityConfig` only decides authenticated-vs-not. Every role decision is a
-manual `switch` inside a service class, close to the query it protects. New
-modules (GBV, chat) are expected to follow this same pattern rather than
-introduce a second authorization mechanism.
+There's no `@PreAuthorize` and no centralized route-based role gate.
+`SecurityConfig` only decides whether you're authenticated at all. Every
+actual role decision is a plain `switch` statement sitting inside a service
+class, right next to the query it's guarding. Anything new (GBV, chat)
+should follow this same pattern rather than bring in a second way of doing
+authorization.
 
-### 3.3 Data model (as built, plus what's planned)
+### 3.3 Data model, as built, plus what's still on paper
 
 ```mermaid
 erDiagram
@@ -140,7 +147,7 @@ erDiagram
 
     USERS {
         bigint user_id PK
-        varchar student_number "nullable, unique — staff have none"
+        varchar student_number "nullable, unique, staff have none"
         varchar full_name
         varchar email "unique"
         varchar password_hash "BCrypt"
@@ -155,10 +162,10 @@ erDiagram
         varchar description "nullable"
         double latitude "nullable"
         double longitude "nullable"
-        varchar location_source "device / none, derived"
+        varchar location_source "device or none, derived"
         boolean anonymous
-        varchar status "reported...resolved/cancelled"
-        int priority "1=most urgent .. 5"
+        varchar status "reported through resolved/cancelled"
+        int priority "1 is most urgent, 5 least"
         bigint assigned_responder_id FK "nullable"
         datetime created_at
         datetime updated_at
@@ -173,25 +180,26 @@ erDiagram
     }
 ```
 
-`GbvReport` (keyed by a non-guessable `referenceCode`, not `user_id`) and
-`IncidentMessage` are specified in `docs/api-contract.md` §7 and planned in
-this report's Part 2, but **do not exist yet** — omitted from the diagram
-above rather than shown as if built.
+`GbvReport`, keyed by a reference code rather than a user id, and
+`IncidentMessage` are both fully specified in `docs/api-contract.md` §7 and
+planned for the next build phase, but neither exists in code yet, so
+they're left out of the diagram above instead of drawn as if they were
+already built.
 
 ---
 
-## 4. Technology stack and pivot justification
+## 4. Technology stack and why each pivot happened
 
-| Layer | Choice | Why (with the trade-off, not just the pick) |
+| Layer | Choice | Reasoning and the trade-off that came with it |
 |---|---|---|
-| Frontend | Plain HTML/CSS/JS, no framework | `CLAUDE.md` mandate — keeps every line explainable to a panel without a build step to reason about |
-| Backend | Java 17, Spring Boot 3.4.5 | Team's existing Java coursework background; Spring Security + Spring Data JPA cover auth and persistence without hand-rolling either |
-| Auth | JWT (`jjwt` 0.12.6), BCrypt | Stateless — no session store needed; 120-minute fixed expiry, no refresh token (accepted trade-off per decision log, revisit if the demo runs long) |
-| Database | MySQL 8 | Matches what's taught, and Railway offers it as a managed service (Render's free tier is Postgres-only — see §2) |
-| Maps | Leaflet + OpenStreetMap | No API key, no billing risk for a student project (decision log) |
-| Hosting | Railway, one Docker service | Pivoted from an earlier three-service draft (§2) once the Dockerfile was changed to bundle frontend into the jar — fewer moving parts, no CORS, one thing to redeploy |
-| Algorithms | C++ (standalone) | Explicitly out of the request path per the contract — a demonstration of the algorithm, not a dependency of it |
-| Analysis | Python (offline) | Results seeded into MySQL, not called at request time |
+| Frontend | Plain HTML, CSS, JS, no framework | Required by `CLAUDE.md` so every line stays explainable to a panel without a build step to reason about first |
+| Backend | Java 17, Spring Boot 3.4.5 | Fits the team's existing coursework, and Spring Security plus Spring Data JPA cover auth and persistence without either being hand-rolled |
+| Auth | JWT via `jjwt` 0.12.6, BCrypt | Stateless, so no session store to run. Fixed 120-minute expiry with no refresh token, an accepted shortcut for a prototype that's worth revisiting if a demo runs long |
+| Database | MySQL 8 | What the team already knows, and Railway offers it as a managed service. Render's free tier is Postgres-only, see §2 |
+| Maps | Leaflet + OpenStreetMap | No API key and no billing risk for a student project |
+| Hosting | Railway, one Docker service | Pivoted away from an earlier three-service draft once the Dockerfile started bundling frontend into the jar. Fewer moving parts, no CORS, one thing to redeploy |
+| Algorithms | C++, standalone | Deliberately kept out of the request path per the contract. It's a demonstration of the algorithm, not something the running app depends on |
+| Analysis | Python, offline | Results get seeded into MySQL ahead of time rather than computed on request |
 
 ---
 
@@ -199,74 +207,78 @@ above rather than shown as if built.
 
 - **Repository:** https://github.com/Mjubane5/ufh-safety-platform (private)
 - **Default branch:** `main`
-- **Live URL:** https://ufh-safety-platform-production.up.railway.app
-  (Railway project `dazzling-insight`, auto-redeploys on every merge to `main`)
-- **No release tags exist yet.** Recommend tagging a checkpoint (e.g.
-  `v0.1-progress`) once this report and Part 2 land, so "what was submitted"
-  has a fixed reference point rather than "whatever `main` happened to be."
-- **26 pull requests merged to date** (see §13 for the per-author breakdown),
-  zero open, zero closed-without-merging except one empty/abandoned PR (#12).
-  No branch protection issue currently blocking work.
+- **Live URL:** https://ufh-safety-platform-production.up.railway.app,
+  Railway project `dazzling-insight`, redeploys automatically on every merge
+  to `main`.
+- No release tags exist yet. Worth tagging a checkpoint, something like
+  `v0.1-progress`, once this report and the next build phase land, so
+  "what got submitted" has a fixed point to point at instead of "whatever
+  `main` happened to be that day."
+- 26 pull requests merged so far (see §13 for who they belong to), none
+  open, and only one closed without merging (#12, which never had any
+  content). Nothing currently blocked on branch protection.
 
 ---
 
-## 6. Feature inventory — done vs. pending
+## 6. Feature inventory: done versus pending
 
-Cross-checked against every endpoint/page named in `docs/api-contract.md`.
+Checked line by line against every endpoint and page named in
+`docs/api-contract.md`.
 
 | Area | Status | Detail |
 |---|---|---|
-| Auth (register/login/me) | **Done** | `auth` package + `login.html`/`register.html` |
-| Incident report/list/detail/status/cancel | **Done** | `incidents` package; student/responder/campus_control/admin role-scoped per §3.2 |
-| Incident assignment (auto-nearest or explicit) | **Done** | `IncidentAssignmentService`, merged PR #26 (2026-09-12) — a responder is also now correctly freed back to `available` on resolve/cancel |
-| Responder availability list | **Done** | `GET /api/responders/available`, `responders` package |
-| Student dashboard | **Done** | `dashboard.html` — filters, pagination, skeleton/empty/error states |
-| Incident report form | **Done** | `report.html` — geolocation capture with graceful fallback |
-| Incident detail page | **Scaffolded, not rendered** | `incident.html`/`incident.js` (PR #25) parse the query string and encode the display rules, but rendering is explicitly not written yet |
-| Patrols (`POST/GET /api/patrols`) | **Not started** | No `patrols` package |
-| Safety map / hotspots / safe routes | **Not started** | No `hotspots` or `routes` package; no map-rendering code anywhere in the frontend despite Leaflet being the agreed provider |
-| Wellness resources/bookings | **Not started** | No `wellness` package |
-| GBV reporting (all of §7) | **Not started** | No `gbv` package on the backend, no GBV page on the frontend — fully specified in the contract, zero implementation |
-| Campus control dashboard | **Not started** | No role-aware redirect exists at all today — every login lands on `dashboard.html` regardless of role |
-| Responder view | **Not started** | Same gap |
-| GBV officer dashboard | **Not started** | Same gap |
-| Incident chat | **Not started** | Not in the contract yet either — see §2 |
+| Auth: register, login, me | Done | `auth` package plus `login.html`/`register.html` |
+| Incident report, list, detail, status, cancel | Done | `incidents` package, role-scoped per §3.2 for student/responder/campus_control/admin |
+| Incident assignment, auto-nearest or explicit | Done | `IncidentAssignmentService`, merged in PR #26 on 2026-09-12. A responder is also now correctly freed back to `available` once the incident resolves or is cancelled |
+| Responder availability list | Done | `GET /api/responders/available`, `responders` package |
+| Student dashboard | Done | `dashboard.html`, with filters, pagination, and skeleton/empty/error states |
+| Incident report form | Done | `report.html`, with geolocation capture and a graceful fallback |
+| Incident detail page | Scaffolded, not rendered | `incident.html`/`incident.js` (PR #25) parse the query string and encode the display rules already, but the actual rendering isn't written |
+| Patrols (`POST`/`GET /api/patrols`) | Not started | No `patrols` package exists |
+| Safety map, hotspots, safe routes | Not started | No `hotspots` or `routes` package, and no map-rendering code anywhere in the frontend despite Leaflet being the agreed provider |
+| Wellness resources and bookings | Not started | No `wellness` package exists |
+| GBV reporting, all of contract §7 | Not started | No `gbv` package on the backend and no GBV page on the frontend. Fully specified, nothing built |
+| Campus control dashboard | Not started | There's no role-aware redirect at all right now. Every login lands on `dashboard.html` regardless of role |
+| Responder view | Not started | Same gap as above |
+| GBV officer dashboard | Not started | Same gap again |
+| Incident chat | Not started | Not even in the contract yet, see §2 |
 
 ---
 
 ## 7. Screenshots, API payloads, and wireframes
 
-Captured this session against a local instance running `frontend/`'s own
-`MOCK` mode (`python -m http.server 5500`, no backend required — the app's
-documented way of running without live data) and cross-checked against the
-live Railway URL. **Binary image files are not embedded in this Markdown
-pass** — described here in enough detail to stand in until real screenshots
-are added to a `docs/screenshots/` folder (or the `.docx` version of this
-report, if one is produced).
+Captured this session against a local copy of `frontend/` running in its
+own `MOCK` mode (`python -m http.server 5500`, no backend needed, which is
+the documented way to run it without live data), and checked against the
+live Railway URL too. Binary image files aren't embedded in this Markdown
+version. What's below should be enough to stand in until real screenshots
+land in a `docs/screenshots/` folder, or in a Word version of this report
+if one gets produced.
 
-- **Login (`/login.html`):** on first load, an interstitial dialog blocks
-  the page — "This is a demonstration, not a real safety service," lists
-  SAPS 10111, ambulance/fire 10177, the GBV Command Centre 0800 428 428, and
-  Childline 116, and requires an explicit "I understand this is a
-  demonstration" click before it dismisses. A persistent red banner with the
-  same message stays pinned above the form afterward. Confirms
-  `docs/deployment.md` §5.1 is actually implemented, not just documented.
-- **Dashboard (`/dashboard.html`, mock data):** "Your reports, A" heading,
-  a "Report an incident" CTA, status filter chips (All/Reported/Triaged/
-  Assigned/En route/On scene/Resolved/Cancelled), and incident cards
-  (e.g. "Medical emergency — Reference 42", "SOS — Reference 41" with an
-  emergency-priority red accent bar).
-- **Report form (`/report.html`):** incident-type dropdown, a 1000-character
-  description field with a live counter, and — captured live, not
-  simulated — the actual browser-permission-denied fallback UI: "Location
+- **Login (`/login.html`).** On first load an interstitial dialog blocks
+  the page: "This is a demonstration, not a real safety service," with SAPS
+  10111, ambulance/fire 10177, the GBV Command Centre 0800 428 428, and
+  Childline 116 listed, and it needs an explicit "I understand this is a
+  demonstration" click before it goes away. A red banner with the same
+  message stays pinned above the form after that. Confirms that
+  `docs/deployment.md` §5.1 is actually built, not just written down.
+- **Dashboard (`/dashboard.html`, mock data).** "Your reports, A" as the
+  heading, a "Report an incident" button, status filter chips running from
+  All through Cancelled, and incident cards like "Medical emergency,
+  Reference 42" and "SOS, Reference 41," the second one with a red
+  emergency accent bar.
+- **Report form (`/report.html`).** An incident-type dropdown, a
+  1000-character description field with a live counter, and, captured
+  live rather than staged, the actual permission-denied fallback: "Location
   permission was blocked. The browser will not ask again... You can send
   your report without it."
-- **Incident detail (`/incident.html?id=42`):** confirms the PR #25 scaffold
-  state exactly — header, demo banner, and a "← Back to your reports" link
-  render; the incident content area is empty, matching the commit's own
-  note that rendering isn't written yet.
+- **Incident detail (`/incident.html?id=42`).** Confirms the PR #25
+  scaffold exactly as described in its own commit message: the header, the
+  demo banner, and a "back to your reports" link all render, but the
+  content area is empty because rendering hasn't been written yet.
 
-**Real API payload**, captured against the live deployment:
+Real API payload, captured against the live deployment:
+
 ```
 $ curl -X POST https://ufh-safety-platform-production.up.railway.app/api/auth/register \
     -H "Content-Type: application/json" -d '{}'
@@ -274,13 +286,13 @@ $ curl -X POST https://ufh-safety-platform-production.up.railway.app/api/auth/re
 {"error":"VALIDATION_FAILED","message":"Email is required.","field":"email"}
 ```
 
-**Wireframes for the four planned pages/panels (campus control dashboard,
-responder view, GBV officer dashboard, incident chat)** are not produced in
-this pass — they're designed in Part 2 of the implementation plan
-(`C:\Users\Admin\.claude\plans\typed-seeking-blossom.md`) as reused layouts
-(`.layout-split` list+map, the existing card/pill/skeleton components) rather
-than fresh mockups; happy to render these as actual wireframe images
-separately if useful ahead of building them.
+Wireframes for the four pages/panels that don't exist yet (campus control
+dashboard, responder view, GBV officer dashboard, incident chat) weren't
+drawn up separately in this pass. They're designed instead as reused
+layouts in the next build phase (the `.layout-split` list-plus-map
+structure and the existing card/pill/skeleton components already in the
+CSS), rather than fresh mockups. Happy to sketch these out as actual
+wireframe images ahead of building them if that would help.
 
 ---
 
@@ -305,108 +317,114 @@ $ ./mvnw test
 | `responders` | `ResponderServiceTest` | 5 | 0 |
 | **Total** | **11 classes** | **70** | **0** |
 
-All pure JUnit5 + Mockito + AssertJ unit tests against mocked repositories —
-**no database in the loop**, confirmed by `backend/pom.xml` carrying no test-DB
-dependency (no H2, no Testcontainers). This is a deliberate, documented
-trade-off (`docs/deployment.md` §5.7): fast and fully isolated, but a bad
-query would still pass the suite. Zero `@Disabled` tests remain — the
-assignment feature's tests were written disabled and enabled one at a time
-as it was implemented (PR #26).
+All of it is plain JUnit5, Mockito and AssertJ against mocked repositories.
+No database in the loop, which `backend/pom.xml` confirms since it has no
+test-DB dependency at all, no H2 and no Testcontainers. That's a deliberate
+trade-off documented in `docs/deployment.md` §5.7: fast and fully isolated,
+but a genuinely bad query would still sail through the suite. There are
+zero `@Disabled` tests left. The assignment feature's tests were written
+disabled up front and enabled one at a time as the feature got built out
+(PR #26).
 
-**No coverage percentage is reported here** — `backend/pom.xml` has no
-coverage plugin (`jacoco` or otherwise). **Recommendation, flagged per
-`CLAUDE.md`'s "no new libraries without flagging it" rule:** add
-`jacoco-maven-plugin` — a build-time-only Maven plugin, not a runtime
-dependency, standard for this exact purpose — so a future version of this
-report can state a real percentage instead of a test count.
+No coverage percentage is reported here because `backend/pom.xml` doesn't
+have a coverage plugin at all, jacoco or otherwise. Recommending one now,
+flagged per CLAUDE.md's rule about not adding libraries quietly: adding
+`jacoco-maven-plugin` is a build-time-only addition, not a runtime
+dependency, and it's the standard tool for exactly this. A later version
+of this report could then state a real percentage instead of just a test
+count.
 
 ---
 
 ## 9. Performance benchmarks
 
-No load-testing tool is set up (no JMeter/k6/Gatling in the project), and
-memory/throughput profiling wasn't attempted this session — stated plainly
-rather than filled with invented numbers. What **was** measured: simple
-wall-clock timing of single requests against the live Railway deployment
-from one machine, one location, one point in time — a sanity check, not a
-benchmark suite.
+There's no load-testing tool set up, no JMeter, k6 or Gatling anywhere in
+the project, and memory or throughput profiling wasn't attempted this
+session. Better to say that plainly than fill the section with made-up
+numbers. What was actually measured: simple wall-clock timing of single
+requests against the live Railway deployment, from one machine, one
+location, one point in time. A sanity check, not a benchmark suite.
 
 | Endpoint | Status | Time (single sample) |
 |---|---|---|
-| `GET /` | 200 | 0.99s (cold), 0.59s, 0.51s |
+| `GET /` | 200 | 0.99s cold, then 0.59s, 0.51s |
 | `GET /login.html` | 200 | 0.43s |
-| `GET /api/incidents` (no token) | 401 | 0.48s |
-| `POST /api/auth/register` (invalid body) | 400 | 0.74s |
-| `GET /api/responders/available` (no token) | 401 | 0.50s |
+| `GET /api/incidents`, no token | 401 | 0.48s |
+| `POST /api/auth/register`, invalid body | 400 | 0.74s |
+| `GET /api/responders/available`, no token | 401 | 0.50s |
 
-All well under a second, no artificial load applied. If real benchmarks are
-wanted for submission, that's separate follow-up work (a k6/JMeter script
-against a few key endpoints under concurrent load), not something to
-retrofit onto this report.
+Everything landed well under a second with no artificial load applied. If
+real benchmarks are needed for the submission, that's separate follow-up
+work, a small k6 or JMeter script run against a few key endpoints under
+actual concurrent load, rather than something to bolt onto this report.
 
 ---
 
-## 10. Bug / vulnerability / edge-case log
+## 10. Bug, vulnerability, and edge-case log
 
 | Item | Status | Source |
 |---|---|---|
-| No rate limiting on `POST /api/auth/login` | **Open** | `docs/deployment.md` §5.4 — "the one item on the list that is genuinely still open"; nothing slows a password-guessing attacker |
-| No rate limiting on GBV reference-code status lookup | **Open (module not built)** | Contract (`docs/api-contract.md` §7) requires it once GBV ships |
-| `spring.jpa.hibernate.ddl-auto=update` in production | **Accepted limitation** | Adds columns, never narrows/removes — real migrations (Flyway/Liquibase) would need a team decision first (`docs/deployment.md` §5.3) |
-| No automated integration tests (service layer only, mocked DB) | **Accepted limitation** | `docs/deployment.md` §5.7; a bad query currently passes the suite |
-| Spring Security default generated-password warning at boot | **Benign, worth understanding** | `UserDetailsServiceAutoConfiguration` auto-configures because no `UserDetailsService` bean is registered (the app uses custom JWT auth instead) — harmless as long as nothing routes through Spring's default form login, but a panel could reasonably ask about it |
-| Failing/disabled tests | **None** | 70/70 passing, 0 `@Disabled` (§8) |
-| Tracked GitHub issues | **None open** | `gh issue list` returns empty — the team is tracking known gaps in `docs/development-challenges.md` §6 and `docs/deployment.md` §5 instead of GitHub Issues |
+| No rate limiting on `POST /api/auth/login` | Open | `docs/deployment.md` §5.4 calls this the one item on the list that's genuinely still open. Nothing currently slows down someone guessing passwords |
+| No rate limiting on the GBV reference-code status lookup | Open, module not built | Required by the contract (`docs/api-contract.md` §7) once GBV ships |
+| `spring.jpa.hibernate.ddl-auto=update` in production | Accepted limitation | Adds columns but never narrows or removes them. Real migrations via Flyway or Liquibase would need a team decision first, see `docs/deployment.md` §5.3 |
+| No automated integration tests, service layer only against a mocked database | Accepted limitation | `docs/deployment.md` §5.7. A bad query currently passes the suite regardless |
+| Spring Security's default generated-password warning at boot | Benign but worth understanding | `UserDetailsServiceAutoConfiguration` kicks in because no `UserDetailsService` bean is registered, since the app uses its own JWT auth instead. Harmless as long as nothing routes through Spring's default form login, but a panel could reasonably ask about it |
+| Failing or disabled tests | None | 70 out of 70 passing, zero `@Disabled`, see §8 |
+| Tracked GitHub issues | None open | `gh issue list` comes back empty. The team is tracking known gaps in `docs/development-challenges.md` §6 and `docs/deployment.md` §5 instead of using GitHub Issues |
 
 ---
 
 ## 11. Challenges and mitigations
 
-`docs/development-challenges.md` is already a thorough, dated log covering
-environment/tooling, database, API-behavior, frontend, and process challenges
-through 2026-09-10 (enum wire-value mismatches, the paging-starts-at-1-vs-0
-bug caught by a test, a PR that showed "Merged" but never reached `main`,
-and more) — **not duplicated here**. What follows is what happened after
-that document's scope, in the deployment and planning work since:
+`docs/development-challenges.md` already covers this territory in detail
+through 2026-09-10: environment and tooling problems, database issues,
+API-behavior bugs, frontend integration, and process mistakes (enum
+wire-value mismatches, the page-numbering-starts-at-1-vs-0 bug a test
+actually caught, a pull request that said "Merged" but never reached
+`main`, and several more). None of that gets repeated here. What follows is
+what came up after that document's scope, during deployment and planning
+work since then.
 
-- **A campus/lab network blocking outbound TCP to arbitrary ports.** Setting
-  up Railway's MySQL initially attempted an SSH tunnel and then a temporary
-  public TCP proxy to run a one-time schema-creation script — both timed out
-  (`Test-NetConnection` confirmed the network blocks non-standard outbound
-  ports entirely). **Mitigation:** used MySQL's `createDatabaseIfNotExist=true`
-  JDBC option instead, so the schema is created by the app itself over
-  Railway's private network on first boot — no external connection to the
-  database ever needed, and the temporary public proxy was removed again
-  immediately.
-- **Deployment docs going stale within a day of being written.** `DEPLOYMENT.md`
-  and `AGENT-DEPLOYMENT-INSTRUCTIONS.md` described a three-service
-  architecture and a manual `frontend/js/config.js` edit that both stopped
-  being true once the Dockerfile bundled frontend into the jar.
-  **Mitigation:** rewritten in PR #22 to match the single-service reality,
-  with the actual commands used to deploy it.
-- **A generic "add chat everywhere" request conflicting with the GBV
-  anonymity model.** GBV reports are anonymous-by-design — no account, a
-  `referenceCode` instead of an ID, and `contactPreference` must be `none`
-  when anonymous, specifically to prevent deanonymizing a reporter.
-  **Mitigation:** scoped chat to non-anonymous incident flows only for this
-  pass, rather than build a feature that would need to punch a hole in that
-  design; a chat feature touching GBV reports needs a contract change agreed
-  by the team first, not a quiet workaround.
+**A campus or lab network blocking outbound connections to non-standard
+ports.** Setting up Railway's MySQL started with an attempted SSH tunnel,
+then a temporary public TCP proxy, just to run a one-time schema-creation
+script. Both timed out, and `Test-NetConnection` confirmed the network
+blocks that kind of outbound traffic outright. The fix was to stop trying
+to connect from outside at all: MySQL's `createDatabaseIfNotExist=true`
+JDBC option lets the app create its own schema over Railway's private
+network the first time it boots, so no external connection to the database
+was ever needed. The temporary public proxy was removed again right away.
+
+**Deployment docs going stale within a day of being written.**
+`DEPLOYMENT.md` and `AGENT-DEPLOYMENT-INSTRUCTIONS.md` still described a
+three-service setup and a manual edit to `frontend/js/config.js`, both of
+which stopped being true the moment the Dockerfile started bundling the
+frontend into the jar. They were rewritten in PR #22 to match what
+actually gets deployed, using the real commands that were run to do it.
+
+**A request to add chat everywhere running straight into the GBV anonymity
+model.** GBV reports are anonymous by design: no account, a reference code
+instead of an id, and `contactPreference` has to be `none` whenever
+`anonymous` is true, specifically so a reporter can't be traced. Rather
+than build a chat feature that would need to punch a hole in that on the
+quiet, chat was scoped down to non-anonymous incident flows only for now.
+Touching GBV reports with chat needs a contract change the whole team signs
+off on, not something decided alone mid-build.
 
 ---
 
-## 12. Timeline — remaining work toward submission
+## 12. Timeline: remaining work toward submission
 
-Built from `docs/team-working agreement_1.md`'s known milestones plus the
-remaining-day breakdown of Part 2 of the implementation plan. **Owner
-columns are intentionally not filled in** — that's the team's call, not
-something to guess from git history (see §13 for why that would be
-misleading here).
+Built from the known milestones in `docs/team-working agreement_1.md` plus
+a day-by-day breakdown of what's left in the next build phase. Owner
+columns are left blank on purpose. That's a call for the team to make, not
+something to guess at from git history (§13 explains why guessing would be
+actively misleading here).
 
 ```mermaid
 gantt
     dateFormat YYYY-MM-DD
-    title Remaining work (dates per the 23 Sept date given for this report — reconcile against the 18 Sept in team-working-agreement, see note at top)
+    title Remaining work (dates use the 23 Sept date given for this report; reconcile against the 18 Sept in team-working-agreement, see the note at the top)
     section Done
     Auth, incidents, responders core     :done, d1, 2026-08-23, 2026-09-11
     Public hosting live on Railway       :done, d2, 2026-09-10, 2026-09-11
@@ -426,48 +444,71 @@ gantt
     Final submission                     :milestone, m1, 2026-09-23, 0d
 ```
 
-**Weekly deliverables**, as a checklist rather than assigned names:
-- This week (by ~2026-09-14): role-aware routing + shared UI module +
-  responder view — smallest, least risky pieces, unblock everything else.
-- Next (by ~2026-09-18): campus control dashboard with map, GBV text-only
-  module, incident detail rendering.
-- Final days: chat feature, integration pass, rehearsal.
+As a checklist of weekly deliverables rather than names attached to tasks:
+
+- This week, roughly by 2026-09-14: role-aware routing, the shared UI
+  module, and the responder view. These are the smallest and least risky
+  pieces, and everything else depends on them.
+- Next, by around 2026-09-18: the campus control dashboard with its map,
+  the text-only GBV module, and the incident detail rendering.
+- Final days: the chat feature, an integration pass, and rehearsal.
 
 ---
 
-## 13. Individual contribution matrix
+## 13. Individual contributions, checked against the working agreement
 
-Generated from `git shortlog -sne --all` and `gh pr list --state merged`
-against the actual repository — an objective starting point for the team to
-review, **not a judgment on equity**. Read the caveat below before drawing
-conclusions from it.
+`docs/team-working agreement_1.md` names eight people across four pairs.
+This section lines that roster up against what's actually visible in git
+and GitHub, using `git shortlog -sne --all` and `gh pr list --state
+merged`. A few of the matches below are confident and a couple are
+educated guesses based on the content of the commits, clearly marked as
+such. None of it is a judgment about who worked hardest. Pairing, review,
+and planning done together at one screen leave no trace in git at all, and
+that matters a lot for reading this table honestly.
 
-| Contributor | Merged PRs | Commits (all branches) |
-|---|---|---|
-| Mjubane5 (Mpilwenhle Jubane) | 23 | 77 (across 3 git identities: `Mjubane5@gmail.com`, `157674678+Mjubane5@users.noreply.github.com`, `andilentombela4@gmail.com`) |
-| SiyabongaNkosi23 | 2 | 2 |
-| Nkosinathi-Mbewana | 1 | 1 |
+| Roster member | Pair and assigned area | Git identity found | Commits | Merged PRs | Notes |
+|---|---|---|---|---|---|
+| Mpilwenhle Jubane | D, incident report form and student dashboard | `Mjubane5` (two emails, same person) | 74 | 23 | Work goes far past Pair D's assigned area: auth, incident endpoints, responders, deployment, most of the documentation. This looks like the bulk of the whole repository |
+| Nkosinathi Mbewana | B, incident endpoints and status lifecycle | `Nkosinathi-Mbewana` | 1 | 1 | The one PR under this name is "Add authentication backend with MySQL and JWT," which is Pair A's area, not Pair B's |
+| Brains Nkosi (unconfirmed) | B, incident endpoints and status lifecycle | `SiyabongaNkosi23`, surname matches, first name doesn't | 2 | 2 | "Create seed.sql" and "Add Incident entity with attributes and methods." Both land close to Pair B's territory, which supports the guess, but it isn't confirmed |
+| Awethu Dyani (unconfirmed) | D, incident report form and student dashboard | 5 commits under the display name `Mjubane5` but a different personal email (`andilentombela4@gmail.com`), no PRs of their own found | 5 | 0 | The commits themselves, "Add student dashboard," a report-form fix, and one auth-hardening change, mostly match Pair D's owned area. Reads like someone working on a shared machine whose git name never got changed |
+| Sinesipho Malgas | A, database schema and auth endpoints | none found | 0 | 0 | |
+| Nondumiso Mbuli | A, database schema and auth endpoints | none found | 0 | 0 | |
+| Scott | C, page layout, shared CSS, api.js, login/register | none found | 0 | 0 | |
+| Nondumiso Mkhonto | C, page layout, shared CSS, api.js, login/register | none found | 0 | 0 | |
 
-**Important caveat, stated plainly rather than left implicit:** this table
-almost certainly **understates** other teammates' real contribution. The
-`team-working-agreement`'s own workload split names eight people across four
-pairs (design/planning work, code review, and any pairing done at a shared
-machine or in person doesn't show up in `git log` at all), and one
-contributor's commits are split across three different local git
-configurations, which is a good reminder that a name in this table is a git
-identity, not necessarily one person's total effort. **This table is a
-starting point for the team's own honest discussion of workload, not a
-substitute for it** — recommend the team fill in a fuller matrix (by feature
-area, not just commit count) themselves for the actual submission.
+A few things stand out worth saying directly rather than leaving buried in
+the table:
+
+- **Pair C's entire assigned area exists and works** (`frontend/js/api.js`,
+  `frontend/css/styles.css`, the login and register pages), but there is no
+  commit under any of the four Pair A or Pair C names anywhere near it.
+  Either that work happened through pairing on someone else's account, or
+  the roster and what actually happened have drifted apart. Worth the team
+  saying out loud which one it is before submission, since a panel could
+  easily ask a Pair C member to explain code with no record of them having
+  touched it.
+- One PR ("Add authentication backend with MySQL and JWT," #8) is credited
+  to a Pair B member for what the working agreement assigns to Pair A.
+  Could just mean people helped across pairs when needed, which is normal
+  and fine, but it's a real mismatch between the plan and the paper trail.
+- If the "unconfirmed" identities above are actually Brains Nkosi and
+  Awethu Dyani, then six of the eight roster members have some visible
+  footprint in the repository, just very unevenly. If they aren't, only
+  four do. Either way, one person's git identity accounts for the large
+  majority of commits and merged PRs, and that's worth a real conversation
+  among the eight of you about how the rest of the work actually got done,
+  not just a number in a report.
 
 ---
 
 ## Sources
 
-Everything above traces to a real command or an existing file — no section
-invents a number or a claim: `git log`/`git shortlog`/`gh pr list` (live,
-2026-09-12), `./mvnw test` output, `curl` against the live deployment,
-`CLAUDE.md`, `docs/api-contract.md`, `docs/team-working agreement_1.md`,
+Every number and claim above traces back to something that was actually
+run or read this session: `git log`, `git shortlog`, and `gh pr list`
+against the live repository (2026-09-12), `./mvnw test` output, `curl`
+against the live deployment, and direct reading of `CLAUDE.md`,
+`docs/api-contract.md`, `docs/team-working agreement_1.md`,
 `docs/development-challenges.md`, `docs/deployment.md`,
-`docs/hosting-railway.md`, and direct inspection of the current
-`backend/src/main/java` and `frontend/` trees.
+`docs/hosting-railway.md`, and the current `backend/src/main/java` and
+`frontend/` source trees.
