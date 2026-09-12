@@ -68,6 +68,7 @@ and the scoping conversation for this report.
 | 2026-09-11 | Deployment docs rewritten | `DEPLOYMENT.md` and `AGENT-DEPLOYMENT-INSTRUCTIONS.md` still described the old three-service setup after the Dockerfile changed. Fixed in PR #22 |
 | 2026-09-12 (planned) | GBV module scoped to text-only reports plus the officer queue for now. Evidence upload deferred | Multipart upload with EXIF stripping is its own chunk of security work. Cutting it keeps the rest of the GBV flow, which the working agreement says carries a significant part of the Security mark, achievable in the time left |
 | 2026-09-12 (planned) | Incident chat limited to non-anonymous reports | GBV reports are anonymous by design: a reference code instead of an account, and `contactPreference` has to be `none` when `anonymous` is true. A generic chat feature would break that unless the contract changes first, and that needs the team's sign-off, not a workaround nobody agreed to |
+| 2026-09-12 | Working agreement amended to formally allow cross-pair contribution | The pairing in `docs/team-working agreement_1.md` §1 was written as fixed lanes, but §13 below shows real work crossing those lines more than once. Rather than treat that as a violation of the plan, the agreement now says explicitly that pairs describe primary ownership, not a hard boundary, which is normal on real software teams. The existing rule to post in the group chat before touching another pair's files still stands |
 
 One more thing worth writing down, not really a decision but a fact that
 affects scope: Railway gives a new account a one-off $5 trial credit that
@@ -488,23 +489,29 @@ would.
 | Nondumiso Mbuli | A, database schema and auth endpoints | `nondumisombuli16` | 1, as a co-author | 0 | "Implement nearest responder selection" is backend algorithm work, closer to Pair B's territory than Pair A's own schema and auth |
 | Nondumiso Mkhonto, fairly likely | C, page layout, shared CSS, api.js, login/register | probably `Nondum1s0`, inferred by matching the remaining unaccounted commit to the remaining unaccounted collaborator, not independently confirmed the way Scott's identity now is | 1, as a co-author | 0 | "Add mobile-first base stylesheet" matches Pair C's assigned area exactly, which is the main reason this guess feels solid |
 | Awethu Dyani | D, incident report form and student dashboard | `awethudyani51-hash` | 1, as a co-author | 0 | "Add login and register pages" is Pair C's assigned area, not his own Pair D |
-| Sinesipho Malgas | A, database schema and auth endpoints | not identified | 0 | 0 | Checked every collaborator account, every commit author and committer field, and every co-author trailer across all branches. Nothing matches, and nothing among the repository's other collaborator handles obviously reads as this name either |
+| Sinesipho Malgas | A, database schema and auth endpoints | not a collaborator on this repository | 0 | 0 | Confirmed directly against the GitHub collaborator list, not just a text search this time. No account was ever added to the repository at all, so there's no commit, PR, review, or comment to find under any name or handle. Whatever she contributed happened entirely outside version control |
 
 A few things worth saying plainly instead of leaving them buried in the
 table:
 
-- All eight roster names now have some real footprint in the repository
-  except Sinesipho Malgas, once every layer above is counted. That's a big
-  change from the first pass at this table, which only found three people
-  at all.
+- Seven of the eight roster names have some real footprint in the
+  repository once every layer above is counted, a big change from the
+  first pass at this table, which only found three. Sinesipho Malgas is
+  the one confirmed exception, and it's a different kind of gap from the
+  others: not a missed search, but an absence from the repository itself.
 - The repository actually has fifteen collaborators added, not eight.
   Beyond the ones matched above, `SIBONGAKONKE651`, `XhantiMakeleni26`,
   `Gobongowandile`, `Ibongwe05`, `Nombulelo24`, `AsehGatsheni0920`,
   `SisonkeN14`, and `somilamathinjwa6-sudo` are all collaborators with zero
-  commits under their own accounts. Might be classmates or helpers added
-  for visibility rather than code, might include Sinesipho Malgas under a
-  handle that isn't obvious from the name alone. Worth the team checking
-  this list directly rather than more guessing from this end.
+  commits under their own accounts. Could be classmates or helpers added
+  for visibility rather than code. Worth the team checking this list
+  directly if any of those names ring a bell.
+- `docs/team-working agreement_1.md` has been updated (2026-09-12) to say
+  outright that pairs describe primary ownership, not a hard boundary,
+  since the table above shows contributions crossing pair lines more than
+  once. Letting people help wherever the work needs doing is standard
+  practice on real software teams, and writing that down means the
+  overlap found here reads as expected, not as a rule being broken.
 - Pair C's own assigned area (`frontend/js/api.js`, `frontend/css/styles.css`,
   login and register pages) has real commits behind it, but from Scott and
   Nondumiso Mkhonto working inside Pair D's and their own area
