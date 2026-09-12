@@ -8,6 +8,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.ac.ufh.safety.common.ApiException;
+import za.ac.ufh.safety.responders.ResponderRepository;
+import za.ac.ufh.safety.responders.ResponderStatus;
 import za.ac.ufh.safety.user.User;
 import za.ac.ufh.safety.user.UserRepository;
 
@@ -19,13 +21,16 @@ public class IncidentService {
 
     private final IncidentRepository incidents;
     private final UserRepository users;
+    private final ResponderRepository responders;
     private final PriorityCalculator priorityCalculator;
 
     public IncidentService(IncidentRepository incidents,
                            UserRepository users,
+                           ResponderRepository responders,
                            PriorityCalculator priorityCalculator) {
         this.incidents = incidents;
         this.users = users;
+        this.responders = responders;
         this.priorityCalculator = priorityCalculator;
     }
 
@@ -169,6 +174,7 @@ public class IncidentService {
         }
 
         incident.setStatus(target);
+        releaseResponderIfFinished(incident);
         return toDetail(incidents.save(incident));
     }
 
@@ -203,7 +209,35 @@ public class IncidentService {
         }
 
         incident.setStatus(IncidentStatus.CANCELLED);
+        releaseResponderIfFinished(incident);
         return toDetail(incidents.save(incident));
+    }
+
+    /**
+     * Puts a responder back in the pool once their incident is finished.
+     *
+     * Assignment takes somebody out of the pool. If nothing ever puts them
+     * back, the roster drains: every assignment removes a person permanently
+     * and after a handful of incidents auto-assignment returns 404 for
+     * everything. That is the kind of fault that appears during a live
+     * demonstration rather than before one.
+     *
+     * The responder keeps the incident's assignedResponderId — the record of
+     * who attended is worth keeping. Only their duty status changes.
+     *
+     * A responder who has since been marked off duty is left alone, because
+     * finishing a call is not a reason to put somebody back on shift.
+     */
+    private void releaseResponderIfFinished(Incident incident) {
+        if (!StatusTransitions.isTerminal(incident.getStatus())) return;
+        if (incident.getAssignedResponderId() == null) return;
+
+        responders.findById(incident.getAssignedResponderId()).ifPresent(responder -> {
+            if (responder.getStatus() == ResponderStatus.ASSIGNED) {
+                responder.setStatus(ResponderStatus.AVAILABLE);
+                responders.save(responder);
+            }
+        });
     }
 
     /**
