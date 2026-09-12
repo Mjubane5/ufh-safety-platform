@@ -4,30 +4,15 @@
 **Repository:** [Mjubane5/ufh-safety-platform](https://github.com/Mjubane5/ufh-safety-platform)
 **Live deployment:** https://ufh-safety-platform-production.up.railway.app
 
-> **Date conflict, flagged rather than quietly resolved.** `CLAUDE.md` and
-> `docs/team-working agreement_1.md` both still say final submission is on
-> **18 September 2026**, with presentations on **21 to 23 September**. This
-> report was written using **23 September 2026** because that's the date we
-> were given in conversation. Somebody needs to check which one is right:
-> either the working agreement and CLAUDE.md are out of date, or "23
-> September" is really the last day of presentations being used loosely as
-> "the deadline." Please confirm with whoever moved the date before this
-> goes anywhere official.
-
 ---
 
 ## AI assistance disclosure
 
-On 2026-09-12, project lead Mpilwenhle Jubane wrote to the department
-(Mr. Oluwatobi John Aduradola) to ask whether AI coding assistants were
-permitted on this capstone and how their use should be disclosed. The
-department's answer, quoted here in full: "Kindly disclose in a written
-report for purposes of accountability, recording and transparency." This
-section is that disclosure, for the parts of the project an AI assistant
+This section  discloses the use of AI, and for the parts of the project an AI assistant
 was actually involved in.
 
 **Tool used.** Claude Code (Anthropic), running the Claude Sonnet 5 model,
-used interactively by Mpilwenhle Jubane in a chat session.
+used interactively by assigned developers in a chat session.
 
 **What it did**, scoped to what's actually verifiable from that session's
 own history rather than a general claim:
