@@ -750,3 +750,54 @@ export async function getSafeRoute(from, to) {
     auth: true,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Wellness - contract section 8
+// ---------------------------------------------------------------------------
+
+export async function getWellnessResources() {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    return {
+      items: [
+        {
+          resourceId: 1,
+          title: 'Student Counselling Unit',
+          category: 'counselling',
+          description: 'On-campus counselling service.',
+          contactPhone: '0400000000',
+          availability: 'Mon-Fri 08:00-16:30',
+        },
+        {
+          resourceId: 2,
+          title: 'Peer Wellness Support',
+          category: 'wellness',
+          description: 'Confidential peer support and wellbeing conversations.',
+          contactPhone: null,
+          availability: 'Tuesday and Thursday 12:00-15:00',
+        },
+      ],
+    };
+  }
+
+  return request('/wellness/resources', { auth: true });
+}
+
+export async function createWellnessBooking(resourceId, preferredDate, preferredSlot, note = null) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    return {
+      bookingId: 31,
+      status: 'requested',
+      createdAt: '2026-08-23T02:00:00Z',
+    };
+  }
+
+  return request('/wellness/bookings', {
+    method: 'POST',
+    body: { resourceId, preferredDate, preferredSlot, note },
+    auth: true,
+  });
+}
