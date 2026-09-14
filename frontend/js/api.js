@@ -801,3 +801,33 @@ export async function createWellnessBooking(resourceId, preferredDate, preferred
     auth: true,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Confidential GBV reporting - contract section 7
+// ---------------------------------------------------------------------------
+
+export async function submitGbvReport(report) {
+  if (MOCK) {
+    await delay();
+    return {
+      referenceCode: 'GBV-4K7P-22XQ',
+      status: 'submitted',
+      submittedAt: '2026-08-23T01:55:00Z',
+    };
+  }
+
+  return request('/gbv/reports', { method: 'POST', body: report, auth: !report.anonymous });
+}
+
+export async function getGbvReportStatus(referenceCode) {
+  if (MOCK) {
+    await delay();
+    return {
+      referenceCode,
+      status: 'under_review',
+      lastUpdatedAt: '2026-08-23T08:00:00Z',
+    };
+  }
+
+  return request(`/gbv/reports/${encodeURIComponent(referenceCode)}/status`);
+}
