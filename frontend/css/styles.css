@@ -1239,6 +1239,146 @@ a:focus-visible,
   box-shadow: 0 12px 32px rgb(0 0 0 / 35%);
 }
 
+/* ===========================================================================
+   12. PRODUCT SHELL REFRESH
+   Shared navigation and visual hierarchy for the operational screens.
+   =========================================================================== */
+
+:root {
+  --color-surface: #ffffff;
+  --color-surface-sunken: #eef4f3;
+  --color-text: #17252a;
+  --color-text-muted: #52666b;
+  --color-primary: #0d6268;
+  --color-primary-dark: #08464b;
+  --color-primary-tint: #e0f1ef;
+  --color-gold: #e4ad38;
+  --color-gold-dark: #78550b;
+  --color-gold-tint: #fff7df;
+  --color-border: #d0dddc;
+  --color-border-strong: #718589;
+  --color-focus: #0d6268;
+  --shadow-card: 0 0.35rem 1rem rgb(23 37 42 / 8%);
+  --shadow-raised: 0 0.75rem 1.75rem rgb(23 37 42 / 14%);
+}
+
+body {
+  background-color: var(--color-surface-sunken);
+  background-image:
+    linear-gradient(135deg, rgb(255 255 255 / 70%), transparent 42%),
+    repeating-linear-gradient(0deg, rgb(13 98 104 / 3%) 0, rgb(13 98 104 / 3%) 1px, transparent 1px, transparent 5px);
+}
+
+h1, h2, h3 {
+  letter-spacing: 0.01em;
+}
+
+h1 {
+  font-weight: 700;
+}
+
+.page {
+  padding-top: var(--space-5);
+  padding-bottom: var(--space-7);
+}
+
+.app-header {
+  position: relative;
+  background: linear-gradient(110deg, #08464b 0%, #0d6268 64%, #178087 100%);
+  box-shadow: 0 0.25rem 1rem rgb(8 70 75 / 24%);
+}
+
+.app-header-inner {
+  flex-wrap: wrap;
+}
+
+.app-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-left: auto;
+}
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  order: 3;
+  width: 100%;
+  overflow-x: auto;
+  padding-top: var(--space-2);
+}
+
+.app-nav-link {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-inverse);
+  border-radius: var(--radius-sm);
+  text-decoration: none;
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.app-nav-link:hover,
+.app-nav-link:focus-visible {
+  color: var(--color-text-inverse);
+  background-color: rgb(255 255 255 / 16%);
+}
+
+.app-back::before {
+  content: "\2190";
+  font-size: var(--text-lg);
+  line-height: 1;
+}
+
+.app-header .app-back {
+  border-color: rgb(255 255 255 / 35%);
+}
+
+.card {
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-card);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-raised);
+}
+
+.btn {
+  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+}
+
+.btn:not(:disabled):hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0.3rem 0.8rem rgb(23 37 42 / 12%);
+}
+
+.btn-primary {
+  box-shadow: 0 0.25rem 0.65rem rgb(13 98 104 / 20%);
+}
+
+.notice {
+  box-shadow: 0 0.25rem 0.7rem rgb(120 85 11 / 8%);
+}
+
+@media (min-width: 768px) {
+  .app-header-inner {
+    flex-wrap: nowrap;
+  }
+
+  .app-nav {
+    order: initial;
+    width: auto;
+    padding-top: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn {
+    transition: none;
+  }
+}
+
 .demo-dialog h2 {
   margin: 0 0 0.75rem;
   color: var(--color-emergency-dark);
