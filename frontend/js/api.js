@@ -686,6 +686,24 @@ export async function getRecentPatrols(latitude, longitude, radiusMetres = 500) 
   return request(`/patrols/recent?${params.toString()}`, { auth: true });
 }
 
+export async function createPatrol(zoneId, latitude, longitude, note = null) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    return {
+      patrolId: 88,
+      zoneId,
+      recordedAt: '2026-08-23T01:48:00Z',
+    };
+  }
+
+  return request('/patrols', {
+    method: 'POST',
+    body: { zoneId, latitude, longitude, note },
+    auth: true,
+  });
+}
+
 export async function getHotspots() {
   if (MOCK) {
     await delay();
