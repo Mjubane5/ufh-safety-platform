@@ -1063,6 +1063,12 @@ a:focus-visible,
   margin-top: var(--space-5);
 }
 
+.control-layout {
+  display: grid;
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+}
+
 .responder-layout h2 {
   margin-bottom: var(--space-3);
 }

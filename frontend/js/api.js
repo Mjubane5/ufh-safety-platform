@@ -621,3 +621,37 @@ export async function getAvailableResponders() {
 
   return request('/responders/available', { auth: true });
 }
+
+/**
+ * POST /api/incidents/{incidentId}/assign - campus control and admin only.
+ *
+ * The dispatcher must choose an explicit responder when an incident has no
+ * coordinates. The backend remains the authority and returns 409 or 404 when
+ * the assignment cannot be made.
+ */
+export async function assignIncident(incidentId, responderId = null) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+
+    const incident = MOCK_INCIDENT_SUMMARIES.find((item) => item.incidentId === incidentId);
+    if (incident) incident.status = 'assigned';
+
+    return {
+      incidentId,
+      status: 'assigned',
+      responder: {
+        responderId: responderId ?? 5,
+        fullName: responderId === 8 ? 'Pieter Botha' : 'Nomsa Khumalo',
+      },
+      route: null,
+    };
+  }
+
+  const body = responderId === null ? {} : { responderId };
+  return request(`/incidents/${encodeURIComponent(incidentId)}/assign`, {
+    method: 'POST',
+    body,
+    auth: true,
+  });
+}

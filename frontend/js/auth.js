@@ -22,7 +22,7 @@ import { register, login, ApiError } from './api.js';
 const ROLE_HOME_URLS = {
   student: './dashboard.html',
   responder: './responder-dashboard.html',
-  campus_control: './role-dashboard.html',
+  campus_control: './control-dashboard.html',
   gbv_officer: './role-dashboard.html',
   admin: './role-dashboard.html',
 };

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Campus control — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./control-dashboard.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Campus control</span>
+        </span>
+      </a>
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype for CSC 200 / CSC 300. Not connected to any live emergency
+      service. All data shown here is synthetic.
+    </p>
+
+    <div id="banner-slot"></div>
+    <h1>Dispatch queue</h1>
+    <p class="text-meta" id="control-message">Loading incidents and responders...</p>
+
+    <section class="control-layout" aria-label="Campus control dispatch">
+      <section aria-labelledby="queue-heading">
+        <h2 id="queue-heading">Incidents</h2>
+        <div id="control-incidents" aria-live="polite" aria-busy="true"></div>
+      </section>
+      <section aria-labelledby="roster-heading">
+        <h2 id="roster-heading">Available responders</h2>
+        <div id="responder-roster" aria-live="polite" aria-busy="true"></div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/control-dashboard.js"></script>
+</body>
+</html>
