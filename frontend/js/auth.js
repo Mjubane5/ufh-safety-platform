@@ -17,8 +17,19 @@
 
 import { register, login, ApiError } from './api.js';
 
-// Where a successful sign-in lands.
-const DASHBOARD_URL = './dashboard.html';
+// Where a successful sign-in lands. Only the student workspace exists today;
+// other roles get a role-aware holding page instead of seeing student-only UI.
+const ROLE_HOME_URLS = {
+  student: './dashboard.html',
+  responder: './role-dashboard.html',
+  campus_control: './role-dashboard.html',
+  gbv_officer: './role-dashboard.html',
+  admin: './role-dashboard.html',
+};
+
+function homeUrlForRole(role) {
+  return ROLE_HOME_URLS[role] ?? './role-dashboard.html';
+}
 
 // Minimum password length we enforce in the browser.
 //
@@ -340,8 +351,8 @@ function initLoginForm(form) {
       // api.js stores the JWT itself on a successful login, so there is
       // nothing to save here. That is the whole point of keeping token
       // handling in one file.
-      await login(email, password);
-      window.location.href = DASHBOARD_URL;
+      const result = await login(email, password);
+      window.location.href = homeUrlForRole(result?.user?.role);
     } catch (err) {
       handleRequestFailure(err, 'Could not sign in');
       setLoading(button, false, 'Signing in…', 'Sign in');
