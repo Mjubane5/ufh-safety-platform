@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Role workspace — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./role-dashboard.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Campus emergency &amp; wellness</span>
+        </span>
+      </a>
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype for CSC 200 / CSC 300. Not connected to any live emergency
+      service. All data shown here is synthetic.
+    </p>
+
+    <div id="banner-slot"></div>
+    <h1 id="workspace-heading">Your workspace</h1>
+    <p class="text-meta" id="workspace-message">Loading your role...</p>
+
+    <section class="card" aria-labelledby="next-heading">
+      <h2 id="next-heading">Workspace coming next</h2>
+      <p class="text-meta">
+        Your account is signed in, but this role-specific workspace is still
+        being built. Student reporting remains available from the student account.
+      </p>
+    </section>
+  </main>
+
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/role-dashboard.js"></script>
+</body>
+</html>
