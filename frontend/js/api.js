@@ -14,7 +14,7 @@
 // ever disagree, the contract is right - raise an issue, do not patch quietly.
 
 // config.js sits next to this file inside frontend/js/, so the path is './'.
-import { BASE_URL, MOCK, MOCK_DELAY_MS, MOCK_ENFORCE_AUTH } from './config.js';
+import { BASE_URL, MOCK, MOCK_DELAY_MS, MOCK_ENFORCE_AUTH, MOCK_ROLE } from './config.js';
 
 // ---------------------------------------------------------------------------
 // The MOCK pattern - read this before you change anything
@@ -230,8 +230,8 @@ async function request(path, { method = 'GET', body = undefined, auth = false } 
 
 const MOCK_USER = {
   userId: 17,
-  fullName: 'A Student',
-  role: 'student',
+  fullName: MOCK_ROLE === 'responder' ? 'A Responder' : 'A Student',
+  role: MOCK_ROLE,
 };
 
 // A small in-memory list so the dashboard has something to render and paginate.
