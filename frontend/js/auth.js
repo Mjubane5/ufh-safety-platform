@@ -404,8 +404,8 @@ function initRegisterForm(form) {
       // (contract section 2). So registering does not sign you in. To land the
       // student on the dashboard we log in immediately with the credentials
       // they just typed, which is what stores the JWT.
-      await login(email, password);
-      window.location.href = DASHBOARD_URL;
+      const result = await login(email, password);
+      window.location.href = homeUrlForRole(result?.user?.role);
     } catch (err) {
       // If the account was created but the follow-up login failed, sending
       // them to the login page is better than saying registration failed —
