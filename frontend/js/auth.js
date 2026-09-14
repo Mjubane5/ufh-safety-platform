@@ -15,7 +15,7 @@
 // above TOKEN_KEY in api.js for why that matters so much when the token lives
 // in localStorage.
 
-import { register, login, ApiError } from './api.js';
+import { register, login, logout, ApiError } from './api.js';
 
 // Where a successful sign-in lands. Only the student workspace exists today;
 // other roles get a role-aware holding page instead of seeing student-only UI.
@@ -365,6 +365,50 @@ function initLoginForm(form) {
   });
 }
 
+function initStaffLoginForm(form) {
+  const button = document.getElementById('staff-submit-button');
+  let isSubmitting = false;
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+
+    clearBanner();
+    clearAllFieldErrors(form);
+
+    const email = valueOf('staff-email');
+    const password = document.getElementById('staff-password').value;
+    const errors = validateLogin({ email, password })
+      .map((error) => ({ ...error, field: `staff-${error.field}` }));
+    if (errors.length > 0) {
+      showValidationErrors(errors);
+      return;
+    }
+
+    const requestedRole = document.querySelector('input[name="staff-role"]:checked')?.value;
+    isSubmitting = true;
+    setLoading(button, true, 'Checking access…', 'Sign in to staff portal');
+
+    try {
+      const result = await login(email, password);
+      const actualRole = result?.user?.role;
+      if (!['campus_control', 'gbv_officer'].includes(actualRole)
+          || actualRole !== requestedRole) {
+        logout();
+        showBanner('Staff access not available', 'Choose the access area that matches your account, or contact an administrator.');
+        setLoading(button, false, 'Checking access…', 'Sign in to staff portal');
+        isSubmitting = false;
+        return;
+      }
+      window.location.href = homeUrlForRole(actualRole);
+    } catch (err) {
+      handleRequestFailure(err, 'Could not sign in to staff portal');
+      setLoading(button, false, 'Checking access…', 'Sign in to staff portal');
+      isSubmitting = false;
+    }
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Register page
 // ---------------------------------------------------------------------------
@@ -431,6 +475,9 @@ function initRegisterForm(form) {
 
 const loginForm = document.getElementById('login-form');
 if (loginForm) initLoginForm(loginForm);
+
+const staffLoginForm = document.getElementById('staff-login-form');
+if (staffLoginForm) initStaffLoginForm(staffLoginForm);
 
 const registerForm = document.getElementById('register-form');
 if (registerForm) initRegisterForm(registerForm);

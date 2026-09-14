@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Staff portal — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body class="staff-login-page">
+  <main class="staff-login-shell">
+    <section class="staff-login-hero" aria-labelledby="staff-title">
+      <a class="staff-brand" href="./index.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span>
+          <strong>Fort Hare Safety</strong>
+          <small>Operational access portal</small>
+        </span>
+      </a>
+      <p class="eyebrow">Authorised personnel</p>
+      <h1 id="staff-title">Keep the campus response moving.</h1>
+      <p>Sign in to coordinate incidents or review confidential support cases.</p>
+      <ul class="staff-trust-list">
+        <li>Role-based access</li>
+        <li>Incident data stays in the correct workspace</li>
+        <li>Prototype data only</li>
+      </ul>
+    </section>
+
+    <section class="staff-login-panel" aria-labelledby="credentials-title">
+      <div class="staff-panel-heading">
+        <p class="eyebrow">Secure sign in</p>
+        <h2 id="credentials-title">Staff credentials</h2>
+        <p class="text-meta">Use the email and password issued for your staff account.</p>
+      </div>
+      <div id="banner-slot"></div>
+
+      <form class="form" id="staff-login-form" novalidate>
+        <fieldset class="staff-role-options">
+          <legend class="label label-required">Choose your access area</legend>
+          <label class="staff-role-option">
+            <input type="radio" name="staff-role" value="campus_control" checked>
+            <span><strong>Campus control</strong><small>Dispatch and patrol operations</small></span>
+          </label>
+          <label class="staff-role-option">
+            <input type="radio" name="staff-role" value="gbv_officer">
+            <span><strong>GBV support unit</strong><small>Confidential case review</small></span>
+          </label>
+        </fieldset>
+
+        <div class="field">
+          <label class="label label-required" for="staff-email">Email address</label>
+          <input class="input" id="staff-email" type="email" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label class="label label-required" for="staff-password">Password</label>
+          <input class="input" id="staff-password" type="password" autocomplete="current-password" required>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary btn-block" id="staff-submit-button" type="submit">Sign in to staff portal</button>
+        </div>
+      </form>
+
+      <div class="staff-panel-footer">
+        <a href="./login.html">Student sign in</a>
+        <span aria-hidden="true">·</span>
+        <a href="./index.html">Return to start</a>
+      </div>
+    </section>
+  </main>
+
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/auth.js"></script>
+</body>
+</html>
