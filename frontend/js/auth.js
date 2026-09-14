@@ -21,7 +21,7 @@ import { register, login, ApiError } from './api.js';
 // other roles get a role-aware holding page instead of seeing student-only UI.
 const ROLE_HOME_URLS = {
   student: './dashboard.html',
-  responder: './role-dashboard.html',
+  responder: './responder-dashboard.html',
   campus_control: './role-dashboard.html',
   gbv_officer: './role-dashboard.html',
   admin: './role-dashboard.html',

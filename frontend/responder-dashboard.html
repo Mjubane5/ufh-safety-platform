@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Responder view — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./responder-dashboard.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Responder operations</span>
+        </span>
+      </a>
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype for CSC 200 / CSC 300. Not connected to any live emergency
+      service. All data shown here is synthetic.
+    </p>
+
+    <div id="banner-slot"></div>
+    <h1 id="responder-heading">Assigned incidents</h1>
+    <p class="text-meta" id="responder-message">Loading assignments...</p>
+
+    <section class="responder-layout" aria-label="Responder assignments">
+      <section aria-labelledby="assignment-heading">
+        <h2 id="assignment-heading">My assignments</h2>
+        <div id="assignment-list" aria-live="polite" aria-busy="true"></div>
+      </section>
+
+      <section aria-labelledby="selected-heading">
+        <h2 id="selected-heading">Selected incident</h2>
+        <div id="selected-incident" aria-live="polite" aria-busy="true">
+          <p class="empty-state">Select an assignment to view its details.</p>
+        </div>
+      </section>
+    </section>
+  </main>
+
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/responder-dashboard.js"></script>
+</body>
+</html>

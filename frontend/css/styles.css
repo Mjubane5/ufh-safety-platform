@@ -1024,6 +1024,11 @@ a:focus-visible,
 .empty-state {
   padding: var(--space-7) var(--space-4);
   text-align: center;
+  background-color: var(--color-surface);
+  /* Dashed, so an empty list does not read as a card that failed to load. */
+  border: 1px dashed var(--color-border-strong);
+  border-radius: var(--radius-md);
+}
 
 .detail-description {
   margin-top: var(--space-4);
@@ -1051,10 +1056,25 @@ a:focus-visible,
 .detail-row dd {
   overflow-wrap: anywhere;
 }
-  background-color: var(--color-surface);
-  /* Dashed, so an empty list does not read as a card that failed to load. */
-  border: 1px dashed var(--color-border-strong);
-  border-radius: var(--radius-md);
+
+.responder-layout {
+  display: grid;
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+}
+
+.responder-layout h2 {
+  margin-bottom: var(--space-3);
+}
+
+.card-clickable {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card-clickable:hover {
+  border-color: var(--color-primary);
 }
 
 .empty-state p {
