@@ -831,3 +831,29 @@ export async function getGbvReportStatus(referenceCode) {
 
   return request(`/gbv/reports/${encodeURIComponent(referenceCode)}/status`);
 }
+
+export async function getGbvReports(status = null, page = 1) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const items = [
+      {
+        referenceCode: 'GBV-4K7P-22XQ',
+        status: 'under_review',
+        description: 'Synthetic confidential case for the officer queue.',
+        occurredAt: '2026-08-20T19:30:00Z',
+        latitude: null,
+        longitude: null,
+        anonymous: true,
+        contactPreference: 'none',
+        submittedAt: '2026-08-23T01:55:00Z',
+        lastUpdatedAt: '2026-08-23T08:00:00Z',
+      },
+    ].filter((report) => !status || report.status === status);
+    return { items, page, pageSize: 20, totalItems: items.length };
+  }
+
+  const params = new URLSearchParams({ page: String(page) });
+  if (status) params.set('status', status);
+  return request(`/gbv/reports?${params.toString()}`, { auth: true });
+}

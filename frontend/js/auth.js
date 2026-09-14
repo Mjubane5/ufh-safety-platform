@@ -23,8 +23,8 @@ const ROLE_HOME_URLS = {
   student: './dashboard.html',
   responder: './responder-dashboard.html',
   campus_control: './control-dashboard.html',
-  gbv_officer: './role-dashboard.html',
-  admin: './role-dashboard.html',
+  gbv_officer: './gbv-officer.html',
+  admin: './gbv-officer.html',
 };
 
 function homeUrlForRole(role) {
