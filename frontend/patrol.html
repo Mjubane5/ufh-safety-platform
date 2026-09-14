@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Record patrol — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./control-dashboard.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Record patrol</span>
+        </span>
+      </a>
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype for CSC 200 / CSC 300. Not connected to any live emergency
+      service. All data shown here is synthetic.
+    </p>
+    <div id="banner-slot"></div>
+    <h1>Record a patrol</h1>
+    <p class="text-meta">Campus control can record a synthetic patrol checkpoint for the safety map.</p>
+
+    <form class="form" id="patrol-form" novalidate>
+      <div class="field">
+        <label class="label label-required" for="zone-id">Zone ID</label>
+        <input class="input" id="zone-id" name="zoneId" type="number" min="1" required>
+      </div>
+      <div class="field">
+        <label class="label" for="patrol-note">Note</label>
+        <textarea class="input" id="patrol-note" name="note" maxlength="500" rows="4"></textarea>
+      </div>
+      <p class="text-meta" id="location-status">Location has not been captured.</p>
+      <div class="form-actions">
+        <button class="btn btn-secondary" id="location-button" type="button">Capture location</button>
+        <button class="btn btn-primary" id="submit-button" type="submit" disabled>Record patrol</button>
+      </div>
+    </form>
+  </main>
+
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/patrol.js"></script>
+</body>
+</html>

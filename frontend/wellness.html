@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Wellness support — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./dashboard.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Wellness support</span>
+        </span>
+      </a>
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype for CSC 200 / CSC 300. This directory is synthetic and is not a live support service.
+    </p>
+    <div id="banner-slot"></div>
+    <h1>Wellness support</h1>
+    <p class="text-meta" id="wellness-message">Loading support resources...</p>
+
+    <section aria-labelledby="resources-heading">
+      <h2 id="resources-heading">Available resources</h2>
+      <div id="resource-list" class="card-list" aria-live="polite" aria-busy="true"></div>
+    </section>
+
+    <section id="booking-section" class="card" aria-labelledby="booking-heading" hidden>
+      <h2 id="booking-heading">Request a booking</h2>
+      <form class="form" id="booking-form" novalidate>
+        <div class="field">
+          <label class="label label-required" for="resource-id">Resource</label>
+          <select class="input" id="resource-id" required></select>
+        </div>
+        <div class="form-row">
+          <div class="field">
+            <label class="label label-required" for="preferred-date">Preferred date</label>
+            <input class="input" id="preferred-date" type="date" required>
+          </div>
+          <div class="field">
+            <label class="label label-required" for="preferred-slot">Preferred slot</label>
+            <select class="input" id="preferred-slot" required>
+              <option value="">Choose a slot</option>
+              <option value="morning">Morning</option>
+              <option value="afternoon">Afternoon</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="booking-note">Note</label>
+          <textarea class="input" id="booking-note" maxlength="500" rows="3"></textarea>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" id="booking-button" type="submit">Request booking</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/wellness.js"></script>
+</body>
+</html>

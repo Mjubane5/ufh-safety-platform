@@ -14,7 +14,7 @@
 // ever disagree, the contract is right - raise an issue, do not patch quietly.
 
 // config.js sits next to this file inside frontend/js/, so the path is './'.
-import { BASE_URL, MOCK, MOCK_DELAY_MS, MOCK_ENFORCE_AUTH } from './config.js';
+import { BASE_URL, MOCK, MOCK_DELAY_MS, MOCK_ENFORCE_AUTH, MOCK_ROLE } from './config.js';
 
 // ---------------------------------------------------------------------------
 // The MOCK pattern - read this before you change anything
@@ -230,8 +230,8 @@ async function request(path, { method = 'GET', body = undefined, auth = false } 
 
 const MOCK_USER = {
   userId: 17,
-  fullName: 'A Student',
-  role: 'student',
+  fullName: MOCK_ROLE === 'responder' ? 'A Responder' : 'A Student',
+  role: MOCK_ROLE,
 };
 
 // A small in-memory list so the dashboard has something to render and paginate.
@@ -620,4 +620,240 @@ export async function getAvailableResponders() {
   }
 
   return request('/responders/available', { auth: true });
+}
+
+/**
+ * POST /api/incidents/{incidentId}/assign - campus control and admin only.
+ *
+ * The dispatcher must choose an explicit responder when an incident has no
+ * coordinates. The backend remains the authority and returns 409 or 404 when
+ * the assignment cannot be made.
+ */
+export async function assignIncident(incidentId, responderId = null) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+
+    const incident = MOCK_INCIDENT_SUMMARIES.find((item) => item.incidentId === incidentId);
+    if (incident) incident.status = 'assigned';
+
+    return {
+      incidentId,
+      status: 'assigned',
+      responder: {
+        responderId: responderId ?? 5,
+        fullName: responderId === 8 ? 'Pieter Botha' : 'Nomsa Khumalo',
+      },
+      route: null,
+    };
+  }
+
+  const body = responderId === null ? {} : { responderId };
+  return request(`/incidents/${encodeURIComponent(incidentId)}/assign`, {
+    method: 'POST',
+    body,
+    auth: true,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Safety map - contract sections 5 and 6
+// ---------------------------------------------------------------------------
+
+export async function getRecentPatrols(latitude, longitude, radiusMetres = 500) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    return {
+      items: [
+        {
+          patrolId: 88,
+          zoneName: 'Library Precinct',
+          latitude: -32.78400,
+          longitude: 26.85010,
+          recordedAt: '2026-08-23T01:48:00Z',
+          minutesAgo: 2,
+        },
+      ],
+    };
+  }
+
+  const params = new URLSearchParams({
+    latitude: String(latitude),
+    longitude: String(longitude),
+    radiusMetres: String(radiusMetres),
+  });
+  return request(`/patrols/recent?${params.toString()}`, { auth: true });
+}
+
+export async function createPatrol(zoneId, latitude, longitude, note = null) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    return {
+      patrolId: 88,
+      zoneId,
+      recordedAt: '2026-08-23T01:48:00Z',
+    };
+  }
+
+  return request('/patrols', {
+    method: 'POST',
+    body: { zoneId, latitude, longitude, note },
+    auth: true,
+  });
+}
+
+export async function getHotspots() {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    return {
+      items: [
+        {
+          hotspotId: 7,
+          name: 'Lower Campus Footpath',
+          latitude: -32.78550,
+          longitude: 26.85200,
+          radiusMetres: 120,
+          riskLevel: 'elevated',
+          incidentCount: 14,
+          computedAt: '2026-08-22T20:00:00Z',
+        },
+      ],
+    };
+  }
+
+  return request('/hotspots', { auth: true });
+}
+
+export async function getSafeRoute(from, to) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    return {
+      distanceMetres: 720,
+      estimatedSeconds: 540,
+      safetyScore: 0.78,
+      avoidedHotspots: [7],
+      points: [
+        { ...from },
+        { latitude: -32.78330, longitude: 26.84950 },
+        { ...to },
+      ],
+    };
+  }
+
+  return request('/routes/safe', {
+    method: 'POST',
+    body: { from, to },
+    auth: true,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Wellness - contract section 8
+// ---------------------------------------------------------------------------
+
+export async function getWellnessResources() {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    return {
+      items: [
+        {
+          resourceId: 1,
+          title: 'Student Counselling Unit',
+          category: 'counselling',
+          description: 'On-campus counselling service.',
+          contactPhone: '0400000000',
+          availability: 'Mon-Fri 08:00-16:30',
+        },
+        {
+          resourceId: 2,
+          title: 'Peer Wellness Support',
+          category: 'wellness',
+          description: 'Confidential peer support and wellbeing conversations.',
+          contactPhone: null,
+          availability: 'Tuesday and Thursday 12:00-15:00',
+        },
+      ],
+    };
+  }
+
+  return request('/wellness/resources', { auth: true });
+}
+
+export async function createWellnessBooking(resourceId, preferredDate, preferredSlot, note = null) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    return {
+      bookingId: 31,
+      status: 'requested',
+      createdAt: '2026-08-23T02:00:00Z',
+    };
+  }
+
+  return request('/wellness/bookings', {
+    method: 'POST',
+    body: { resourceId, preferredDate, preferredSlot, note },
+    auth: true,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Confidential GBV reporting - contract section 7
+// ---------------------------------------------------------------------------
+
+export async function submitGbvReport(report) {
+  if (MOCK) {
+    await delay();
+    return {
+      referenceCode: 'GBV-4K7P-22XQ',
+      status: 'submitted',
+      submittedAt: '2026-08-23T01:55:00Z',
+    };
+  }
+
+  return request('/gbv/reports', { method: 'POST', body: report, auth: !report.anonymous });
+}
+
+export async function getGbvReportStatus(referenceCode) {
+  if (MOCK) {
+    await delay();
+    return {
+      referenceCode,
+      status: 'under_review',
+      lastUpdatedAt: '2026-08-23T08:00:00Z',
+    };
+  }
+
+  return request(`/gbv/reports/${encodeURIComponent(referenceCode)}/status`);
+}
+
+export async function getGbvReports(status = null, page = 1) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const items = [
+      {
+        referenceCode: 'GBV-4K7P-22XQ',
+        status: 'under_review',
+        description: 'Synthetic confidential case for the officer queue.',
+        occurredAt: '2026-08-20T19:30:00Z',
+        latitude: null,
+        longitude: null,
+        anonymous: true,
+        contactPreference: 'none',
+        submittedAt: '2026-08-23T01:55:00Z',
+        lastUpdatedAt: '2026-08-23T08:00:00Z',
+      },
+    ].filter((report) => !status || report.status === status);
+    return { items, page, pageSize: 20, totalItems: items.length };
+  }
+
+  const params = new URLSearchParams({ page: String(page) });
+  if (status) params.set('status', status);
+  return request(`/gbv/reports?${params.toString()}`, { auth: true });
 }

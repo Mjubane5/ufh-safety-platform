@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Confidential GBV report — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./dashboard.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Confidential support</span>
+        </span>
+      </a>
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype only. This report does not reach a live GBV support unit. In an emergency call local emergency services.
+    </p>
+    <div id="banner-slot"></div>
+    <h1>Confidential report</h1>
+    <p class="text-meta">Text-only prototype. Do not include names or identifying details unless necessary for your safety.</p>
+
+    <form class="form" id="gbv-form" novalidate>
+      <div class="field">
+        <label class="label label-required" for="gbv-description">What happened?</label>
+        <textarea class="input" id="gbv-description" maxlength="5000" rows="7" required></textarea>
+      </div>
+      <div class="form-row">
+        <div class="field">
+          <label class="label" for="occurred-at">When did it happen?</label>
+          <input class="input" id="occurred-at" type="datetime-local">
+        </div>
+        <div class="field">
+          <label class="label" for="contact-preference">Contact preference</label>
+          <select class="input" id="contact-preference">
+            <option value="none">No contact</option>
+            <option value="email">Email</option>
+            <option value="phone">Phone</option>
+          </select>
+        </div>
+      </div>
+      <label class="checkbox-label">
+        <input id="anonymous" type="checkbox" checked>
+        Submit anonymously
+      </label>
+      <p class="text-meta" id="anonymous-note">Anonymous reports must use “No contact”.</p>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="submit-button" type="submit">Submit confidential report</button>
+      </div>
+    </form>
+
+    <section class="card" aria-labelledby="status-heading">
+      <h2 id="status-heading">Check report status</h2>
+      <form class="form" id="status-form" novalidate>
+        <div class="field">
+          <label class="label" for="reference-code">Reference code</label>
+          <input class="input" id="reference-code" placeholder="GBV-4K7P-22XQ" required>
+        </div>
+        <button class="btn btn-secondary" type="submit">Check status</button>
+      </form>
+      <p id="status-result" class="text-meta" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/gbv.js"></script>
+</body>
+</html>

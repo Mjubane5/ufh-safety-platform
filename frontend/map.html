@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Safety map — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+  <!-- Leaflet is the map provider agreed in docs/api-contract.md. -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./dashboard.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Safety map</span>
+        </span>
+      </a>
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype for CSC 200 / CSC 300. Not connected to any live emergency
+      service. All data shown here is synthetic.
+    </p>
+    <div id="banner-slot"></div>
+    <h1>Safety map</h1>
+    <p class="text-meta">View recent patrols, elevated-risk areas, and request a safer route.</p>
+
+    <section class="map-layout" aria-label="Safety map and route controls">
+      <div id="safety-map" class="safety-map" aria-label="Campus safety map"></div>
+      <div class="card map-controls">
+        <h2>Safe route</h2>
+        <p class="text-meta">Use your location as the starting point, then choose a destination on the map.</p>
+        <button class="btn btn-secondary" id="location-button" type="button">Use my location</button>
+        <p class="text-meta" id="route-status">Choose a destination on the map.</p>
+        <div id="route-summary" aria-live="polite"></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/map.js"></script>
+</body>
+</html>

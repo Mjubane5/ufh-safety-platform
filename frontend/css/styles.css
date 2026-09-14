@@ -1030,6 +1030,77 @@ a:focus-visible,
   border-radius: var(--radius-md);
 }
 
+.detail-description {
+  margin-top: var(--space-4);
+  white-space: pre-wrap;
+}
+
+.detail-list {
+  margin-top: var(--space-5);
+  border-top: 1px solid var(--color-border);
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: minmax(7rem, 0.8fr) 1.2fr;
+  gap: var(--space-3);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.detail-row dt {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.detail-row dd {
+  overflow-wrap: anywhere;
+}
+
+.responder-layout {
+  display: grid;
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+}
+
+.control-layout {
+  display: grid;
+  gap: var(--space-6);
+  margin-top: var(--space-5);
+}
+
+.map-layout {
+  display: grid;
+  gap: var(--space-5);
+  margin-top: var(--space-5);
+}
+
+.safety-map {
+  min-height: 24rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.map-controls {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.responder-layout h2 {
+  margin-bottom: var(--space-3);
+}
+
+.card-clickable {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+}
+
+.card-clickable:hover {
+  border-color: var(--color-primary);
+}
+
 .empty-state p {
   margin-inline: auto;
 }

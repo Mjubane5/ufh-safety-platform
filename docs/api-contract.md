@@ -1,6 +1,6 @@
 # API Contract — Campus Safety, Emergency & Wellness Platform
 
-**Status:** Draft v0.2 — to be reviewed and agreed by the full group before
+**Status:** Draft v0.3 — to be reviewed and agreed by the full group before
 frontend or backend implementation begins.
 
 **Owner:** Project Group Leader
@@ -593,6 +593,50 @@ GBV status values: `submitted`, `under_review`, `referred`, `closed`.
 
 ---
 
+### GET /api/gbv/reports
+
+Roles: `gbv_officer`, `admin`.
+
+Returns the confidential case queue. This endpoint must never be exposed to
+`student`, `responder`, or `campus_control`; those roles receive 403. Unlike
+the public status lookup above, this response contains case content and must
+be recorded in the GBV audit trail.
+
+**Query parameters**
+
+| Param | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `status` | string | all | One GBV status value |
+| `page` | integer | 1 | 1-based page number |
+| `pageSize` | integer | 20 | Maximum 100 |
+
+**Response 200**
+```json
+{
+  "items": [
+    {
+      "referenceCode": "GBV-4K7P-22XQ",
+      "status": "under_review",
+      "description": "Free-text account of the incident.",
+      "occurredAt": "2026-08-20T19:30:00Z",
+      "latitude": -32.78400,
+      "longitude": 26.85010,
+      "anonymous": true,
+      "contactPreference": "none",
+      "submittedAt": "2026-08-23T01:55:00Z",
+      "lastUpdatedAt": "2026-08-23T08:00:00Z"
+    }
+  ],
+  "page": 1,
+  "pageSize": 20,
+  "totalItems": 1
+}
+```
+
+The frontend must render `null` coordinates and descriptions safely. Evidence
+is intentionally excluded from this first text-only officer view until the
+multipart upload and EXIF-stripping design is implemented.
+
 ### POST /api/gbv/evidence
 
 Roles: same as report submission.
@@ -697,3 +741,4 @@ The contract will change — that is fine, as long as it changes deliberately.
 | --- | --- | --- |
 | 0.1 | 2026-08-23 | Initial draft for group review |
 | 0.2 | 2026-08-30 | Coordinates optional; `locationSource` added; manual triage for location-less incidents |
+| 0.3 | 2026-09-14 | Added role-restricted GBV officer/admin queue for text-only case review |

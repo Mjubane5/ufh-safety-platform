@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>GBV case queue — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./gbv-officer.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Confidential case queue</span>
+        </span>
+      </a>
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype only. Case data is synthetic. Access is restricted to GBV officers and administrators.
+    </p>
+    <div id="banner-slot"></div>
+    <h1>Confidential case queue</h1>
+    <p class="text-meta" id="queue-message">Loading cases...</p>
+    <div class="chips" id="status-filter" role="group" aria-label="Filter GBV cases"></div>
+    <section id="case-list" class="card-list" aria-live="polite" aria-busy="true"></section>
+  </main>
+
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/gbv-officer.js"></script>
+</body>
+</html>

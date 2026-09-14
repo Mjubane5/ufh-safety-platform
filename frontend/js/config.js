@@ -50,6 +50,11 @@ export const IS_PROTOTYPE = true;
 // field for field.
 export const MOCK = isLocal;
 
+// Which role the mock login represents. Keep student as the committed
+// default; temporarily use 'responder' when exercising the responder page
+// without a running backend. This has no effect when MOCK is false.
+export const MOCK_ROLE = 'student';
+
 // How long the fake responses pretend to take, in milliseconds.
 // Real requests are not instant, so mock ones should not be either - this is
 // what lets us see our spinners and loading states while developing.
