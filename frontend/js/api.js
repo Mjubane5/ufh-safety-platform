@@ -655,3 +655,80 @@ export async function assignIncident(incidentId, responderId = null) {
     auth: true,
   });
 }
+
+// ---------------------------------------------------------------------------
+// Safety map - contract sections 5 and 6
+// ---------------------------------------------------------------------------
+
+export async function getRecentPatrols(latitude, longitude, radiusMetres = 500) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    return {
+      items: [
+        {
+          patrolId: 88,
+          zoneName: 'Library Precinct',
+          latitude: -32.78400,
+          longitude: 26.85010,
+          recordedAt: '2026-08-23T01:48:00Z',
+          minutesAgo: 2,
+        },
+      ],
+    };
+  }
+
+  const params = new URLSearchParams({
+    latitude: String(latitude),
+    longitude: String(longitude),
+    radiusMetres: String(radiusMetres),
+  });
+  return request(`/patrols/recent?${params.toString()}`, { auth: true });
+}
+
+export async function getHotspots() {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    return {
+      items: [
+        {
+          hotspotId: 7,
+          name: 'Lower Campus Footpath',
+          latitude: -32.78550,
+          longitude: 26.85200,
+          radiusMetres: 120,
+          riskLevel: 'elevated',
+          incidentCount: 14,
+          computedAt: '2026-08-22T20:00:00Z',
+        },
+      ],
+    };
+  }
+
+  return request('/hotspots', { auth: true });
+}
+
+export async function getSafeRoute(from, to) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    return {
+      distanceMetres: 720,
+      estimatedSeconds: 540,
+      safetyScore: 0.78,
+      avoidedHotspots: [7],
+      points: [
+        { ...from },
+        { latitude: -32.78330, longitude: 26.84950 },
+        { ...to },
+      ],
+    };
+  }
+
+  return request('/routes/safe', {
+    method: 'POST',
+    body: { from, to },
+    auth: true,
+  });
+}
