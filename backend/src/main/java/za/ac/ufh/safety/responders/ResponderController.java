@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
-@RequestMapping("/api/responders")
+@RequestMapping("/api/v1/responders")
 public class ResponderController {
 
     private final ResponderService responderService;

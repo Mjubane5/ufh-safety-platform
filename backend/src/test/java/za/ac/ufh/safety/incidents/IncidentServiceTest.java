@@ -176,7 +176,7 @@ class IncidentServiceTest {
     void anUnknownStatusFilterIsABadRequestNotAServerError() {
         User admin = user(3, "admin");
 
-        assertThatThrownBy(() -> service.list(admin.getEmail(), "en-route", null, null))
+        assertThatThrownBy(() -> service.list(admin.getEmail(), "en-route", 1, 20))
             .isInstanceOf(ApiException.class)
             .satisfies(thrown -> assertThat(((ApiException) thrown).getStatus()).isEqualTo(400));
     }

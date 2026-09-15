@@ -6,7 +6,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/incidents")
+@RequestMapping("/api/v1/incidents")
 public class IncidentController {
 
     private final IncidentService incidentService;
@@ -30,8 +30,8 @@ public class IncidentController {
     @GetMapping
     public IncidentListResponse list(Authentication authentication,
                                      @RequestParam(required = false) String status,
-                                     @RequestParam(required = false) Integer page,
-                                     @RequestParam(required = false) Integer pageSize) {
+                                     @RequestParam(defaultValue = "1") int page,
+                                     @RequestParam(defaultValue = "20") int pageSize) {
         return incidentService.list(authentication.getName(), status, page, pageSize);
     }
 
