@@ -7,6 +7,7 @@ build/
 # Node / frontend
 node_modules/
 dist/
+server.cjs
 
 # C++
 *.o
@@ -33,9 +34,6 @@ Thumbs.db
 # Spring Boot / Maven
 backend/target/
 backend/.env
-
-# Claude Code local settings
-.claude/
 
 # Claude Code local settings
 .claude/

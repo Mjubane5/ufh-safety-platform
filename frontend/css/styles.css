@@ -499,6 +499,13 @@ a:focus-visible,
   width: 100%;
 }
 
+.btn-sm {
+  min-height: 2.1rem;
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+}
+
 /* --- SOS ------------------------------------------------------------------
    Deliberately unlike every other control in the app: twice the height, a
    thick dark ring, uppercase, and the largest type on the page. Turn the
@@ -1267,7 +1274,8 @@ a:focus-visible,
   white-space: nowrap;
 }
 
-@media (prefers-reduced-motion: no-preference) {\n  .demo-dialog {
+@media (prefers-reduced-motion: no-preference) {
+  .demo-dialog {
     animation: demo-dialog-in 160ms ease-out;
   }
 }
@@ -1435,11 +1443,123 @@ a:focus-visible,
 .staff-panel-footer {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-3);
   margin-top: var(--space-5);
   padding-top: var(--space-4);
   border-top: 1px solid var(--color-border);
   font-size: var(--text-sm);
+}
+
+.auth-footer-prompt {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+}
+
+.auth-footer-link {
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.auth-footer-link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
+}
+
+.auth-channel-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface-sunken);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.auth-channel-card:hover {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-primary-tint);
+}
+
+.auth-channel-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.auth-channel-label {
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.auth-channel-sub {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.auth-prototype-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: rgb(247 181 0 / 12%);
+  border: 1px dashed rgb(180 130 0 / 50%);
+  border-radius: var(--radius-md);
+}
+
+.auth-prototype-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.auth-prototype-tag {
+  display: inline-block;
+  width: fit-content;
+  padding: 0.1rem 0.45rem;
+  background: var(--color-gold);
+  color: #002544;
+  font-size: 0.68rem;
+  font-weight: 700;
+  border-radius: var(--radius-pill);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.2;
+}
+
+.auth-prototype-title {
+  font-size: 0.8rem;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+.auth-prototype-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.auth-prototype-link:hover {
+  color: var(--color-primary-dark);
+  text-decoration: underline;
 }
 
 @media (min-width: 768px) {
@@ -1825,5 +1945,17 @@ a:focus-visible,
   .action-tile,
   .persona-card {
     transition: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .user-badge-name {
+    display: none;
+  }
+  .brand-sub {
+    display: none;
+  }
+  .app-header {
+    padding: var(--space-2) var(--space-3);
   }
 }

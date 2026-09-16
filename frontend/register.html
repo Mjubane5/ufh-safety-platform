@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Create an account — UFH Safety Platform</title>
+  <title>Register — UFH Safety Platform</title>
   <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body class="staff-login-page">
@@ -13,16 +13,16 @@
         <span class="brand-mark" aria-hidden="true">UFH</span>
         <span>
           <strong>Fort Hare Safety</strong>
-          <small>Student registration portal</small>
+          <small>Student registration</small>
         </span>
       </a>
-      <p class="eyebrow">Student Safety Hub</p>
-      <h1 id="register-hero-title">Join the Fort Hare safety network.</h1>
-      <p>Create a verified student safety account to quickly request emergency response, view verified patrol zones, and coordinate wellness bookings.</p>
+      <p class="eyebrow">Student account</p>
+      <h1 id="register-hero-title">Be prepared before an emergency happens.</h1>
+      <p>Registering ensures campus control and emergency responders have your verified contact details and residence info when you call for help.</p>
       <ul class="staff-trust-list">
-        <li>Direct connection to campus control</li>
-        <li>Optional anonymous incident reporting</li>
-        <li>Confidential GBV support &amp; wellness care</li>
+        <li>Quick incident dispatch</li>
+        <li>Direct contact during campus emergencies</li>
+        <li>Confidential student wellness access</li>
       </ul>
     </section>
 
@@ -110,11 +110,31 @@
       </form>
 
       <div class="staff-panel-footer">
-        <div>
-          Already registered? <a href="./login.html"><strong>Sign in</strong></a>
+        <div class="auth-footer-prompt">
+          <span>Already registered with Fort Hare Safety?</span>
+          <a href="./login.html" class="auth-footer-link">
+            <span>Sign in to account</span>
+            <span aria-hidden="true">&rarr;</span>
+          </a>
         </div>
-        <div>
-          Staff access? <a href="./staff-login.html"><strong>Open staff portal</strong></a>
+
+        <div class="auth-channel-card">
+          <div class="auth-channel-text">
+            <span class="auth-channel-label">Campus Personnel</span>
+            <span class="auth-channel-sub">Staff and responder accounts are provisioned by an admin</span>
+          </div>
+          <a href="./staff-login.html" class="btn btn-secondary btn-sm">Staff portal</a>
+        </div>
+
+        <div class="auth-prototype-badge">
+          <div class="auth-prototype-header">
+            <span class="auth-prototype-tag">Demo Environment</span>
+            <span class="auth-prototype-title">Evaluate all 4 stakeholder roles</span>
+          </div>
+          <a href="./role-dashboard.html" class="auth-prototype-link">
+            <span>Role switcher</span>
+            <span aria-hidden="true">&rarr;</span>
+          </a>
         </div>
       </div>
     </section>

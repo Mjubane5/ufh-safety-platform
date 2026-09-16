@@ -240,7 +240,8 @@ async function load() {
     const incident = await getIncident(incidentId);
     if (!incident || typeof incident !== 'object') {
       renderFailure('Could not load report', 'The report data was not available.');
-      return;\n    }
+      return;
+    }
     renderIncident(incident);
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {

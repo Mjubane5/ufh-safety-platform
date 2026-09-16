@@ -42,18 +42,23 @@
             <span><strong>Campus control</strong><small>Dispatch and patrol operations</small></span>
           </label>
           <label class="staff-role-option">
+            <input type="radio" name="staff-role" value="responder">
+            <span><strong>Emergency responder</strong><small>Field units and rapid incident response</small></span>
+          </label>
+          <label class="staff-role-option">
             <input type="radio" name="staff-role" value="gbv_officer">
             <span><strong>GBV support unit</strong><small>Confidential case review</small></span>
           </label>
         </fieldset>
 
         <div class="field">
-          <label class="label label-required" for="staff-email">Email address</label>
-          <input class="input" id="staff-email" type="email" autocomplete="username" required>
+          <label class="label label-required" for="staff-email">Staff email or username</label>
+          <input class="input" id="staff-email" type="text" autocomplete="username" placeholder="e.g. control or control@ufh.ac.za" required>
+          <p class="field-hint">In prototype mode, any username and password will sign in to the chosen role.</p>
         </div>
         <div class="field">
           <label class="label label-required" for="staff-password">Password</label>
-          <input class="input" id="staff-password" type="password" autocomplete="current-password" required>
+          <input class="input" id="staff-password" type="password" autocomplete="current-password" placeholder="••••••••" required>
         </div>
         <div class="form-actions">
           <button class="btn btn-primary btn-block" id="staff-submit-button" type="submit">Sign in to staff portal</button>
@@ -61,9 +66,32 @@
       </form>
 
       <div class="staff-panel-footer">
-        <a href="./login.html">Student sign in</a>
-        <span aria-hidden="true">·</span>
-        <a href="./index.html">Return to start</a>
+        <div class="auth-footer-prompt">
+          <span>Student looking for safety services?</span>
+          <a href="./login.html" class="auth-footer-link">
+            <span>Student portal</span>
+            <span aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
+
+        <div class="auth-channel-card">
+          <div class="auth-channel-text">
+            <span class="auth-channel-label">Public Safety Hub</span>
+            <span class="auth-channel-sub">Return to public emergency contact information</span>
+          </div>
+          <a href="./index.html" class="btn btn-secondary btn-sm">Home</a>
+        </div>
+
+        <div class="auth-prototype-badge">
+          <div class="auth-prototype-header">
+            <span class="auth-prototype-tag">Demo Environment</span>
+            <span class="auth-prototype-title">Evaluate all 4 stakeholder roles</span>
+          </div>
+          <a href="./role-dashboard.html" class="auth-prototype-link">
+            <span>Role switcher</span>
+            <span aria-hidden="true">&rarr;</span>
+          </a>
+        </div>
       </div>
     </section>
   </main>
