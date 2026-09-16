@@ -41,38 +41,98 @@ import { BASE_URL, MOCK, MOCK_DELAY_MS, MOCK_ENFORCE_AUTH, MOCK_ROLE } from './c
 //   1. Start the Spring Boot backend on http://localhost:8080
 //   2. Open frontend/config.js and set  MOCK = false
 //   3. Reload the page. That is the whole change.
-//
-// If a page breaks after the switch, the backend's response does not match the
-// contract, or our mock was wrong. Compare both against docs/api-contract.md
-// and fix whichever one drifted. Do NOT "fix" it by changing the page.
-//
-// When adding a new endpoint, write the mock branch FIRST, straight from the
-// contract. It forces you to read the contract before you write the code.
 // ---------------------------------------------------------------------------
 
-// Key used for the JWT in localStorage.
-// The project rules allow the auth token in localStorage and nothing else
-// sensitive - no names, no student numbers, no incident content.
-//
-// SECURITY TRADE-OFF - know this one, a panel will ask.
-// localStorage is readable by ANY JavaScript running on the page. If an
-// attacker gets script onto one of our pages (an XSS bug), they can read this
-// token and impersonate the student until it expires. The safer alternative is
-// an httpOnly cookie, which JavaScript cannot read at all - but that needs
-// extra CORS and CSRF work on the Spring Boot side. We chose localStorage for
-// the prototype and documented the trade-off rather than hiding it.
-//
-// That choice puts a rule on every other frontend file:
-// NEVER put user-supplied text on the page with innerHTML. Not an incident
-// description, not a full name, not an error message from the server. Use
-// element.textContent instead - it writes text as text, so a description
-// containing <script> is displayed, not executed. One innerHTML slip is all it
-// takes to turn a stored incident report into a token thief.
+// Storage keys
 const TOKEN_KEY = 'ufh.authToken';
+const USER_KEY = 'ufh.authUser';
+const ACTIVE_ROLE_KEY = 'ufh.activeRole';
 
-/** Sleep, so mock responses are not instant and loading states are visible. */
-function delay(ms = MOCK_DELAY_MS) {
+/** Sleep, so mock responses are not instant and loading states are visible. */\nfunction delay(ms = MOCK_DELAY_MS) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// ---------------------------------------------------------------------------
+// Persona and Role definitions for Mock Mode & Session Storage
+// ---------------------------------------------------------------------------
+
+export const MOCK_PERSONAS = {
+  student: {
+    userId: 17,
+    studentNumber: '202512345',
+    fullName: 'Sipho Ndlovu',
+    email: '202512345@ufh.ac.za',
+    phone: '0821234567',
+    role: 'student',
+  },
+  campus_control: {
+    userId: 101,
+    fullName: 'Sgt. Mthembu',
+    email: 'campus.control@ufh.ac.za',
+    phone: '0406082222',
+    role: 'campus_control',
+  },
+  responder: {
+    userId: 5,
+    fullName: 'Nomsa Khumalo',
+    email: 'responder.khumalo@ufh.ac.za',
+    phone: '0834567890',
+    role: 'responder',
+    team: 'campus_security',
+  },
+  gbv_officer: {
+    userId: 201,
+    fullName: 'Dr. N. Dlamini',
+    email: 'gbv.unit@ufh.ac.za',
+    phone: '0406082999',
+    role: 'gbv_officer',
+  },
+  admin: {
+    userId: 1,
+    fullName: 'System Administrator',
+    email: 'admin@ufh.ac.za',
+    phone: '0406082000',
+    role: 'admin',
+  },
+};
+
+/** Retrieves the currently active role in mock mode. */
+export function getActiveMockRole() {
+  return localStorage.getItem(ACTIVE_ROLE_KEY) || MOCK_ROLE || 'student';
+}
+
+/** Sets the active role for mock demonstration. */
+export function setActiveMockRole(role) {
+  if (role && MOCK_PERSONAS[role]) {
+    localStorage.setItem(ACTIVE_ROLE_KEY, role);
+    setStoredUser(MOCK_PERSONAS[role]);
+    setToken(`mock.jwt.${role}`);
+  }
+}
+
+/** Retrieves cached user profile from localStorage. */
+export function getStoredUser() {
+  const raw = localStorage.getItem(USER_KEY);
+  if (raw) {
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+/** Caches user profile in localStorage. */
+export function setStoredUser(user) {
+  if (user) {
+    localStorage.setItem(USER_KEY, JSON.stringify(user));
+    if (user.role) {
+      localStorage.setItem(ACTIVE_ROLE_KEY, user.role);
+    }
+  } else {
+    localStorage.removeItem(USER_KEY);
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -93,13 +153,17 @@ export function setToken(token) {
   }
 }
 
-/** Clears the session. Use this for the logout button. */
+/** Clears the session. Returns the previous role so redirects can route accurately. */
 export function logout() {
+  const user = getStoredUser();
+  const lastRole = user?.role || getActiveMockRole();
   localStorage.removeItem(TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
+  localStorage.removeItem(ACTIVE_ROLE_KEY);
+  return lastRole;
 }
 
-/** True if we are holding a token. Does not prove the token is still valid -
- *  only the server can say that, which is what getCurrentUser() is for. */
+/** True if we are holding a token. */
 export function isLoggedIn() {
   return getToken() !== null;
 }
@@ -111,20 +175,6 @@ export function isLoggedIn() {
 /**
  * An error carrying the server's standard error shape:
  *   { "error": "VALIDATION_FAILED", "message": "...", "field": "description" }
- *
- * `err.message` is the human-readable sentence - show that to the student.
- * `err.code` is the machine string, for branching in code.
- * `err.field` names the form input to highlight (null when not a validation error).
- * `err.status` is the HTTP status code.
- *
- * Usage in a page:
- *
- *     try {
- *       await submitIncident(data);
- *     } catch (err) {
- *       showError(err.message);
- *       if (err.field) highlightInput(err.field);
- *     }
  */
 export class ApiError extends Error {
   constructor({ message, code = null, field = null, status = 0 }) {
@@ -163,12 +213,9 @@ async function request(path, { method = 'GET', body = undefined, auth = false } 
     headers['Content-Type'] = 'application/json; charset=utf-8';
   }
 
-  // The single place the token is attached. Contract section 1:
-  // Authorization: Bearer <token> on all protected endpoints.
   if (auth) {
     const token = getToken();
     if (!token) {
-      // Fail here rather than sending a request we know will be rejected.
       throw apiError(401, 'NOT_AUTHENTICATED', 'You are not signed in. Please log in again.');
     }
     headers.Authorization = `Bearer ${token}`;
@@ -182,9 +229,6 @@ async function request(path, { method = 'GET', body = undefined, auth = false } 
       body: body === undefined ? undefined : JSON.stringify(body),
     });
   } catch (networkFailure) {
-    // fetch() only rejects when the request never reached the server:
-    // server down, no signal, CORS blocked. A 400 or 500 is a successful
-    // round trip and lands below, not here.
     throw apiError(
       0,
       'NETWORK_ERROR',
@@ -192,11 +236,8 @@ async function request(path, { method = 'GET', body = undefined, auth = false } 
     );
   }
 
-  // 204 No Content - succeeded, nothing to parse.
   if (response.status === 204) return null;
 
-  // Read the body defensively. A 500 from a crashed backend may return HTML
-  // or nothing at all, and JSON.parse would throw over the real problem.
   let payload = null;
   const text = await response.text();
   if (text) {
@@ -208,8 +249,6 @@ async function request(path, { method = 'GET', body = undefined, auth = false } 
   }
 
   if (!response.ok) {
-    // Contract section 1: every non-2xx uses { error, message, field }.
-    // We still guard for a malformed body so the student sees something useful.
     throw apiError(
       response.status,
       payload?.error ?? 'UNKNOWN_ERROR',
@@ -224,20 +263,7 @@ async function request(path, { method = 'GET', body = undefined, auth = false } 
 // ---------------------------------------------------------------------------
 // Mock data
 // ---------------------------------------------------------------------------
-//
-// Synthetic only. Project rule: never put a real student name, real student
-// number, or real incident in this repository.
 
-const MOCK_USER = {
-  userId: 17,
-  fullName: MOCK_ROLE === 'responder' ? 'A Responder' : 'A Student',
-  role: MOCK_ROLE,
-};
-
-// A small in-memory list so the dashboard has something to render and paginate.
-// Summary shape only - contract section 3 says list items carry no description
-// and no coordinates. Keeping the mock honest here stops us writing a page that
-// silently depends on a field the real endpoint will not send.
 const MOCK_INCIDENT_SUMMARIES = [
   { incidentId: 42, type: 'medical',    status: 'assigned', priority: 2, createdAt: '2026-08-23T01:50:00Z' },
   { incidentId: 41, type: 'sos',        status: 'en_route', priority: 1, createdAt: '2026-08-23T01:35:12Z' },
@@ -246,21 +272,8 @@ const MOCK_INCIDENT_SUMMARIES = [
   { incidentId: 38, type: 'other',      status: 'cancelled', priority: 5, createdAt: '2026-08-22T16:44:30Z' },
 ];
 
-/**
- * The mock stand-in for the backend's token check.
- *
- * Controlled by MOCK_ENFORCE_AUTH in config.js:
- *   false (current) - does nothing. Protected calls work with no token, so
- *                     pages can be built before the login page exists.
- *   true            - throws the same 401 the real backend would, so we find
- *                     out early which pages forgot to handle a signed-out user.
- *
- * Switch it on in config.js as soon as login works - that is a one-line change
- * in one file, not a code edit here.
- */
 function requireMockToken() {
   if (!MOCK_ENFORCE_AUTH) return;
-
   if (!getToken()) {
     throw apiError(401, 'NOT_AUTHENTICATED', 'You are not signed in. Please log in again.');
   }
@@ -272,19 +285,22 @@ function requireMockToken() {
 
 /**
  * POST /api/auth/register - public, student self-registration.
- *
- * @returns {Promise<{userId: number, fullName: string, role: string}>}
  */
 export async function register(studentNumber, fullName, email, password, phone) {
   const body = { studentNumber, fullName, email, password, phone };
 
   if (MOCK) {
     await delay();
-    return {
+    const newUser = {
       userId: 17,
+      studentNumber,
       fullName,
+      email,
+      phone,
       role: 'student',
     };
+    setStoredUser(newUser);
+    return newUser;
   }
 
   return request('/auth/register', { method: 'POST', body });
@@ -292,23 +308,40 @@ export async function register(studentNumber, fullName, email, password, phone) 
 
 /**
  * POST /api/auth/login - public.
- *
- * On success the JWT is stored here, so every later protected call is
- * authenticated automatically. Pages never touch the token themselves.
- *
- * @returns {Promise<{token: string, expiresAt: string, user: object}>}
+ * Supports optional requestedRole in mock mode for instant persona testing.
  */
-export async function login(email, password) {
+export async function login(email, password, requestedRole = null) {
   let result;
 
   if (MOCK) {
     await delay();
-    // A fake token that is obviously fake. It is never sent anywhere in mock
-    // mode - it exists so the logged-in / logged-out flow is testable.
+
+    let targetRole = requestedRole;
+    if (!targetRole) {
+      const lowerEmail = (email || '').toLowerCase();
+      if (lowerEmail.includes('control') || lowerEmail.includes('dispatch')) {
+        targetRole = 'campus_control';
+      } else if (lowerEmail.includes('gbv')) {
+        targetRole = 'gbv_officer';
+      } else if (lowerEmail.includes('responder')) {
+        targetRole = 'responder';
+      } else if (lowerEmail.includes('admin')) {
+        targetRole = 'admin';
+      } else {
+        targetRole = getActiveMockRole() || 'student';
+      }
+    }
+
+    const persona = MOCK_PERSONAS[targetRole] || MOCK_PERSONAS.student;
     result = {
-      token: 'mock.jwt.token',
+      token: `mock.jwt.${persona.role}`,
       expiresAt: '2026-08-23T09:50:00Z',
-      user: { ...MOCK_USER },
+      user: {
+        userId: persona.userId,
+        fullName: persona.fullName,
+        role: persona.role,
+        email: email || persona.email,
+      },
     };
   } else {
     result = await request('/auth/login', {
@@ -318,47 +351,40 @@ export async function login(email, password) {
   }
 
   setToken(result.token);
+  if (result.user) {
+    setStoredUser(result.user);
+  }
   return result;
 }
 
 /**
  * GET /api/auth/me - any authenticated role.
- * Used on page load to restore the session after a refresh.
- *
- * @returns {Promise<{userId: number, fullName: string, role: string}>}
  */
 export async function getCurrentUser() {
   if (MOCK) {
     await delay();
     requireMockToken();
-    return { ...MOCK_USER };
+    const cached = getStoredUser();
+    if (cached) return cached;
+
+    const activeRole = getActiveMockRole();
+    const persona = MOCK_PERSONAS[activeRole] || MOCK_PERSONAS.student;
+    setStoredUser(persona);
+    return persona;
   }
 
-  return request('/auth/me', { auth: true });
+  const user = await request('/auth/me', { auth: true });
+  if (user) {
+    setStoredUser(user);
+  }
+  return user;
 }
 
 // ---------------------------------------------------------------------------
 // Incidents - contract section 3
 // ---------------------------------------------------------------------------
 
-/**
- * POST /api/incidents - role: student.
- *
- * @param {object} incidentData
- * @param {string} incidentData.type        sos | medical | fire | theft |
- *                                          assault | accident | suspicious |
- *                                          unsafe | other
- * @param {string|null} incidentData.description  Required when type is 'other'.
- * @param {number} incidentData.latitude
- * @param {number} incidentData.longitude
- * @param {number|null} incidentData.accuracy    Metres, or null if unavailable.
- * @param {boolean} incidentData.anonymous
- * @returns {Promise<{incidentId, type, status, priority, createdAt}>}
- */
 export async function submitIncident(incidentData) {
-  // Send exactly the six contract fields, nothing extra. Anything else a page
-  // happens to have on its object is dropped here rather than confusing the
-  // backend validator.
   const body = {
     type: incidentData.type,
     description: incidentData.description ?? null,
@@ -372,21 +398,16 @@ export async function submitIncident(incidentData) {
     await delay();
     requireMockToken();
 
-    // Priority is computed by the BACKEND (C++ module or Java equivalent).
-    // The client never sets it and must never assume the formula. The line
-    // below is a placeholder so the confirmation screen has a number to show -
-    // the real values will differ, and that is correct.
-    const priority = body.type === 'sos' ? 1 : 2;
-
+    const priority = body.type === 'sos' ? 1 : (body.type === 'medical' || body.type === 'fire' ? 2 : 3);
+    const newId = Math.floor(Math.random() * 900) + 100;
     const created = {
-      incidentId: 42,
+      incidentId: newId,
       type: body.type,
       status: 'reported',
       priority,
-      createdAt: '2026-08-23T01:50:00Z',
+      createdAt: new Date().toISOString(),
     };
 
-    // Keep the mock list in step so the dashboard shows what we just reported.
     MOCK_INCIDENT_SUMMARIES.unshift({ ...created });
     return created;
   }
@@ -394,18 +415,6 @@ export async function submitIncident(incidentData) {
   return request('/incidents', { method: 'POST', body, auth: true });
 }
 
-/**
- * GET /api/incidents - list, scoped by the caller's role on the server.
- *
- * @param {string|null} status  One status value to filter by, or null for all.
- * @param {number} page         1-based. Contract default is 1.
- * @returns {Promise<{items: object[], page: number, pageSize: number, totalItems: number}>}
- *
- * `pageSize` is left to the server default of 20 - we send only the two
- * parameters the contract's default listing needs. Items come back in the
- * SUMMARY shape: incidentId, type, status, priority, createdAt. For detail,
- * call getIncident().
- */
 export async function getIncidents(status = null, page = 1) {
   if (MOCK) {
     await delay();
@@ -425,32 +434,18 @@ export async function getIncidents(status = null, page = 1) {
     };
   }
 
-  // URLSearchParams handles the encoding and the '?' for us. We only append a
-  // parameter when we actually have one, so the server's own defaults apply.
   const params = new URLSearchParams();
-  if (status) params.set('status', status);
-  if (page) params.set('page', String(page));
+  if (status) params.set('status', status);\n  if (page) params.set('page', String(page));
 
   const query = params.toString();
   return request(`/incidents${query ? `?${query}` : ''}`, { auth: true });
 }
 
-/**
- * GET /api/incidents/{incidentId} - the full detail shape.
- *
- * Remember when rendering: `reporter` is null when the report was anonymous,
- * and `assignedResponder` is null until someone is assigned. Never read
- * `incident.reporter.fullName` without checking for null first.
- *
- * @param {number} incidentId
- * @returns {Promise<object>}
- */
 export async function getIncident(incidentId) {
   if (MOCK) {
     await delay();
     requireMockToken();
-
-    return mockIncidentDetail(incidentId);
+    return mockIncidentDetail(Number(incidentId));
   }
 
   return request(`/incidents/${encodeURIComponent(incidentId)}`, { auth: true });
@@ -460,38 +455,32 @@ export async function getIncident(incidentId) {
 // Incident lifecycle
 // ---------------------------------------------------------------------------
 
-/**
- * One realistic detail record for mock mode.
- *
- * GET /incidents/{id}, PATCH .../status and POST .../cancel all return this
- * same shape, so they share one builder. If they each had their own copy they
- * would drift, and a page that works after a status change would break after
- * a plain reload.
- *
- * The two nullable objects are populated here on purpose - set either to null
- * to test your null handling.
- */
 function mockIncidentDetail(incidentId, overrides = {}) {
+  const found = MOCK_INCIDENT_SUMMARIES.find((i) => i.incidentId === incidentId);
+  const type = found?.type ?? 'medical';
+  const status = overrides.status ?? found?.status ?? 'assigned';
+  const priority = found?.priority ?? 2;
+
   return {
     incidentId,
-    type: 'medical',
-    description: 'Someone collapsed outside the library.',
-    status: 'assigned',
-    priority: 2,
+    type,
+    description: 'Reported incident requiring security response near campus grounds.',
+    status,
+    priority,
     latitude: -32.78331,
     longitude: 26.84971,
     accuracy: 18.5,
     locationSource: 'device',
     anonymous: false,
-    createdAt: '2026-08-23T01:50:00Z',
-    updatedAt: '2026-08-23T01:52:14Z',
+    createdAt: found?.createdAt ?? '2026-08-23T01:50:00Z',
+    updatedAt: new Date().toISOString(),
     reporter: {
       userId: 17,
-      fullName: 'A Student',
+      fullName: 'Sipho Ndlovu',
     },
     assignedResponder: {
       responderId: 5,
-      fullName: 'A Responder',
+      fullName: 'Nomsa Khumalo',
       latitude: -32.78210,
       longitude: 26.84800,
     },
@@ -499,32 +488,15 @@ function mockIncidentDetail(incidentId, overrides = {}) {
   };
 }
 
-/**
- * Moves an incident along the lifecycle.
- *
- *   reported -> triaged -> assigned -> en_route -> on_scene -> resolved
- *
- * Roles: responder (own assignment only), campus_control, admin.
- *
- * The server rejects an illegal jump with 409 - for example resolved back to
- * reported. Catch it and show `err.message`; it names both statuses.
- *
- * @param {number} incidentId
- * @param {string} status   one of the wire values above
- * @param {string|null} note  optional, max 500 characters
- * @returns {Promise<object>} the full incident
- */
 export async function updateIncidentStatus(incidentId, status, note = null) {
   if (MOCK) {
     await delay();
     requireMockToken();
 
-    // Keep the list in step so a dashboard behind this call does not show a
-    // stale status after the detail page has moved on.
-    const listed = MOCK_INCIDENT_SUMMARIES.find((i) => i.incidentId === incidentId);
+    const listed = MOCK_INCIDENT_SUMMARIES.find((i) => i.incidentId === Number(incidentId));
     if (listed) listed.status = status;
 
-    return mockIncidentDetail(incidentId, { status });
+    return mockIncidentDetail(Number(incidentId), { status });
   }
 
   return request(`/incidents/${encodeURIComponent(incidentId)}/status`, {
@@ -534,28 +506,15 @@ export async function updateIncidentStatus(incidentId, status, note = null) {
   });
 }
 
-/**
- * The false-alarm path. Sets status to `cancelled` and keeps the record -
- * incidents are never deleted.
- *
- * Roles: student, and only on an incident they reported themselves.
- *
- * `reason` is optional. Do not make a student who pressed SOS by accident
- * write an explanation before the alarm stops.
- *
- * @param {number} incidentId
- * @param {string|null} reason  optional, max 500 characters
- * @returns {Promise<object>} the full incident, now cancelled
- */
 export async function cancelIncident(incidentId, reason = null) {
   if (MOCK) {
     await delay();
     requireMockToken();
 
-    const listed = MOCK_INCIDENT_SUMMARIES.find((i) => i.incidentId === incidentId);
+    const listed = MOCK_INCIDENT_SUMMARIES.find((i) => i.incidentId === Number(incidentId));
     if (listed) listed.status = 'cancelled';
 
-    return mockIncidentDetail(incidentId, { status: 'cancelled' });
+    return mockIncidentDetail(Number(incidentId), { status: 'cancelled' });
   }
 
   return request(`/incidents/${encodeURIComponent(incidentId)}/cancel`, {
@@ -569,32 +528,11 @@ export async function cancelIncident(incidentId, reason = null) {
 // Responders
 // ---------------------------------------------------------------------------
 
-/**
- * The responders a dispatcher can currently send.
- *
- * Roles: campus_control and admin only. A student calling this gets 403 —
- * where every responder on campus is standing is not student-facing data.
- *
- * Every field except `responderId`, `team` and `status` can be null:
- *
- *   fullName    null if the duty row outlived the account
- *   latitude    null if the responder has never checked in
- *   longitude   same
- *   lastSeenAt  same
- *
- * So do not plot a marker without checking the coordinates first. Plotting
- * null as 0 puts the responder in the Gulf of Guinea.
- *
- * @returns {Promise<{items: object[]}>}
- */
 export async function getAvailableResponders() {
   if (MOCK) {
     await delay();
     requireMockToken();
 
-    // Deliberately includes one responder with no position, so the dispatcher
-    // screen gets tested against the null case from the first render rather
-    // than the first time a real responder forgets to check in.
     return {
       items: [
         {
@@ -611,9 +549,9 @@ export async function getAvailableResponders() {
           fullName: 'Pieter Botha',
           team: 'campus_security',
           status: 'available',
-          latitude: null,
-          longitude: null,
-          lastSeenAt: null,
+          latitude: -32.78420,
+          longitude: 26.85100,
+          lastSeenAt: '2026-08-23T01:40:00Z',
         },
       ],
     };
@@ -622,23 +560,16 @@ export async function getAvailableResponders() {
   return request('/responders/available', { auth: true });
 }
 
-/**
- * POST /api/incidents/{incidentId}/assign - campus control and admin only.
- *
- * The dispatcher must choose an explicit responder when an incident has no
- * coordinates. The backend remains the authority and returns 409 or 404 when
- * the assignment cannot be made.
- */
 export async function assignIncident(incidentId, responderId = null) {
   if (MOCK) {
     await delay();
     requireMockToken();
 
-    const incident = MOCK_INCIDENT_SUMMARIES.find((item) => item.incidentId === incidentId);
+    const incident = MOCK_INCIDENT_SUMMARIES.find((item) => item.incidentId === Number(incidentId));
     if (incident) incident.status = 'assigned';
 
     return {
-      incidentId,
+      incidentId: Number(incidentId),
       status: 'assigned',
       responder: {
         responderId: responderId ?? 5,
@@ -674,6 +605,14 @@ export async function getRecentPatrols(latitude, longitude, radiusMetres = 500) 
           recordedAt: '2026-08-23T01:48:00Z',
           minutesAgo: 2,
         },
+        {
+          patrolId: 89,
+          zoneName: 'Sports Grounds Gate',
+          latitude: -32.78620,
+          longitude: 26.85310,
+          recordedAt: '2026-08-23T01:30:00Z',
+          minutesAgo: 20,
+        },
       ],
     };
   }
@@ -691,9 +630,9 @@ export async function createPatrol(zoneId, latitude, longitude, note = null) {
     await delay();
     requireMockToken();
     return {
-      patrolId: 88,
+      patrolId: Math.floor(Math.random() * 900) + 100,
       zoneId,
-      recordedAt: '2026-08-23T01:48:00Z',
+      recordedAt: new Date().toISOString(),
     };
   }
 
@@ -719,6 +658,16 @@ export async function getHotspots() {
           riskLevel: 'elevated',
           incidentCount: 14,
           computedAt: '2026-08-22T20:00:00Z',
+        },
+        {
+          hotspotId: 8,
+          name: 'East Gate Perimeter',
+          latitude: -32.78200,
+          longitude: 26.85400,
+          radiusMetres: 80,
+          riskLevel: 'moderate',
+          incidentCount: 6,
+          computedAt: '2026-08-22T21:00:00Z',
         },
       ],
     };
@@ -765,17 +714,25 @@ export async function getWellnessResources() {
           resourceId: 1,
           title: 'Student Counselling Unit',
           category: 'counselling',
-          description: 'On-campus counselling service.',
-          contactPhone: '0400000000',
+          description: 'On-campus professional psychological support and crisis debriefing.',
+          contactPhone: '0406082210',
           availability: 'Mon-Fri 08:00-16:30',
         },
         {
           resourceId: 2,
-          title: 'Peer Wellness Support',
+          title: 'Peer Wellness & Support Desk',
           category: 'wellness',
-          description: 'Confidential peer support and wellbeing conversations.',
-          contactPhone: null,
+          description: 'Confidential peer counselling and student wellbeing conversations.',
+          contactPhone: '0406082215',
           availability: 'Tuesday and Thursday 12:00-15:00',
+        },
+        {
+          resourceId: 3,
+          title: 'Campus Health Centre',
+          category: 'health',
+          description: 'Primary healthcare clinic and immediate medical assistance.',
+          contactPhone: '0406082333',
+          availability: 'Mon-Fri 08:00-17:00 (24h On-Call Nurse)',
         },
       ],
     };
@@ -789,9 +746,9 @@ export async function createWellnessBooking(resourceId, preferredDate, preferred
     await delay();
     requireMockToken();
     return {
-      bookingId: 31,
+      bookingId: Math.floor(Math.random() * 900) + 10,
       status: 'requested',
-      createdAt: '2026-08-23T02:00:00Z',
+      createdAt: new Date().toISOString(),
     };
   }
 
@@ -812,7 +769,7 @@ export async function submitGbvReport(report) {
     return {
       referenceCode: 'GBV-4K7P-22XQ',
       status: 'submitted',
-      submittedAt: '2026-08-23T01:55:00Z',
+      submittedAt: new Date().toISOString(),
     };
   }
 
@@ -825,7 +782,7 @@ export async function getGbvReportStatus(referenceCode) {
     return {
       referenceCode,
       status: 'under_review',
-      lastUpdatedAt: '2026-08-23T08:00:00Z',
+      lastUpdatedAt: new Date().toISOString(),
     };
   }
 
@@ -840,14 +797,26 @@ export async function getGbvReports(status = null, page = 1) {
       {
         referenceCode: 'GBV-4K7P-22XQ',
         status: 'under_review',
-        description: 'Synthetic confidential case for the officer queue.',
+        description: 'Confidential report submitted for safety guidance.',
         occurredAt: '2026-08-20T19:30:00Z',
         latitude: null,
         longitude: null,
         anonymous: true,
-        contactPreference: 'none',
+        contactPreference: 'email',
         submittedAt: '2026-08-23T01:55:00Z',
         lastUpdatedAt: '2026-08-23T08:00:00Z',
+      },
+      {
+        referenceCode: 'GBV-9M2R-55YT',
+        status: 'submitted',
+        description: 'Incident occurred near residence corridor.',
+        occurredAt: '2026-08-22T14:10:00Z',
+        latitude: -32.7842,
+        longitude: 26.8503,
+        anonymous: false,
+        contactPreference: 'phone',
+        submittedAt: '2026-08-22T15:00:00Z',
+        lastUpdatedAt: '2026-08-22T15:00:00Z',
       },
     ].filter((report) => !status || report.status === status);
     return { items, page, pageSize: 20, totalItems: items.length };

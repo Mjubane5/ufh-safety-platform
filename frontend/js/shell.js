@@ -1,17 +1,55 @@
-import { logout } from './api.js';
+// shell.js — shared responsive header, role-aware navigation, user badge,
+// and centralized session controls across all pages in the platform.
 
-const HOME_BY_PAGE = {
-  'dashboard.html': './dashboard.html',
-  'report.html': './dashboard.html',
-  'incident.html': './dashboard.html',
-  'map.html': './dashboard.html',
-  'wellness.html': './dashboard.html',
-  'gbv.html': './dashboard.html',
-  'responder-dashboard.html': './responder-dashboard.html',
-  'control-dashboard.html': './control-dashboard.html',
-  'patrol.html': './control-dashboard.html',
-  'gbv-officer.html': './gbv-officer.html',
-  'role-dashboard.html': './role-dashboard.html',
+import { getCurrentUser, getStoredUser, logout } from './api.js';
+
+const ROLE_HOME_URLS = {
+  student: './dashboard.html',
+  campus_control: './control-dashboard.html',
+  responder: './responder-dashboard.html',
+  gbv_officer: './gbv-officer.html',
+  admin: './control-dashboard.html',
+};
+
+const ROLE_LABELS = {
+  student: 'Student',
+  campus_control: 'Campus Control',
+  responder: 'Responder',
+  gbv_officer: 'GBV Support Officer',
+  admin: 'Administrator',
+};
+
+const NAV_BY_ROLE = {
+  student: [
+    ['Dashboard', './dashboard.html'],
+    ['Report Incident', './report.html'],
+    ['Safety Map', './map.html'],
+    ['Wellness', './wellness.html'],
+    ['Confidential GBV', './gbv.html'],
+  ],
+  campus_control: [
+    ['Dispatch Queue', './control-dashboard.html'],
+    ['Record Patrol', './patrol.html'],
+    ['Safety Map', './map.html'],
+    ['Demo Switcher', './role-dashboard.html'],
+  ],
+  responder: [
+    ['Assignments', './responder-dashboard.html'],
+    ['Safety Map', './map.html'],
+    ['Demo Switcher', './role-dashboard.html'],
+  ],
+  gbv_officer: [
+    ['Case Queue', './gbv-officer.html'],
+    ['Confidential Report', './gbv.html'],
+    ['Wellness Units', './wellness.html'],
+    ['Demo Switcher', './role-dashboard.html'],
+  ],
+  admin: [
+    ['Campus Control', './control-dashboard.html'],
+    ['Responder Desk', './responder-dashboard.html'],
+    ['GBV Queue', './gbv-officer.html'],
+    ['Demo Switcher', './role-dashboard.html'],
+  ],
 };
 
 function createButton(label, className, onClick) {
@@ -23,48 +61,99 @@ function createButton(label, className, onClick) {
   return button;
 }
 
-function addNavigation() {
-  const header = document.querySelector('.app-header-inner');
-  if (!header || header.querySelector('.app-nav')) return;
+export function handleSignOut() {
+  const lastRole = logout();
+  if (['campus_control', 'gbv_officer', 'responder', 'admin'].includes(lastRole)) {
+    window.location.replace('./staff-login.html');
+  } else {
+    window.location.replace('./login.html');
+  }
+}
 
+async function renderShell() {
+  const header = document.querySelector('.app-header-inner');
+  if (!header) return;
+
+  // Prevent duplicate rendering
+  if (header.querySelector('.app-header-actions')) return;
+
+  // Retrieve user or cached fallback
+  let user = getStoredUser();
+  if (!user) {
+    try {
+      user = await getCurrentUser();
+    } catch {
+      user = null;
+    }
+  }
+
+  const role = user?.role || 'student';
+  const homeUrl = ROLE_HOME_URLS[role] ?? './dashboard.html';
   const currentPage = window.location.pathname.split('/').pop() || 'dashboard.html';
-  const homeUrl = HOME_BY_PAGE[currentPage] ?? './dashboard.html';
+
   const actions = document.createElement('div');
   actions.className = 'app-header-actions';
 
-  const back = createButton('Back', 'btn btn-ghost app-back', () => {
-    if (window.history.length > 1) {
-      window.history.back();
-    } else {
-      window.location.replace(homeUrl);
-    }
-  });
-  back.setAttribute('aria-label', 'Go back to the previous page');
-  actions.appendChild(back);
-
+  // Navigation Links
   const nav = document.createElement('nav');
   nav.className = 'app-nav';
   nav.setAttribute('aria-label', 'Main navigation');
-  const links = [
-    ['Dashboard', homeUrl],
-    ['Safety map', './map.html'],
-    ['Wellness', './wellness.html'],
-  ];
+
+  const links = NAV_BY_ROLE[role] || NAV_BY_ROLE.student;
   links.forEach(([label, href]) => {
     const link = document.createElement('a');
     link.className = 'app-nav-link';
     link.href = href;
     link.textContent = label;
+
+    const linkPage = href.replace('./', '').split('?')[0];
+    if (currentPage === linkPage) {
+      link.classList.add('active');
+      link.setAttribute('aria-current', 'page');
+    }
     nav.appendChild(link);
   });
   actions.appendChild(nav);
 
-  const signOut = header.querySelector('#signout-button');
-  if (signOut) {
-    header.insertBefore(actions, signOut);
-  } else {
-    header.appendChild(actions);
+  // User Badge (if logged in)
+  if (user) {
+    const userBadge = document.createElement('div');
+    userBadge.className = 'user-badge';
+    userBadge.title = `Signed in as ${user.fullName || 'User'} (${ROLE_LABELS[role] || role})`;
+
+    const userName = document.createElement('span');
+    userName.className = 'user-badge-name';
+    userName.textContent = user.fullName || 'User';
+
+    const userRole = document.createElement('span');
+    userRole.className = `user-badge-role role-tag role-${role}`;
+    userRole.textContent = ROLE_LABELS[role] || role;
+
+    userBadge.appendChild(userName);
+    userBadge.appendChild(userRole);
+    actions.appendChild(userBadge);
   }
+
+  // Hook or create Sign Out button
+  let signOutBtn = header.querySelector('#signout-button');
+  if (!signOutBtn) {
+    signOutBtn = createButton('Sign out', 'btn btn-ghost', handleSignOut);
+    signOutBtn.id = 'signout-button';
+  } else {
+    // Replace with clean event listener
+    const freshBtn = signOutBtn.cloneNode(true);
+    freshBtn.addEventListener('click', handleSignOut);
+    signOutBtn.parentNode.replaceChild(freshBtn, signOutBtn);
+    signOutBtn = freshBtn;
+  }
+
+  header.appendChild(actions);
+  header.appendChild(signOutBtn);
 }
 
-addNavigation();
+// Automatically initialize header
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', renderShell);
+} else {
+  renderShell();
+}

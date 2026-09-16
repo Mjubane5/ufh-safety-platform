@@ -1,18 +1,18 @@
-/* ===========================================================================
-   styles.css — the single shared stylesheet for the whole frontend.
+﻿/* ===========================================================================
+   styles.css â€” the single shared stylesheet for the whole frontend.
 
    Plain CSS. No framework, no build step. Link it from any page in frontend/:
 
        <link rel="stylesheet" href="./css/styles.css">
 
    ---------------------------------------------------------------------------
-   HOW TO CHANGE THINGS — read this before editing anything below
+   HOW TO CHANGE THINGS â€” read this before editing anything below
    ---------------------------------------------------------------------------
 
    Every colour, space and font size in this file comes from a custom property
    (a "CSS variable") defined once in the :root block in section 1. Change the
    value there and it updates everywhere. Do NOT hardcode a hex colour or a
-   pixel value further down the file — if you find yourself wanting to, add a
+   pixel value further down the file â€” if you find yourself wanting to, add a
    new custom property instead so the next person can find it.
 
    Naming, so you can guess a variable without scrolling:
@@ -24,7 +24,7 @@
      --shadow-*    Box shadows.
 
    The spacing scale is a 4px step: --space-1 is 4px, --space-2 is 8px, and so
-   on. Use the scale rather than arbitrary numbers — it is what keeps the
+   on. Use the scale rather than arbitrary numbers â€” it is what keeps the
    spacing on different pages looking like one product instead of eight.
 
    Font sizes are in rem, not px. 1rem is whatever the student has set as their
@@ -41,11 +41,11 @@
 
    When you add a new component, write the phone version up here first, then
    add desktop overrides in section 8. Do not write a desktop layout and then
-   try to shrink it — that is how you end up with a form nobody can use on the
+   try to shrink it â€” that is how you end up with a form nobody can use on the
    bus.
 
    ---------------------------------------------------------------------------
-   ACCESSIBILITY — this is a safety application, so this part is not optional
+   ACCESSIBILITY â€” this is a safety application, so this part is not optional
    ---------------------------------------------------------------------------
 
    1. Contrast. Every text/background pairing in this file meets WCAG AA
@@ -64,7 +64,7 @@
         - a shape or icon difference (a border, a glyph, a size change).
 
       This is why .banner has an icon glyph and .sos-button is physically
-      larger than every other button. Those are not decoration — they are the
+      larger than every other button. Those are not decoration â€” they are the
       fallback when the colour does not land.
 
    3. Touch targets are at least 44px tall. A student pressing SOS may be
@@ -84,8 +84,8 @@
   /* --- Surfaces and text ------------------------------------------------ */
   --color-surface: #ffffff;          /* page and card background            */
   --color-surface-sunken: #f2f4f7;   /* page behind cards, skeleton base    */
-  --color-text: #1a1d21;             /* body text          — 16.1:1 on white */
-  --color-text-muted: #5c6470;       /* secondary/meta text — 5.9:1 on white */
+  --color-text: #1a1d21;             /* body text          â€” 16.1:1 on white */
+  --color-text-muted: #5c6470;       /* secondary/meta text â€” 5.9:1 on white */
   --color-text-inverse: #ffffff;     /* text on a dark or saturated fill    */
 
   /* --- Borders ----------------------------------------------------------
@@ -93,33 +93,33 @@
      buttons): WCAG requires 3:1 for the boundary of a control. Use the light
      one only for decorative dividers, which are exempt. */
   --color-border: #d7dbe0;           /* decorative dividers, card outline   */
-  --color-border-strong: #767e8a;    /* input + button borders — 4.1:1      */
+  --color-border-strong: #767e8a;    /* input + button borders â€” 4.1:1      */
 
   /* --- Brand: University of Fort Hare ------------------------------------
      UFH's identity is blue, white and gold. These are our own accessible
      approximations. When Comms sends the CI manual, replace the three hexes
      here and re-check every ratio noted in this block. Nothing else in the
      file hardcodes a brand colour. */
-  --color-primary: #00447c;          /* white text on this  — 9.9:1         */
-  --color-primary-dark: #002f56;     /* hover / active      — 13.6:1        */
+  --color-primary: #00447c;          /* white text on this  â€” 9.9:1         */
+  --color-primary-dark: #002f56;     /* hover / active      â€” 13.6:1        */
   --color-primary-tint: #e8f0f8;     /* selected row, subtle fill           */
 
   /* Gold is a surface colour. Gold text on white is 1.8:1 and unreadable,
      so put dark text on a gold fill, or use --color-gold-dark for text. */
-  --color-gold: #f7b500;             /* --color-text on this — 9.2:1        */
-  --color-gold-dark: #8a6100;        /* gold text on white   — 5.5:1        */
+  --color-gold: #f7b500;             /* --color-text on this â€” 9.2:1        */
+  --color-gold-dark: #8a6100;        /* gold text on white   â€” 5.5:1        */
   --color-gold-tint: #fff6dd;
 
   /* --- Emergency -------------------------------------------------------
      Reserved for SOS and priority 1. Do not use this red for an ordinary
-     delete button — if everything is an emergency, nothing is. */
-  --color-emergency: #b3001b;        /* white text on this  — 7.2:1         */
+     delete button â€” if everything is an emergency, nothing is. */
+  --color-emergency: #b3001b;        /* white text on this  â€” 7.2:1         */
   --color-emergency-dark: #8c0014;   /* hover / active, and banner text     */
   --color-emergency-tint: #fdecee;   /* error banner background             */
 
   /* --- Success ---------------------------------------------------------- */
-  --color-success: #0f6b3f;          /* white text on this  — 6.6:1         */
-  --color-success-dark: #0b5132;     /* banner text — 8.4:1 on its tint     */
+  --color-success: #0f6b3f;          /* white text on this  â€” 6.6:1         */
+  --color-success-dark: #0b5132;     /* banner text â€” 8.4:1 on its tint     */
   --color-success-tint: #e9f6ef;     /* success banner background           */
 
   /* --- Priority scale (1 = most urgent, per the API contract) -----------
@@ -152,11 +152,11 @@
   /* --- Font sizes -------------------------------------------------------
      --text-base is the body size. Do not go below --text-sm for anything a
      student has to read; small print on a cracked phone screen is unusable. */
-  --text-sm: 0.875rem;  /* 14px — meta, timestamps, helper text */
-  --text-base: 1rem;    /* 16px — body, form inputs             */
-  --text-lg: 1.125rem;  /* 18px — card titles                   */
-  --text-xl: 1.375rem;  /* 22px — page headings on phone        */
-  --text-2xl: 1.75rem;  /* 28px — SOS button, hero numbers      */
+  --text-sm: 0.875rem;  /* 14px â€” meta, timestamps, helper text */
+  --text-base: 1rem;    /* 16px â€” body, form inputs             */
+  --text-lg: 1.125rem;  /* 18px â€” card titles                   */
+  --text-xl: 1.375rem;  /* 22px â€” page headings on phone        */
+  --text-2xl: 1.75rem;  /* 28px â€” SOS button, hero numbers      */
 
   /* --- Shape ------------------------------------------------------------ */
   --radius-sm: 4px;
@@ -259,7 +259,7 @@ p {
 
 a {
   color: var(--color-primary);
-  /* Underlined, not just coloured — colour alone is not a link signal. */
+  /* Underlined, not just coloured â€” colour alone is not a link signal. */
   text-decoration: underline;
 }
 
@@ -317,7 +317,7 @@ small,
   gap: var(--space-2);
 }
 
-/* Always use a real <label for="..."> — placeholder text is not a label.
+/* Always use a real <label for="..."> â€” placeholder text is not a label.
    It disappears the moment the student starts typing. */
 .label {
   font-size: var(--text-sm);
@@ -356,7 +356,7 @@ small,
 
 .input::placeholder,
 .textarea::placeholder {
-  color: var(--color-text-muted);   /* 5.9:1 — placeholders must be legible */
+  color: var(--color-text-muted);   /* 5.9:1 â€” placeholders must be legible */
   opacity: 1;                       /* Firefox dims placeholders by default */
 }
 
@@ -378,7 +378,7 @@ a:focus-visible,
 
 /* --- Invalid state -------------------------------------------------------
    Red border AND the .field-error message below it. The border alone is not
-   enough — pair it with .field-error every time. */
+   enough â€” pair it with .field-error every time. */
 .input-invalid,
 .input[aria-invalid="true"],
 .select[aria-invalid="true"],
@@ -388,7 +388,7 @@ a:focus-visible,
 }
 
 /* Error text under a field. The API's error shape carries `field`, which
-   names the input this belongs to — see the standard error shape in
+   names the input this belongs to â€” see the standard error shape in
    docs/api-contract.md. */
 .field-error {
   display: flex;
@@ -401,7 +401,7 @@ a:focus-visible,
 
 /* Glyph, so the message is not identifiable by its colour alone. */
 .field-error::before {
-  content: "\26A0";   /* ⚠ */
+  content: "\26A0";   /* âš  */
   flex-shrink: 0;
   line-height: 1.6;
 }
@@ -493,7 +493,7 @@ a:focus-visible,
   outline-offset: 2px;
 }
 
-/* On phones a form's submit button should span the width — it is the easiest
+/* On phones a form's submit button should span the width â€” it is the easiest
    thing in the world to hit. */
 .btn-block {
   width: 100%;
@@ -502,7 +502,7 @@ a:focus-visible,
 /* --- SOS ------------------------------------------------------------------
    Deliberately unlike every other control in the app: twice the height, a
    thick dark ring, uppercase, and the largest type on the page. Turn the
-   screen greyscale and it is still obviously the emergency control — that is
+   screen greyscale and it is still obviously the emergency control â€” that is
    the point. Do not shrink it to fit a layout. */
 .sos-button {
   display: flex;
@@ -651,7 +651,7 @@ a:focus-visible,
 }
 
 .pill-cancelled {
-  /* the false-alarm path — the record is retained, never deleted */
+  /* the false-alarm path â€” the record is retained, never deleted */
   color: var(--color-text-muted);
   border-style: dashed;   /* shape cue, distinct from resolved */
 }
@@ -687,7 +687,7 @@ a:focus-visible,
    Spinner and skeleton. Every request shows one of these.
    =========================================================================== */
 
-/* Usage — the text is what a screen reader announces:
+/* Usage â€” the text is what a screen reader announces:
      <div class="spinner-row" role="status">
        <span class="spinner"></span>
        <span class="visually-hidden">Loading incidents</span>
@@ -721,7 +721,7 @@ a:focus-visible,
   to { transform: rotate(360deg); }
 }
 
-/* Skeleton placeholder — a grey block the shape of the content that is
+/* Skeleton placeholder â€” a grey block the shape of the content that is
    coming. Use it for the incident list so the page does not jump when the
    real cards arrive. */
 .skeleton {
@@ -801,7 +801,7 @@ a:focus-visible,
   margin-bottom: var(--space-1);
 }
 
-/* Error. Put the server's `message` from the standard error shape in here —
+/* Error. Put the server's `message` from the standard error shape in here â€”
    the contract guarantees every non-2xx response carries one. */
 .banner-error {
   color: var(--color-emergency-dark);      /* 8.6:1 on its tint */
@@ -810,7 +810,7 @@ a:focus-visible,
 }
 
 .banner-error::before {
-  content: "\26A0";   /* ⚠ warning triangle */
+  content: "\26A0";   /* âš  warning triangle */
 }
 
 /* Success. */
@@ -821,7 +821,7 @@ a:focus-visible,
 }
 
 .banner-success::before {
-  content: "\2713";   /* ✓ check mark */
+  content: "\2713";   /* âœ“ check mark */
 }
 
 /* ===========================================================================
@@ -940,7 +940,7 @@ a:focus-visible,
 }
 
 .notice::before {
-  content: "\2139";   /* ℹ */
+  content: "\2139";   /* â„¹ */
   flex-shrink: 0;
   font-weight: 700;
 }
@@ -1176,42 +1176,10 @@ a:focus-visible,
     justify-content: flex-end;
   }
 
-  /* Dashboard: cards in a grid rather than a single stack. */
-  .card-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
-    gap: var(--space-4);
-  }
-
-  .card {
-    padding: var(--space-5);
-  }
-
-  /* SOS stays large and obvious, but does not need to span a 1400px screen. */
-  .sos-button {
-    width: auto;
-    min-width: 20rem;
-    margin-inline: auto;
-  }
-
-  /* Two-column shell: map or detail panel beside a list. */
-  .layout-split {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr);
-    gap: var(--space-5);
-    align-items: start;
-  }
-}
-
-/* ---------------------------------------------------------------------------
-   Demonstration notice
-   ---------------------------------------------------------------------------
-   Shown only when config.js has MOCK = true, which is the public build. See
-   js/demo-notice.js for why this exists.
-
-   Colours reuse the emergency tokens already defined above rather than
-   introducing new ones, so contrast stays at the ratios documented there.
-   --------------------------------------------------------------------------- */
+/* ===========================================================================
+   11. DEMONSTRATION NOTICE & EMERGENCY CONTACTS MODAL
+   Shown only when config.js has MOCK = true, which is the public build.
+   =========================================================================== */
 
 .demo-locked {
   overflow: hidden;
@@ -1234,18 +1202,94 @@ a:focus-visible,
   overflow-y: auto;
   padding: 1.5rem;
   border-top: 6px solid var(--color-emergency);
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: 0 12px 32px rgb(0 0 0 / 35%);
 }
 
+.demo-dialog h2 {
+  margin: 0 0 0.75rem;
+  color: var(--color-emergency-dark);
+  font-size: var(--text-xl);
+  line-height: 1.25;
+}
+
+.demo-dialog p {
+  margin: 0 0 0.75rem;
+}
+
+.demo-contacts {
+  margin: 0 0 1.25rem;
+  padding: 0;
+  list-style: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.demo-contacts li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.6rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.demo-contacts li:last-child {
+  border-bottom: 0;
+}
+
+.demo-contacts a {
+  color: var(--color-emergency-dark);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.demo-banner {
+  padding: 0.6rem 1rem;
+  border-bottom: 1px solid var(--color-emergency);
+  background: var(--color-emergency-tint);
+  color: var(--color-emergency-dark);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  text-align: center;
+}
+
+#submit-button + .demo-banner,
+.demo-banner + #submit-button {
+  margin-top: 0.75rem;
+}
+
+.demo-banner a {
+  color: inherit;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: no-preference) {\n  .demo-dialog {
+    animation: demo-dialog-in 160ms ease-out;
+  }
+}
+
+@keyframes demo-dialog-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ===========================================================================
+   12. AUTHENTICATION & LOGIN SHELL (Student & Staff)
+   Institutional 2-column layout for login, register, and staff access.
+   =========================================================================== */
+
 .staff-login-page {
   display: grid;
   place-items: center;
+  min-height: 100vh;
   padding: var(--space-4);
   background:
-    linear-gradient(135deg, rgb(8 70 75 / 96%), rgb(13 98 104 / 88%)),
-    var(--color-surface-sunken);
+    radial-gradient(circle at 10% 10%, rgb(247 181 0 / 12%), transparent 30%),
+    linear-gradient(135deg, #002544 0%, #00447c 100%);
 }
 
 .staff-login-shell {
@@ -1255,7 +1299,7 @@ a:focus-visible,
   background-color: var(--color-surface);
   border: 1px solid rgb(255 255 255 / 20%);
   border-radius: var(--radius-lg);
-  box-shadow: 0 1.5rem 3rem rgb(4 39 42 / 30%);
+  box-shadow: 0 1.5rem 3rem rgb(0 20 45 / 35%);
 }
 
 .staff-login-hero,
@@ -1270,26 +1314,28 @@ a:focus-visible,
   min-height: 18rem;
   color: var(--color-text-inverse);
   background:
-    radial-gradient(circle at 85% 20%, rgb(228 173 56 / 28%), transparent 30%),
-    linear-gradient(145deg, #08464b, #0d6268);
+    radial-gradient(circle at 85% 20%, rgb(247 181 0 / 25%), transparent 32%),
+    linear-gradient(145deg, #001f38 0%, #003865 60%, #004d80 100%);
 }
 
 .staff-login-hero .eyebrow {
   margin-top: var(--space-7);
-  color: #d9efed;
+  color: #e8f0f8;
 }
 
 .staff-login-hero h1 {
-  max-width: 15ch;
+  max-width: 16ch;
   margin-top: var(--space-2);
   color: inherit;
   font-size: 2.25rem;
+  line-height: 1.2;
 }
 
 .staff-login-hero > p:not(.eyebrow) {
   max-width: 38ch;
   margin-top: var(--space-3);
-  color: #d9efed;
+  color: #d7e4f2;
+  font-size: var(--text-base);
 }
 
 .staff-brand {
@@ -1308,14 +1354,14 @@ a:focus-visible,
 }
 
 .staff-brand small {
-  color: #d9efed;
+  color: #cfe0f0;
 }
 
 .staff-trust-list {
   display: grid;
   gap: var(--space-2);
   margin-top: var(--space-5);
-  color: #d9efed;
+  color: #d7e4f2;
   font-size: var(--text-sm);
 }
 
@@ -1355,6 +1401,12 @@ a:focus-visible,
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+
+.staff-role-option:hover {
+  border-color: var(--color-border-strong);
+  background-color: var(--color-surface-sunken);
 }
 
 .staff-role-option:has(input:checked) {
@@ -1377,12 +1429,16 @@ a:focus-visible,
 
 .staff-role-option small {
   margin-top: var(--space-1);
+  color: var(--color-text-muted);
 }
 
 .staff-panel-footer {
   display: flex;
+  flex-direction: column;
   gap: var(--space-2);
   margin-top: var(--space-5);
+  padding-top: var(--space-4);
+  border-top: 1px solid var(--color-border);
   font-size: var(--text-sm);
 }
 
@@ -1402,52 +1458,15 @@ a:focus-visible,
 }
 
 /* ===========================================================================
-   12. PRODUCT SHELL REFRESH
-   Shared navigation and visual hierarchy for the operational screens.
+   13. PRODUCT SHELL REFRESH
+   Shared navigation, active link state, role badges, and stakeholder layouts.
    =========================================================================== */
-
-:root {
-  --color-surface: #ffffff;
-  --color-surface-sunken: #eef4f3;
-  --color-text: #17252a;
-  --color-text-muted: #52666b;
-  --color-primary: #0d6268;
-  --color-primary-dark: #08464b;
-  --color-primary-tint: #e0f1ef;
-  --color-gold: #e4ad38;
-  --color-gold-dark: #78550b;
-  --color-gold-tint: #fff7df;
-  --color-border: #d0dddc;
-  --color-border-strong: #718589;
-  --color-focus: #0d6268;
-  --shadow-card: 0 0.35rem 1rem rgb(23 37 42 / 8%);
-  --shadow-raised: 0 0.75rem 1.75rem rgb(23 37 42 / 14%);
-}
-
-body {
-  background-color: var(--color-surface-sunken);
-  background-image:
-    linear-gradient(135deg, rgb(255 255 255 / 70%), transparent 42%),
-    repeating-linear-gradient(0deg, rgb(13 98 104 / 3%) 0, rgb(13 98 104 / 3%) 1px, transparent 1px, transparent 5px);
-}
-
-h1, h2, h3 {
-  letter-spacing: 0.01em;
-}
-
-h1 {
-  font-weight: 700;
-}
-
-.page {
-  padding-top: var(--space-5);
-  padding-bottom: var(--space-7);
-}
 
 .app-header {
   position: relative;
-  background: linear-gradient(110deg, #08464b 0%, #0d6268 64%, #178087 100%);
-  box-shadow: 0 0.25rem 1rem rgb(8 70 75 / 24%);
+  background: linear-gradient(110deg, #002544 0%, #00447c 65%, #005696 100%);
+  border-bottom: 3px solid var(--color-gold);
+  box-shadow: 0 0.25rem 1rem rgb(0 37 68 / 20%);
 }
 
 .app-header-inner {
@@ -1469,6 +1488,7 @@ h1 {
   width: 100%;
   overflow-x: auto;
   padding-top: var(--space-2);
+  scrollbar-width: thin;
 }
 
 .app-nav-link {
@@ -1479,6 +1499,8 @@ h1 {
   text-decoration: none;
   font-size: var(--text-sm);
   font-weight: 600;
+  border-bottom: 2px solid transparent;
+  transition: background-color 140ms ease, border-color 140ms ease;
 }
 
 .app-nav-link:hover,
@@ -1487,10 +1509,66 @@ h1 {
   background-color: rgb(255 255 255 / 16%);
 }
 
-.app-back::before {
-  content: "\2190";
-  font-size: var(--text-lg);
-  line-height: 1;
+.app-nav-link.active {
+  color: var(--color-text-inverse);
+  background-color: rgb(255 255 255 / 22%);
+  border-bottom-color: var(--color-gold);
+}
+
+/* User identity badge */
+.user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: rgb(255 255 255 / 12%);
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: var(--radius-pill);
+  font-size: var(--text-sm);
+  color: var(--color-text-inverse);
+  white-space: nowrap;
+}
+
+.user-badge-name {
+  font-weight: 600;
+}
+
+.role-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.725rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.role-tag.role-student {
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
+}
+
+.role-tag.role-campus_control {
+  background: var(--color-gold-tint);
+  color: var(--color-gold-dark);
+}
+
+.role-tag.role-responder {
+  background: var(--color-success-tint);
+  color: var(--color-success);
+}
+
+.role-tag.role-gbv_officer {
+  background: var(--color-emergency-tint);
+  color: var(--color-emergency);
+}
+
+.role-tag.role-admin {
+  background: #2a2e35;
+  color: #ffffff;
 }
 
 .dashboard-intro {
@@ -1499,7 +1577,7 @@ h1 {
   align-items: end;
   padding: var(--space-5);
   color: var(--color-text-inverse);
-  background: linear-gradient(120deg, #08464b, #0d6268 65%, #178087);
+  background: linear-gradient(120deg, #002544 0%, #00447c 65%, #005696 100%);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-raised);
 }
@@ -1512,12 +1590,12 @@ h1 {
 
 .dashboard-intro .eyebrow,
 .dashboard-intro .intro-copy {
-  color: #d9efed;
+  color: #d7e4f2;
 }
 
 .intro-copy {
   margin-top: var(--space-3);
-  max-width: 42ch;
+  max-width: 48ch;
 }
 
 .dashboard-primary-action {
@@ -1527,7 +1605,7 @@ h1 {
 
 .dashboard-primary-action:hover {
   color: var(--color-text);
-  background-color: #f3c65f;
+  background-color: #e6a800;
 }
 
 .action-grid {
@@ -1598,7 +1676,7 @@ h1 {
 
 .section-heading-row {
   display: flex;
-  align-items: end;
+  align-items: flex-end;
   justify-content: space-between;
   gap: var(--space-3);
 }
@@ -1617,34 +1695,104 @@ h1 {
   white-space: nowrap;
 }
 
-.app-header .app-back {
-  border-color: rgb(255 255 255 / 35%);
+/* Persona grid for role switcher */
+.persona-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
 }
 
-.card {
-  border-color: var(--color-border);
+.persona-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: var(--space-5);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: 4px solid var(--color-primary);
+  border-radius: var(--radius-md);
   box-shadow: var(--shadow-card);
+  transition: transform 140ms ease, box-shadow 140ms ease;
 }
 
-.card:hover {
+.persona-card:hover {
+  transform: translateY(-2px);
   box-shadow: var(--shadow-raised);
 }
 
-.btn {
-  transition: transform 140ms ease, box-shadow 140ms ease, background-color 140ms ease;
+#persona-card-student { border-top-color: var(--color-primary); }
+#persona-card-control { border-top-color: var(--color-gold); }
+#persona-card-responder { border-top-color: var(--color-success); }
+#persona-card-gbv { border-top-color: var(--color-emergency); }
+
+.persona-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
 }
 
-.btn:not(:disabled):hover {
-  transform: translateY(-1px);
-  box-shadow: 0 0.3rem 0.8rem rgb(23 37 42 / 12%);
+.persona-avatar {
+  display: grid;
+  place-items: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  font-size: var(--text-base);
+  background: var(--color-primary-tint);
+  color: var(--color-primary);
 }
 
-.btn-primary {
-  box-shadow: 0 0.25rem 0.65rem rgb(13 98 104 / 20%);
+#persona-card-control .persona-avatar {
+  background: var(--color-gold-tint);
+  color: var(--color-gold-dark);
 }
 
-.notice {
-  box-shadow: 0 0.25rem 0.7rem rgb(120 85 11 / 8%);
+#persona-card-responder .persona-avatar {
+  background: var(--color-success-tint);
+  color: var(--color-success);
+}
+
+#persona-card-gbv .persona-avatar {
+  background: var(--color-emergency-tint);
+  color: var(--color-emergency);
+}
+
+.persona-description {
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  margin-bottom: var(--space-3);
+}
+
+.persona-features {
+  margin: 0 0 var(--space-4) var(--space-4);
+  padding: 0;
+  list-style: disc;
+  font-size: var(--text-sm);
+  color: var(--color-text);
+}
+
+.persona-features li {
+  margin-bottom: var(--space-1);
+}
+
+.active-persona-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  background: rgb(255 255 255 / 14%);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid rgb(255 255 255 / 20%);
+}
+
+@media (min-width: 640px) {
+  .persona-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 @media (min-width: 768px) {
@@ -1673,84 +1821,9 @@ h1 {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .btn {
+  .btn,
+  .action-tile,
+  .persona-card {
     transition: none;
   }
-
-  .action-tile {
-    transition: none;
-  }
-}
-
-.demo-dialog h2 {
-  margin: 0 0 0.75rem;
-  color: var(--color-emergency-dark);
-  font-size: var(--text-xl);
-  line-height: 1.25;
-}
-
-.demo-dialog p {
-  margin: 0 0 0.75rem;
-}
-
-.demo-contacts {
-  margin: 0 0 1.25rem;
-  padding: 0;
-  list-style: none;
-  border: 1px solid var(--color-border);
-  border-radius: 8px;
-}
-
-.demo-contacts li {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  padding: 0.6rem 0.85rem;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.demo-contacts li:last-child {
-  border-bottom: 0;
-}
-
-.demo-contacts a {
-  color: var(--color-emergency-dark);
-  font-weight: 700;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.demo-banner {
-  padding: 0.6rem 1rem;
-  border-bottom: 1px solid var(--color-emergency);
-  background: var(--color-emergency-tint);
-  color: var(--color-emergency-dark);
-  font-size: var(--text-sm);
-  line-height: 1.45;
-  text-align: center;
-}
-
-/* The copy above the submit button is not a page-wide strip, so it gets the
-   card treatment instead of running edge to edge. */
-#submit-button + .demo-banner,
-.demo-banner + #submit-button {
-  margin-top: 0.75rem;
-}
-
-.demo-banner a {
-  color: inherit;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  .demo-dialog {
-    animation: demo-dialog-in 160ms ease-out;
-  }
-}
-
-@keyframes demo-dialog-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: none; }
 }

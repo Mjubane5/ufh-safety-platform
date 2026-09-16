@@ -3,64 +3,83 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sign in — UFH Safety Platform</title>
+  <title>Sign In — UFH Safety Platform</title>
   <link rel="stylesheet" href="./css/styles.css">
 </head>
-<body>
-  <main class="page">
-    <h1>Sign in</h1>
-    <p class="text-meta">
-      Use the email address you registered with.
-    </p>
+<body class="staff-login-page">
+  <main class="staff-login-shell">
+    <section class="staff-login-hero" aria-labelledby="student-hero-title">
+      <a class="staff-brand" href="./index.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span>
+          <strong>Fort Hare Safety</strong>
+          <small>Student emergency &amp; wellness portal</small>
+        </span>
+      </a>
+      <p class="eyebrow">Campus Safety Hub</p>
+      <h1 id="student-hero-title">Rapid emergency response at Fort Hare.</h1>
+      <p>Sign in with your registered student account to report incidents, access campus safety maps, and connect with wellness support.</p>
+      <ul class="staff-trust-list">
+        <li>Immediate SOS &amp; incident dispatch</li>
+        <li>Real-time responder status tracking</li>
+        <li>Confidential GBV support &amp; wellness care</li>
+      </ul>
+    </section>
 
-    <!-- auth.js inserts the error banner here. The slot starts empty:
-         the .banner class sets display:flex, which would beat the browser's
-         own [hidden] rule, so we add and remove the element instead of
-         hiding it. -->
-    <div id="banner-slot"></div>
-
-    <!-- novalidate turns OFF the browser's built-in validation bubbles so our
-         own checks run instead and errors appear in the .field-error style
-         used everywhere else. The required/type attributes stay because
-         screen readers announce them. -->
-    <form class="form" id="login-form" novalidate>
-      <div class="field" id="field-email">
-        <label class="label label-required" for="email">Email</label>
-        <input
-          class="input"
-          id="email"
-          name="email"
-          type="email"
-          autocomplete="email"
-          inputmode="email"
-          placeholder="202512345@ufh.ac.za"
-          required>
+    <section class="staff-login-panel" aria-labelledby="login-title">
+      <div class="staff-panel-heading">
+        <p class="eyebrow">Student access</p>
+        <h2 id="login-title">Sign in to your account</h2>
+        <p class="text-meta">Use the email address and password you registered with.</p>
       </div>
 
-      <div class="field" id="field-password">
-        <label class="label label-required" for="password">Password</label>
-        <input
-          class="input"
-          id="password"
-          name="password"
-          type="password"
-          autocomplete="current-password"
-          required>
-      </div>
+      <div id="banner-slot"></div>
 
-      <div class="form-actions">
-        <button class="btn btn-primary btn-block" id="submit-button" type="submit">
-          Sign in
-        </button>
-      </div>
-    </form>
+      <form class="form" id="login-form" novalidate>
+        <div class="field" id="field-email">
+          <label class="label label-required" for="email">Student email</label>
+          <input
+            class="input"
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            inputmode="email"
+            placeholder="202512345@ufh.ac.za"
+            required>
+        </div>
 
-    <p class="text-meta">
-      No account yet? <a href="./register.html">Create one</a>
-    </p>
-    <p class="text-meta staff-entry-link">
-      Staff access? <a href="./staff-login.html">Open the secure staff portal</a>
-    </p>
+        <div class="field" id="field-password">
+          <label class="label label-required" for="password">Password</label>
+          <input
+            class="input"
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+            required>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary btn-block" id="submit-button" type="submit">
+            Sign in
+          </button>
+        </div>
+      </form>
+
+      <div class="staff-panel-footer">
+        <div>
+          No account yet? <a href="./register.html"><strong>Create one</strong></a>
+        </div>
+        <div>
+          Campus staff or responder? <a href="./staff-login.html"><strong>Staff portal</strong></a>
+        </div>
+        <div style="margin-top: var(--space-2);">
+          Testing prototype? <a href="./role-dashboard.html"><strong>Open demo switcher</strong></a>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script type="module" src="./js/demo-notice.js"></script>
