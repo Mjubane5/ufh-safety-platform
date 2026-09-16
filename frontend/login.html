@@ -70,14 +70,31 @@
       </form>
 
       <div class="staff-panel-footer">
-        <div>
-          No account yet? <a href="./register.html"><strong>Create one</strong></a>
+        <div class="auth-footer-prompt">
+          <span>Don't have an account yet?</span>
+          <a href="./register.html" class="auth-footer-link">
+            <span>Create student account</span>
+            <span aria-hidden="true">&rarr;</span>
+          </a>
         </div>
-        <div>
-          Campus staff or responder? <a href="./staff-login.html"><strong>Staff portal</strong></a>
+
+        <div class="auth-channel-card">
+          <div class="auth-channel-text">
+            <span class="auth-channel-label">Campus Personnel</span>
+            <span class="auth-channel-sub">Control room, field responders &amp; GBV unit</span>
+          </div>
+          <a href="./staff-login.html" class="btn btn-secondary btn-sm">Staff portal</a>
         </div>
-        <div style="margin-top: var(--space-2);">
-          Testing prototype? <a href="./role-dashboard.html"><strong>Open demo switcher</strong></a>
+
+        <div class="auth-prototype-badge">
+          <div class="auth-prototype-header">
+            <span class="auth-prototype-tag">Demo Environment</span>
+            <span class="auth-prototype-title">Evaluate all 4 stakeholder roles</span>
+          </div>
+          <a href="./role-dashboard.html" class="auth-prototype-link">
+            <span>Role switcher</span>
+            <span aria-hidden="true">&rarr;</span>
+          </a>
         </div>
       </div>
     </section>
