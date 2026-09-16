@@ -42,18 +42,23 @@
             <span><strong>Campus control</strong><small>Dispatch and patrol operations</small></span>
           </label>
           <label class="staff-role-option">
+            <input type="radio" name="staff-role" value="responder">
+            <span><strong>Emergency responder</strong><small>Field units and rapid incident response</small></span>
+          </label>
+          <label class="staff-role-option">
             <input type="radio" name="staff-role" value="gbv_officer">
             <span><strong>GBV support unit</strong><small>Confidential case review</small></span>
           </label>
         </fieldset>
 
         <div class="field">
-          <label class="label label-required" for="staff-email">Email address</label>
-          <input class="input" id="staff-email" type="email" autocomplete="username" required>
+          <label class="label label-required" for="staff-email">Staff email or username</label>
+          <input class="input" id="staff-email" type="text" autocomplete="username" placeholder="e.g. control or control@ufh.ac.za" required>
+          <p class="field-hint">In prototype mode, any username and password will sign in to the chosen role.</p>
         </div>
         <div class="field">
           <label class="label label-required" for="staff-password">Password</label>
-          <input class="input" id="staff-password" type="password" autocomplete="current-password" required>
+          <input class="input" id="staff-password" type="password" autocomplete="current-password" placeholder="••••••••" required>
         </div>
         <div class="form-actions">
           <button class="btn btn-primary btn-block" id="staff-submit-button" type="submit">Sign in to staff portal</button>
@@ -62,6 +67,8 @@
 
       <div class="staff-panel-footer">
         <a href="./login.html">Student sign in</a>
+        <span aria-hidden="true">·</span>
+        <a href="./role-dashboard.html">Role switcher</a>
         <span aria-hidden="true">·</span>
         <a href="./index.html">Return to start</a>
       </div>

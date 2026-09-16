@@ -30,23 +30,24 @@
       <div class="staff-panel-heading">
         <p class="eyebrow">Student access</p>
         <h2 id="login-title">Sign in to your account</h2>
-        <p class="text-meta">Use the email address and password you registered with.</p>
+        <p class="text-meta">Use the email address or student number and password you registered with.</p>
       </div>
 
       <div id="banner-slot"></div>
 
       <form class="form" id="login-form" novalidate>
         <div class="field" id="field-email">
-          <label class="label label-required" for="email">Student email</label>
+          <label class="label label-required" for="email">Student email or number</label>
           <input
             class="input"
             id="email"
             name="email"
-            type="email"
-            autocomplete="email"
+            type="text"
+            autocomplete="username"
             inputmode="email"
-            placeholder="202512345@ufh.ac.za"
+            placeholder="202512345 or 202512345@ufh.ac.za"
             required>
+          <p class="field-hint">In prototype mode, any student number or email and password will work.</p>
         </div>
 
         <div class="field" id="field-password">

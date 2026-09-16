@@ -1267,7 +1267,8 @@ a:focus-visible,
   white-space: nowrap;
 }
 
-@media (prefers-reduced-motion: no-preference) {\n  .demo-dialog {
+@media (prefers-reduced-motion: no-preference) {
+  .demo-dialog {
     animation: demo-dialog-in 160ms ease-out;
   }
 }
@@ -1825,5 +1826,17 @@ a:focus-visible,
   .action-tile,
   .persona-card {
     transition: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .user-badge-name {
+    display: none;
+  }
+  .brand-sub {
+    display: none;
+  }
+  .app-header {
+    padding: var(--space-2) var(--space-3);
   }
 }

@@ -255,7 +255,8 @@ function initLoginForm(form) {
     try {
       const result = await login(email, password, 'student');
       window.location.href = homeUrlForRole(result?.user?.role);
-    } catch (err) {\n      handleRequestFailure(err, 'Could not sign in');
+    } catch (err) {
+      handleRequestFailure(err, 'Could not sign in');
       setLoading(button, false, 'Signing in…', 'Sign in');
       isSubmitting = false;
     }
@@ -297,7 +298,7 @@ function initStaffLoginForm(form) {
       if (!['campus_control', 'gbv_officer', 'responder', 'admin'].includes(actualRole)
           || (requestedRole && actualRole !== requestedRole && actualRole !== 'admin')) {
         logout();
-        showBanner('Staff access not available', 'Choose the access area that matches your account, or contact an administrator.');
+        showBanner('error', 'Staff access not available', 'Choose the access area that matches your account, or contact an administrator.');
         setLoading(button, false, 'Checking access…', 'Sign in to staff portal');
         isSubmitting = false;
         return;

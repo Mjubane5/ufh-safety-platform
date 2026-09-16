@@ -48,7 +48,8 @@ const TOKEN_KEY = 'ufh.authToken';
 const USER_KEY = 'ufh.authUser';
 const ACTIVE_ROLE_KEY = 'ufh.activeRole';
 
-/** Sleep, so mock responses are not instant and loading states are visible. */\nfunction delay(ms = MOCK_DELAY_MS) {
+/** Sleep, so mock responses are not instant and loading states are visible. */
+function delay(ms = MOCK_DELAY_MS) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
@@ -435,7 +436,8 @@ export async function getIncidents(status = null, page = 1) {
   }
 
   const params = new URLSearchParams();
-  if (status) params.set('status', status);\n  if (page) params.set('page', String(page));
+  if (status) params.set('status', status);
+  if (page) params.set('page', String(page));
 
   const query = params.toString();
   return request(`/incidents${query ? `?${query}` : ''}`, { auth: true });
