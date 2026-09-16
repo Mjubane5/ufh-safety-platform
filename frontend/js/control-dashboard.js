@@ -6,6 +6,7 @@ import {
   logout,
   ApiError,
 } from './api.js';
+import { createTrackingMap, getTrackingState, saveTrackingState } from './tracking.js';
 
 const LOGIN_URL = './login.html';
 const TYPE_LABELS = {
@@ -21,8 +22,11 @@ const STATUS_LABELS = {
 const incidentContainer = document.getElementById('control-incidents');
 const responderContainer = document.getElementById('responder-roster');
 const message = document.getElementById('control-message');
+const trackingContainer = document.getElementById('control-live-tracking');
+
 let incidents = [];
 let responders = [];
+let trackingController = null;
 
 function el(tag, className, text) {
   const node = document.createElement(tag);
@@ -112,10 +116,31 @@ function renderIncidents() {
       assign.type = 'button';
       assign.addEventListener('click', () => assignSelected(incident, select, assign));
       card.appendChild(assign);
+    } else if (incident.status === 'en_route' || incident.status === 'assigned') {
+      const trackBtn = el('button', 'btn btn-ghost btn-sm', 'Focus live tracking map');
+      trackBtn.type = 'button';
+      trackBtn.addEventListener('click', () => {
+        initTracking(incident.incidentId);
+        trackingContainer?.scrollIntoView({ behavior: 'smooth' });
+      });
+      card.appendChild(trackBtn);
     }
     list.appendChild(card);
   });
   incidentContainer.appendChild(list);
+}
+
+function initTracking(incidentId = 41) {
+  if (!trackingContainer) return;
+  if (trackingController) {
+    trackingController.destroy();
+    trackingController = null;
+  }
+  trackingController = createTrackingMap(trackingContainer, {
+    role: 'campus_control',
+    incidentId,
+    showControls: true,
+  });
 }
 
 async function assignSelected(incident, select, button) {
@@ -128,11 +153,27 @@ async function assignSelected(incident, select, button) {
 
   button.disabled = true;
   try {
-    await assignIncident(incident.incidentId, responderId);
+    const assignedResult = await assignIncident(incident.incidentId, responderId);
     incidents = incidents.map((item) => item.incidentId === incident.incidentId
       ? { ...item, status: 'assigned' }
       : item);
     renderIncidents();
+
+    // Update tracking state with newly assigned responder
+    const responderObj = responders.find((r) => r.responderId === responderId);
+    const trackingState = getTrackingState(incident.incidentId);
+    trackingState.incidentId = incident.incidentId;
+    trackingState.incidentType = incident.type;
+    trackingState.status = 'assigned';
+    if (responderObj) {
+      trackingState.responder.name = responderObj.fullName;
+      trackingState.responder.team = responderObj.team || 'Campus Rapid Response';
+    }
+    trackingState.progress = 0.05;
+    saveTrackingState(trackingState);
+
+    // Refresh tracking map
+    initTracking(incident.incidentId);
   } catch (error) {
     button.disabled = false;
     if (error instanceof ApiError && error.status === 401) {
@@ -159,6 +200,10 @@ async function loadDashboard() {
     message.textContent = `${incidents.length} incident${incidents.length === 1 ? '' : 's'} in the queue.`;
     renderIncidents();
     renderResponders();
+
+    // Find active incident that has responder en route or assigned
+    const activeIncident = incidents.find((i) => i.status === 'en_route' || i.status === 'assigned') || incidents[0];
+    initTracking(activeIncident ? activeIncident.incidentId : 41);
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       redirectToLogin();

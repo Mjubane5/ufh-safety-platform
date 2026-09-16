@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Campus control — UFH Safety Platform</title>
   <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
   <header class="app-header">
@@ -28,8 +29,11 @@
 
     <div id="banner-slot"></div>
     <h1>Dispatch queue</h1>
-    <p class="text-meta" id="control-message">Loading incidents and responders...</p>
+    <p class="text-meta" id=\"control-message\">Loading incidents and responders...</p>
     <p><a class="btn btn-secondary" href="./patrol.html">Record a patrol</a></p>
+
+    <!-- Live Responder & Student Movement Tracking Map -->
+    <section id="control-live-tracking" aria-label="Campus control live dispatch tracking"></section>
 
     <section class="control-layout" aria-label="Campus control dispatch">
       <section aria-labelledby="queue-heading">
@@ -43,6 +47,7 @@
     </section>
   </main>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module" src="./js/demo-notice.js"></script>
   <script type="module" src="./js/shell.js"></script>
   <script type="module" src="./js/control-dashboard.js"></script>

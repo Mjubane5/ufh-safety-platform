@@ -3,6 +3,7 @@
  */
 
 import { getIncident, cancelIncident, isLoggedIn, logout, getCurrentUser, ApiError } from './api.js';
+import { createTrackingMap } from './tracking.js';
 
 const LOGIN_URL = './login.html';
 const DASHBOARD_URL = './dashboard.html';
@@ -128,6 +129,38 @@ function addDetailRow(container, label, value) {
   container.appendChild(row);
 }
 
+
+let trackingController = null;
+
+function renderIncidentTracking(incident) {
+  const slot = document.getElementById('incident-live-tracking');
+  if (!slot) return;
+  if (!['en_route', 'on_scene', 'assigned'].includes(incident?.status)) {
+    if (trackingController) {
+      trackingController.destroy();
+      trackingController = null;
+    }
+    slot.replaceChildren();
+    return;
+  }
+  if (!trackingController) {
+    getCurrentUser().then((user) => {
+      const userRole = user?.role === 'campus_control' ? 'campus_control' : (user?.role === 'responder' ? 'responder' : 'student');
+      trackingController = createTrackingMap(slot, {
+        role: userRole,
+        incidentId: incident.incidentId,
+        showControls: true,
+      });
+    }).catch(() => {
+      trackingController = createTrackingMap(slot, {
+        role: 'student',
+        incidentId: incident.incidentId,
+        showControls: true,
+      });
+    });
+  }
+}
+
 function renderIncident(incident) {
   detail.setAttribute('aria-busy', 'false');
   detail.replaceChildren();
@@ -165,6 +198,7 @@ function renderIncident(incident) {
   detail.appendChild(card);
 
   renderCancelControl(incident);
+  renderIncidentTracking(incident);
 }
 
 function renderCancelControl(incident) {

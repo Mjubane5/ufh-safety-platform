@@ -85,6 +85,25 @@ function renderList() {
   list.appendChild(cards);
 }
 
+
+let trackingController = null;
+
+function renderResponderTracking(incident, container) {
+  if (trackingController) {
+    trackingController.destroy();
+    trackingController = null;
+  }
+  if (['en_route', 'on_scene', 'assigned'].includes(incident.status)) {
+    const trackingWrapper = el('div', 'responder-tracking-box');
+    container.appendChild(trackingWrapper);
+    trackingController = createTrackingMap(trackingWrapper, {
+      role: 'responder',
+      incidentId: incident.incidentId,
+      showControls: true,
+    });
+  }
+}
+
 function renderSelected(incident) {
   selected.setAttribute('aria-busy', 'false');
   selected.replaceChildren();
@@ -114,6 +133,7 @@ function renderSelected(incident) {
     card.appendChild(el('p', 'text-meta', 'No further responder action is available.'));
   }
   selected.appendChild(card);
+  renderResponderTracking(incident, selected);
 }
 
 async function loadSelected(incidentId) {

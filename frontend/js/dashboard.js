@@ -8,6 +8,7 @@
 // No innerHTML here. Every server value reaches the page via textContent.
 
 import { getCurrentUser, getIncidents, isLoggedIn, logout, ApiError } from './api.js';
+import { createTrackingMap } from './tracking.js';
 
 const LOGIN_URL = './login.html';
 const REPORT_URL = './report.html';
@@ -376,6 +377,12 @@ async function loadIncidents() {
     // something unexpected, and an empty list is a better failure than a
     // thrown TypeError on an undefined .length.
     const items = Array.isArray(result?.items) ? result.items : [];
+
+    // If an incident has an active responder dispatched (en_route or on_scene), mount live map
+    const activeDispatched = items.find((i) => i.status === 'en_route' || i.status === 'on_scene');
+    if (activeDispatched) {
+      renderLiveTracking(activeDispatched);
+    }
 
     container.setAttribute('aria-busy', 'false');
 

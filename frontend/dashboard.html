@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Your reports — UFH Safety Platform</title>
   <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
   <header class="app-header">
@@ -68,6 +69,9 @@
          would override [hidden]. -->
     <div id="banner-slot"></div>
 
+    <!-- Live responder tracking slot when incident is en route -->
+    <div id="live-tracking-slot" aria-live="polite"></div>
+
     <div class="section-heading-row">
       <div>
         <p class="eyebrow">Activity</p>
@@ -89,6 +93,7 @@
     <div id="pagination"></div>
   </main>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module" src="./js/demo-notice.js"></script>
   <script type="module" src="./js/shell.js"></script>
   <script type="module" src="./js/dashboard.js"></script>
