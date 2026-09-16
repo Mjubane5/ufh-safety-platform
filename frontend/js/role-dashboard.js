@@ -1,58 +1,51 @@
-import { getCurrentUser, isLoggedIn, logout, ApiError } from './api.js';
+// role-dashboard.js — Interactive role switcher for capstone demonstrations.
+
+import { getCurrentUser, setActiveMockRole, MOCK_PERSONAS } from './api.js';
+
+const ROLE_URLS = {
+  student: './dashboard.html',
+  campus_control: './control-dashboard.html',
+  responder: './responder-dashboard.html',
+  gbv_officer: './gbv-officer.html',
+};
 
 const ROLE_LABELS = {
+  student: 'Student',
+  campus_control: 'Campus Control',
   responder: 'Responder',
-  campus_control: 'Campus control',
-  gbv_officer: 'GBV officer',
+  gbv_officer: 'GBV Support Officer',
   admin: 'Administrator',
 };
 
-const heading = document.getElementById('workspace-heading');
-const message = document.getElementById('workspace-message');
-const signOutButton = document.getElementById('signout-button');
-
-function showError(text) {
-  const slot = document.getElementById('banner-slot');
-  if (!slot) return;
-
-  const banner = document.createElement('div');
-  banner.className = 'banner banner-error';
-  banner.setAttribute('role', 'alert');
-  banner.textContent = text;
-  slot.replaceChildren(banner);
-}
-
-if (signOutButton) {
-  signOutButton.addEventListener('click', () => {
-    logout();
-    window.location.replace('./login.html');
-  });
-}
-
-async function loadWorkspace() {
-  if (!isLoggedIn()) {
-    window.location.replace('./login.html');
-    return;
-  }
+async function initRoleHub() {
+  const nameEl = document.getElementById('active-persona-name');
+  const roleEl = document.getElementById('active-persona-role');
 
   try {
     const user = await getCurrentUser();
-    const roleLabel = ROLE_LABELS[user?.role] ?? 'Authenticated user';
-    heading.textContent = `${roleLabel} workspace`;
-    message.textContent = user?.fullName
-      ? `Signed in as ${user.fullName}.`
-      : 'You are signed in.';
-  } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
-      logout();
-      window.location.replace('./login.html');
-      return;
+    if (nameEl && user) {
+      nameEl.textContent = user.fullName || 'Authenticated User';
     }
-
-    console.error('Could not load role workspace:', error);
-    message.textContent = 'Your workspace could not be loaded.';
-    showError('Please refresh the page and try again.');
+    if (roleEl && user) {
+      roleEl.textContent = ROLE_LABELS[user.role] || user.role;
+      roleEl.className = `role-tag role-${user.role}`;
+    }
+  } catch (err) {
+    console.warn('Could not load current user profile:', err);
+    if (nameEl) nameEl.textContent = 'Demo Mode';
   }
+
+  // Wire up switcher buttons
+  const buttons = document.querySelectorAll('button[data-switch-role]');
+  buttons.forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetRole = btn.getAttribute('data-switch-role');
+      if (targetRole && ROLE_URLS[targetRole]) {
+        setActiveMockRole(targetRole);
+        window.location.href = ROLE_URLS[targetRole];
+      }
+    });
+  });
 }
 
-loadWorkspace();
+initRoleHub();

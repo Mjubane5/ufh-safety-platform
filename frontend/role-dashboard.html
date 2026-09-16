@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Role workspace — UFH Safety Platform</title>
+  <title>Role Switcher &amp; Workspace Hub — UFH Safety Platform</title>
   <link rel="stylesheet" href="./css/styles.css">
 </head>
 <body>
@@ -13,7 +13,7 @@
         <span class="brand-mark" aria-hidden="true">UFH</span>
         <span class="brand-text">
           <span class="brand-name">Fort Hare Safety</span>
-          <span class="brand-sub">Campus emergency &amp; wellness</span>
+          <span class="brand-sub">Demonstration &amp; Role Hub</span>
         </span>
       </a>
       <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
@@ -22,20 +22,127 @@
 
   <main class="page">
     <p class="notice">
-      Prototype for CSC 200 / CSC 300. Not connected to any live emergency
-      service. All data shown here is synthetic.
+      Prototype demonstration for CSC 200 / CSC 300. Switch personas below to test
+      the end-to-end safety workflow from each stakeholder's perspective.
     </p>
 
     <div id="banner-slot"></div>
-    <h1 id="workspace-heading">Your workspace</h1>
-    <p class="text-meta" id="workspace-message">Loading your role...</p>
 
-    <section class="card" aria-labelledby="next-heading">
-      <h2 id="next-heading">Workspace coming next</h2>
-      <p class="text-meta">
-        Your account is signed in, but this role-specific workspace is still
-        being built. Student reporting remains available from the student account.
-      </p>
+    <section class="dashboard-intro" aria-labelledby="hub-heading">
+      <div>
+        <p class="eyebrow">Academic Demonstration</p>
+        <h1 id="hub-heading">Interactive Persona Switcher</h1>
+        <p class="intro-copy">
+          Experience the platform across different roles. Switching personas updates the active
+          session credentials and redirects to that stakeholder's dedicated workspace.
+        </p>
+      </div>
+      <div class="active-persona-indicator" id="active-persona-box">
+        <span class="text-meta">Current session:</span>
+        <strong id="active-persona-name">Loading persona...</strong>
+        <span class="role-tag" id="active-persona-role">...</span>
+      </div>
+    </section>
+
+    <div class="section-heading-row">
+      <div>
+        <p class="eyebrow">Stakeholder Portals</p>
+        <h2>Select an operational role to test</h2>
+      </div>
+    </div>
+
+    <section class="persona-grid" aria-label="Available operational roles">
+      <article class="persona-card" id="persona-card-student">
+        <div class="persona-header">
+          <span class="persona-avatar" aria-hidden="true">ST</span>
+          <div>
+            <h3>Student Hub</h3>
+            <p class="text-meta">Sipho Ndlovu &bull; 202512345@ufh.ac.za</p>
+          </div>
+        </div>
+        <p class="persona-description">
+          Submit emergency SOS, report incidents with GPS coordinates, track report resolution,
+          view campus safety heatmap, and book wellness appointments.
+        </p>
+        <ul class="persona-features">
+          <li>One-touch Emergency SOS</li>
+          <li>Campus Safety Map &amp; Safe Routes</li>
+          <li>Confidential GBV Reporting</li>
+          <li>Student Wellness Support</li>
+        </ul>
+        <button class="btn btn-primary btn-block" type="button" data-switch-role="student">
+          Switch to Student
+        </button>
+      </article>
+
+      <article class="persona-card" id="persona-card-control">
+        <div class="persona-header">
+          <span class="persona-avatar" aria-hidden="true">CC</span>
+          <div>
+            <h3>Campus Control Dispatch</h3>
+            <p class="text-meta">Sgt. Mthembu &bull; campus.control@ufh.ac.za</p>
+          </div>
+        </div>
+        <p class="persona-description">
+          Live triage desk for security operators. Review incoming emergency calls, assign
+          nearest available responders, track patrol checkpoints, and monitor campus hotspots.
+        </p>
+        <ul class="persona-features">
+          <li>Live Incident Dispatch Queue</li>
+          <li>Responder Roster &amp; Assignment</li>
+          <li>Patrol Checkpoint Recording</li>
+          <li>Campus Hotspot Analytics</li>
+        </ul>
+        <button class="btn btn-primary btn-block" type="button" data-switch-role="campus_control">
+          Switch to Campus Control
+        </button>
+      </article>
+
+      <article class="persona-card" id="persona-card-responder">
+        <div class="persona-header">
+          <span class="persona-avatar" aria-hidden="true">RS</span>
+          <div>
+            <h3>Security Responder</h3>
+            <p class="text-meta">Nomsa Khumalo &bull; responder.khumalo@ufh.ac.za</p>
+          </div>
+        </div>
+        <p class="persona-description">
+          Field responder interface optimized for mobile. View assigned incident dispatches,
+          obtain scene coordinates, and update status from En Route to On Scene and Resolved.
+        </p>
+        <ul class="persona-features">
+          <li>Immediate Dispatch Alerts</li>
+          <li>Incident Location Coordinates</li>
+          <li>Status Lifecycle Progression</li>
+          <li>Emergency Navigation Map</li>
+        </ul>
+        <button class="btn btn-primary btn-block" type="button" data-switch-role="responder">
+          Switch to Responder
+        </button>
+      </article>
+
+      <article class="persona-card" id="persona-card-gbv">
+        <div class="persona-header">
+          <span class="persona-avatar" aria-hidden="true">GB</span>
+          <div>
+            <h3>GBV Support Unit</h3>
+            <p class="text-meta">Dr. N. Dlamini &bull; gbv.unit@ufh.ac.za</p>
+          </div>
+        </div>
+        <p class="persona-description">
+          Restricted-access confidential case management queue. Review encrypted anonymous reports,
+          track reference codes, and coordinate trauma counselling care.
+        </p>
+        <ul class="persona-features">
+          <li>Confidential Case Triage</li>
+          <li>Anonymous Reference Tracking</li>
+          <li>Safe Care Coordination</li>
+          <li>Strict Role-Protected Access</li>
+        </ul>
+        <button class="btn btn-primary btn-block" type="button" data-switch-role="gbv_officer">
+          Switch to GBV Officer
+        </button>
+      </article>
     </section>
   </main>
 

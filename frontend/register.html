@@ -6,95 +6,118 @@
   <title>Create an account — UFH Safety Platform</title>
   <link rel="stylesheet" href="./css/styles.css">
 </head>
-<body>
-  <main class="page">
-    <h1>Create an account</h1>
-    <p class="text-meta">
-      Student registration. Staff and responder accounts are created by an
-      administrator.
-    </p>
+<body class="staff-login-page">
+  <main class="staff-login-shell">
+    <section class="staff-login-hero" aria-labelledby="register-hero-title">
+      <a class="staff-brand" href="./index.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span>
+          <strong>Fort Hare Safety</strong>
+          <small>Student registration portal</small>
+        </span>
+      </a>
+      <p class="eyebrow">Student Safety Hub</p>
+      <h1 id="register-hero-title">Join the Fort Hare safety network.</h1>
+      <p>Create a verified student safety account to quickly request emergency response, view verified patrol zones, and coordinate wellness bookings.</p>
+      <ul class="staff-trust-list">
+        <li>Direct connection to campus control</li>
+        <li>Optional anonymous incident reporting</li>
+        <li>Confidential GBV support &amp; wellness care</li>
+      </ul>
+    </section>
 
-    <!-- auth.js inserts the error banner here. See the note in login.html
-         for why the slot starts empty rather than hidden. -->
-    <div id="banner-slot"></div>
-
-    <form class="form" id="register-form" novalidate>
-      <div class="field" id="field-studentNumber">
-        <label class="label label-required" for="studentNumber">Student number</label>
-        <input
-          class="input"
-          id="studentNumber"
-          name="studentNumber"
-          type="text"
-          autocomplete="username"
-          inputmode="numeric"
-          placeholder="202512345"
-          required>
-        <p class="field-hint">Digits only, as printed on your student card.</p>
+    <section class="staff-login-panel" aria-labelledby="create-title">
+      <div class="staff-panel-heading">
+        <p class="eyebrow">New registration</p>
+        <h2 id="create-title">Create student account</h2>
+        <p class="text-meta">Staff and responder accounts are provisioned by an administrator.</p>
       </div>
 
-      <div class="field" id="field-fullName">
-        <label class="label label-required" for="fullName">Full name</label>
-        <input
-          class="input"
-          id="fullName"
-          name="fullName"
-          type="text"
-          autocomplete="name"
-          required>
-      </div>
+      <div id="banner-slot"></div>
 
-      <div class="field" id="field-email">
-        <label class="label label-required" for="email">Email</label>
-        <input
-          class="input"
-          id="email"
-          name="email"
-          type="email"
-          autocomplete="email"
-          inputmode="email"
-          placeholder="202512345@ufh.ac.za"
-          required>
-      </div>
+      <form class="form" id="register-form" novalidate>
+        <div class="field" id="field-studentNumber">
+          <label class="label label-required" for="studentNumber">Student number</label>
+          <input
+            class="input"
+            id="studentNumber"
+            name="studentNumber"
+            type="text"
+            autocomplete="username"
+            inputmode="numeric"
+            placeholder="202512345"
+            required>
+          <p class="field-hint">Digits only, as printed on your student card.</p>
+        </div>
 
-      <div class="field" id="field-password">
-        <label class="label label-required" for="password">Password</label>
-        <input
-          class="input"
-          id="password"
-          name="password"
-          type="password"
-          autocomplete="new-password"
-          required>
-        <p class="field-hint">At least 8 characters.</p>
-      </div>
+        <div class="field" id="field-fullName">
+          <label class="label label-required" for="fullName">Full name</label>
+          <input
+            class="input"
+            id="fullName"
+            name="fullName"
+            type="text"
+            autocomplete="name"
+            placeholder="e.g. Sipho Ndlovu"
+            required>
+        </div>
 
-      <div class="field" id="field-phone">
-        <label class="label label-required" for="phone">Phone number</label>
-        <input
-          class="input"
-          id="phone"
-          name="phone"
-          type="tel"
-          autocomplete="tel"
-          inputmode="tel"
-          placeholder="0821234567"
-          required>
-        <p class="field-hint">
-          Used to contact you about an incident you report.
-        </p>
-      </div>
+        <div class="field" id="field-email">
+          <label class="label label-required" for="email">Student email</label>
+          <input
+            class="input"
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="email"
+            inputmode="email"
+            placeholder="202512345@ufh.ac.za"
+            required>
+        </div>
 
-      <div class="form-actions">
-        <button class="btn btn-primary btn-block" id="submit-button" type="submit">
-          Create account
-        </button>
-      </div>
-    </form>
+        <div class="field" id="field-password">
+          <label class="label label-required" for="password">Password</label>
+          <input
+            class="input"
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            placeholder="At least 8 characters"
+            required>
+          <p class="field-hint">At least 8 characters.</p>
+        </div>
 
-    <p class="text-meta">
-      Already registered? <a href="./login.html">Sign in</a>
-    </p>
+        <div class="field" id="field-phone">
+          <label class="label label-required" for="phone">Phone number</label>
+          <input
+            class="input"
+            id="phone"
+            name="phone"
+            type="tel"
+            autocomplete="tel"
+            inputmode="tel"
+            placeholder="0821234567"
+            required>
+          <p class="field-hint">Used to contact you if you report an emergency.</p>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary btn-block" id="submit-button" type="submit">
+            Create account
+          </button>
+        </div>
+      </form>
+
+      <div class="staff-panel-footer">
+        <div>
+          Already registered? <a href="./login.html"><strong>Sign in</strong></a>
+        </div>
+        <div>
+          Staff access? <a href="./staff-login.html"><strong>Open staff portal</strong></a>
+        </div>
+      </div>
+    </section>
   </main>
 
   <script type="module" src="./js/demo-notice.js"></script>

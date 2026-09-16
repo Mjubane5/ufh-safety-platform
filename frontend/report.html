@@ -10,8 +10,6 @@
   <header class="app-header">
     <div class="app-header-inner">
       <a class="brand" href="./dashboard.html">
-        <!-- Swap for the real logo once it is in frontend/assets/:
-             <img class="brand-logo" src="./assets/ufh-logo.svg" alt="University of Fort Hare"> -->
         <span class="brand-mark" aria-hidden="true">UFH</span>
         <span class="brand-text">
           <span class="brand-name">Fort Hare Safety</span>
@@ -19,32 +17,20 @@
         </span>
       </a>
 
-      <!-- A link, not a sign-out button. Someone part-way through reporting an
-           incident is far more likely to want their report list than to want
-           to sign out. -->
-      <a class="btn btn-ghost" href="./dashboard.html">My reports</a>
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
     </div>
   </header>
 
   <main class="page">
     <h1>Report an incident</h1>
-    <!-- data-live-claim holds the text demo-notice.js swaps in when MOCK is
-         true. The promise below is true of the finished system and false of a
-         demonstration build, and leaving it would undo the notice. -->
     <p class="text-meta"
        data-live-claim="This is a demonstration. Nothing you submit here is sent to campus control or stored anywhere. If you are in danger, call 10111.">
       Campus control receives this immediately. If you are in danger and cannot
       wait, call your local emergency number as well.
     </p>
 
-    <!-- report.js inserts the error and confirmation banners here. The slot
-         starts empty rather than hidden: .banner sets display:flex, which
-         beats the browser's built-in [hidden] rule, so we add and remove the
-         element instead. -->
     <div id="banner-slot"></div>
 
-    <!-- novalidate switches off the browser's own validation bubbles so our
-         checks run instead and errors use the .field-error style. -->
     <form class="form" id="report-form" novalidate>
 
       <div class="field" id="field-type">
@@ -108,6 +94,7 @@
   </main>
 
   <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/shell.js"></script>
   <script type="module" src="./js/report.js"></script>
 </body>
 </html>
