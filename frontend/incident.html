@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Incident — UFH Safety Platform</title>
   <link rel="stylesheet" href="./css/styles.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 </head>
 <body>
   <header class="app-header">
@@ -33,11 +34,15 @@
 
     <h1 id="incident-heading">Incident</h1>
 
+    <!-- Live navigation map when responder is dispatched -->
+    <div id="incident-live-tracking" aria-live="polite"></div>
+
     <section id="incident-detail" aria-live="polite" aria-busy="true"></section>
 
     <section id="cancel-slot" hidden></section>
   </main>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script type="module" src="./js/demo-notice.js"></script>
   <script type="module" src="./js/shell.js"></script>
   <script type="module" src="./js/incident.js"></script>
