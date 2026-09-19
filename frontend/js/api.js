@@ -287,8 +287,25 @@ function requireMockToken() {
 /**
  * POST /api/auth/register - public, student self-registration.
  */
-export async function register(studentNumber, fullName, email, password, phone) {
-  const body = { studentNumber, fullName, email, password, phone };
+/**
+ * POST /api/auth/register - public.
+ *
+ * healthInfo is optional: { conditions: string[], note: string|null }. Not
+ * yet part of the backend contract - the real endpoint currently ignores
+ * unknown JSON fields rather than rejecting the request (verified directly
+ * against a running backend), so sending it is safe, but nothing is stored
+ * or shown to a responder until the backend adds a column for it.
+ */
+export async function register(studentNumber, fullName, email, password, phone, healthInfo = null) {
+  const body = {
+    studentNumber,
+    fullName,
+    email,
+    password,
+    phone,
+    healthConditions: healthInfo?.conditions?.length ? healthInfo.conditions : null,
+    healthNote: healthInfo?.note ?? null,
+  };
 
   if (MOCK) {
     await delay();

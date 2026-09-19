@@ -28,6 +28,17 @@ function homeUrlForRole(role) {
 
 const MIN_PASSWORD_LENGTH = 8;
 
+// Student self-service (login.html, register.html) is restricted to real
+// university addresses. Staff accounts are provisioned by an admin, not
+// self-registered, so staff-login.html deliberately does not use this check -
+// applying it there would also lock out the seeded demo staff accounts,
+// which use @example.ac.za on purpose (see docs/development-challenges.md).
+const UFH_EMAIL_DOMAIN = '@ufh.ac.za';
+
+function isUfhEmail(value) {
+  return value.toLowerCase().endsWith(UFH_EMAIL_DOMAIN);
+}
+
 // ---------------------------------------------------------------------------
 // Small DOM helpers
 // ---------------------------------------------------------------------------
@@ -151,13 +162,15 @@ function looksLikeEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-function validateLogin({ email, password }) {
+function validateLogin({ email, password }, { requireUfhDomain = false } = {}) {
   const errors = [];
 
   if (!email) {
     errors.push({ field: 'email', message: 'Enter your email address.' });
   } else if (!looksLikeEmail(email)) {
     errors.push({ field: 'email', message: 'That does not look like an email address.' });
+  } else if (requireUfhDomain && !isUfhEmail(email)) {
+    errors.push({ field: 'email', message: `Use your ${UFH_EMAIL_DOMAIN} student email.` });
   }
 
   if (!password) {
@@ -184,6 +197,8 @@ function validateRegister({ studentNumber, fullName, email, password, phone }) {
     errors.push({ field: 'email', message: 'Enter your email address.' });
   } else if (!looksLikeEmail(email)) {
     errors.push({ field: 'email', message: 'That does not look like an email address.' });
+  } else if (!isUfhEmail(email)) {
+    errors.push({ field: 'email', message: `Use your ${UFH_EMAIL_DOMAIN} student email.` });
   }
 
   if (!password) {
@@ -243,7 +258,7 @@ function initLoginForm(form) {
     const email = valueOf('email');
     const password = document.getElementById('password').value;
 
-    const errors = validateLogin({ email, password });
+    const errors = validateLogin({ email, password }, { requireUfhDomain: true });
     if (errors.length > 0) {
       showValidationErrors(errors);
       return;
@@ -316,9 +331,37 @@ function initStaffLoginForm(form) {
 // Register page (Student self-registration)
 // ---------------------------------------------------------------------------
 
+// The note is context for a responder in the middle of an emergency, not a
+// medical file. Capped well short of the textarea's own maxlength so the
+// count and the actual hard limit never disagree.
+const HEALTH_NOTE_MAX_LENGTH = 200;
+
+function initHealthNoteCounter(form) {
+  const note = document.getElementById('healthNote');
+  const count = document.getElementById('health-note-count');
+  if (!note || !count) return;
+
+  const update = () => {
+    count.textContent = `${note.value.length} / ${HEALTH_NOTE_MAX_LENGTH} characters`;
+  };
+  note.addEventListener('input', update);
+  update();
+}
+
+function collectHealthInfo(form) {
+  const conditions = Array.from(form.querySelectorAll('input[name="healthCondition"]:checked'))
+    .map((input) => input.value);
+  const note = valueOf('healthNote');
+
+  if (conditions.length === 0 && !note) return null;
+  return { conditions, note: note || null };
+}
+
 function initRegisterForm(form) {
   const button = document.getElementById('submit-button');
   let isSubmitting = false;
+
+  initHealthNoteCounter(form);
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -332,6 +375,7 @@ function initRegisterForm(form) {
     const email = valueOf('email');
     const password = document.getElementById('password').value;
     const phone = valueOf('phone');
+    const healthInfo = collectHealthInfo(form);
 
     const errors = validateRegister({ studentNumber, fullName, email, password, phone });
     if (errors.length > 0) {
@@ -343,7 +387,7 @@ function initRegisterForm(form) {
     setLoading(button, true, 'Creating account…', 'Create account');
 
     try {
-      await register(studentNumber, fullName, email, password, phone);
+      await register(studentNumber, fullName, email, password, phone, healthInfo);
       const result = await login(email, password, 'student');
       window.location.href = homeUrlForRole(result?.user?.role);
     } catch (err) {
