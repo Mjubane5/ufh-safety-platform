@@ -77,15 +77,13 @@ real-world cost. See `frontend/js/demo-notice.js` for the reasoning.
 5. **Settings → Networking → Generate Domain.** Railway assigns the port
    through `PORT`, which `application.properties` already reads.
 6. Wait for the deploy. Hibernate creates the tables on first start
-   (`ddl-auto=update`), but they are **empty** — nobody can sign in yet.
-7. Seed the accounts, once. On the MySQL service, copy the public connection
-   command from the **Connect** tab, then:
-
-   ```
-   mysql -h <host> -P <port> -u root -p <database> < database/seed.sql
-   ```
-
-   Check it worked: `SELECT email, role FROM users;` should list four accounts.
+   (`ddl-auto=update`).
+7. **Automatic Demo Account Seeding.** With `DemoDataSeeder` in place, Spring Boot
+   automatically provisions synthetic student, campus control, GBV officer, and
+   responder duty accounts on initial startup if they are absent. Manual MySQL CLI
+   execution (`database/seed.sql`) is no longer required on Railway or local development.
+   
+   Check the startup logs: `DemoDataSeeder: Demonstration accounts check completed successfully.`
 
 8. Open `https://<app>.up.railway.app/`. You should get the landing page, then
    the login page, with the demonstration notice on top.
@@ -106,7 +104,7 @@ doing: without it a push to any branch can redeploy the live site.
   Acceptable for a prototype carrying a demonstration notice; it would not be
   acceptable for anything real.
 - **No backups.** Railway's MySQL on the trial has none configured. Everything
-  in it is synthetic and re-seedable from `database/seed.sql`, so treat the
+  in it is synthetic and re-seedable from `database/seed.sql` and `DemoDataSeeder`, so treat the
   hosted database as disposable.
 - **`ddl-auto=update` never drops anything.** Rename a field and the old column
   stays behind holding its data. Fine for us, wrong for production.
