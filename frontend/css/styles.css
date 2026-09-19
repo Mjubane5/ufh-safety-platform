@@ -540,6 +540,26 @@ a:focus-visible,
   outline-offset: 3px;
 }
 
+/* Primed state: the first tap armed it, a second tap within the window sends
+   it. The darker fill and thicker outline read as "this is now live" even to
+   someone glancing rather than reading the label. */
+.sos-button-armed {
+  background-color: var(--color-emergency-dark);
+  outline: 4px solid var(--color-text);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .sos-button-armed {
+    animation: sos-armed-pulse 1s ease-in-out infinite;
+  }
+}
+
+@keyframes sos-armed-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.02); }
+}
+
 /* --- Disabled -------------------------------------------------------------
    Applies to any control. Kept legible rather than faded into nothing: a
    student needs to understand WHY they cannot press it, so always pair a

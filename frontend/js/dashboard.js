@@ -7,7 +7,7 @@
 // No fetch() here. Everything goes through api.js.
 // No innerHTML here. Every server value reaches the page via textContent.
 
-import { getCurrentUser, getIncidents, isLoggedIn, logout, ApiError } from './api.js';
+import { getCurrentUser, getIncidents, isLoggedIn, logout, ApiError, submitIncident } from './api.js';
 import { createTrackingMap } from './tracking.js';
 
 const LOGIN_URL = './login.html';
@@ -359,6 +359,28 @@ function renderPagination(meta) {
   container.appendChild(nav);
 }
 
+// Mounted once per page load, not once per loadIncidents() call - loadIncidents
+// runs again on every filter/page change, and remounting the Leaflet map each
+// time would leak the previous instance (createTrackingMap never gets a
+// matching destroy() call from here) and restart its simulation from scratch.
+let liveTrackingMounted = false;
+
+/**
+ * Shows the live tracking map when the student has an incident a responder
+ * is actively en route to or on scene for. Was previously called here with
+ * no matching definition anywhere in the file - a ReferenceError that broke
+ * the entire incident list (caught by loadIncidents' try/catch) for any
+ * student in that state. createTrackingMap already exists in tracking.js and
+ * is imported above; this just actually calls it.
+ */
+function renderLiveTracking(incident) {
+  const slot = document.getElementById('live-tracking-slot');
+  if (!slot || liveTrackingMounted) return;
+
+  createTrackingMap(slot, { role: 'student', incidentId: incident.incidentId });
+  liveTrackingMounted = true;
+}
+
 // ---------------------------------------------------------------------------
 // Loading
 // ---------------------------------------------------------------------------
@@ -494,6 +516,118 @@ function initFilters() {
   });
 }
 
+// ---------------------------------------------------------------------------
+// SOS
+// ---------------------------------------------------------------------------
+
+// Same high-accuracy request report.js uses, on a shorter leash. An
+// emergency report should never wait 15 seconds on a GPS fix that report.js
+// can afford to wait for; if a fix isn't in by the time the student confirms,
+// send without one rather than hold the SOS back.
+const SOS_GEO_OPTIONS = { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 };
+const SOS_CONFIRM_WINDOW_MS = 5000;
+
+function capturePosition() {
+  return new Promise((resolve) => {
+    if (!navigator.geolocation) {
+      resolve(null);
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => resolve({
+        latitude: pos.coords.latitude,
+        longitude: pos.coords.longitude,
+        accuracy: pos.coords.accuracy ?? null,
+      }),
+      () => resolve(null), // denied, unavailable, or timed out - all the same to an SOS: send anyway
+      SOS_GEO_OPTIONS,
+    );
+  });
+}
+
+function initSosButton() {
+  const button = document.getElementById('sos-button');
+  const label = document.getElementById('sos-button-label');
+  const hint = document.getElementById('sos-hint');
+  if (!button || !label || !hint) return;
+
+  const idleLabel = label.textContent;
+  const idleHint = hint.textContent;
+  let armed = false;
+  let disarmTimer = null;
+  let positionPromise = null;
+
+  function disarm() {
+    armed = false;
+    clearTimeout(disarmTimer);
+    button.classList.remove('sos-button-armed');
+    label.textContent = idleLabel;
+    hint.textContent = idleHint;
+  }
+
+  function arm() {
+    armed = true;
+    // Start the GPS fix now, in parallel with the confirm countdown, so it
+    // has a head start by the time (if) the student taps again.
+    positionPromise = capturePosition();
+    label.textContent = 'Tap again to confirm SOS';
+    hint.textContent = `Sending in ${SOS_CONFIRM_WINDOW_MS / 1000}s if you don't tap again. Tap anywhere else to cancel.`;
+    button.classList.add('sos-button-armed');
+    disarmTimer = setTimeout(disarm, SOS_CONFIRM_WINDOW_MS);
+  }
+
+  async function send() {
+    clearTimeout(disarmTimer);
+    button.disabled = true;
+    label.textContent = 'Sending SOS…';
+    hint.textContent = 'Do not close this page.';
+
+    // Give a fix already in flight a little more time, but an SOS must not
+    // hang indefinitely on GPS - three more seconds, then send regardless.
+    const position = await Promise.race([
+      positionPromise,
+      new Promise((resolve) => setTimeout(() => resolve(null), 3000)),
+    ]);
+
+    try {
+      const incident = await submitIncident({
+        type: 'sos',
+        description: null,
+        anonymous: false,
+        latitude: position?.latitude ?? null,
+        longitude: position?.longitude ?? null,
+        accuracy: position?.accuracy ?? null,
+      });
+      window.location.href = `${INCIDENT_URL}?id=${incident.incidentId}`;
+    } catch (err) {
+      disarm();
+      button.disabled = false;
+      if (isSessionExpired(err)) {
+        redirectToLogin();
+        return;
+      }
+      showBanner('Could not send your SOS',
+        err instanceof ApiError ? err.message : 'Something went wrong. Please try again, or call 112 directly.');
+    }
+  }
+
+  button.addEventListener('click', () => {
+    if (armed) {
+      send();
+    } else {
+      arm();
+    }
+  });
+
+  // Tapping anywhere else cancels an armed SOS rather than leaving it primed
+  // to fire on whatever gets tapped next.
+  document.addEventListener('click', (event) => {
+    if (armed && event.target !== button && !button.contains(event.target)) {
+      disarm();
+    }
+  });
+}
+
 function initSignOut() {
   const button = document.getElementById('signout-button');
   if (!button) return;
@@ -516,6 +650,7 @@ if (!isLoggedIn()) {
   redirectToLogin();
 } else {
   initSignOut();
+  initSosButton();
   initFilters();
   loadGreeting();
   loadIncidents();
