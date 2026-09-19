@@ -7,6 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
@@ -54,6 +55,21 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleNotFound(NoResourceFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
             .body(new ErrorResponse("NOT_FOUND", "That endpoint does not exist.", null));
+    }
+
+    // A required @RequestParam that was never sent (GET /api/patrols/recent
+    // with no latitude/longitude, for example) is client error, not ours, but
+    // Spring throws before the controller body runs, so a service's own
+    // "field is required" check never gets the chance to fire. Same class of
+    // bug as NoResourceFoundException above: without this it fell through to
+    // the catch-all and came back as a 500 for what is really a 400.
+    @ExceptionHandler(MissingServletRequestParameterException.class)
+    public ResponseEntity<ErrorResponse> handleMissingParameter(MissingServletRequestParameterException ex) {
+        return ResponseEntity.badRequest()
+            .body(new ErrorResponse(
+                "VALIDATION_FAILED",
+                ex.getParameterName() + " is required.",
+                ex.getParameterName()));
     }
 
     // A body Jackson cannot read is bad client data, not a server fault: a

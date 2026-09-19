@@ -3,6 +3,7 @@ package za.ac.ufh.safety.common;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import org.springframework.http.HttpMethod;
@@ -10,9 +11,10 @@ import org.springframework.http.HttpMethod;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * These two cases used to fall through to the catch-all and come back as 500.
+ * These cases used to fall through to the catch-all and come back as 500.
  * A 500 tells the frontend team the backend crashed, so they go looking for a
- * bug that is not there when the real answer is "wrong URL" or "bad body".
+ * bug that is not there when the real answer is "wrong URL", "bad body", or
+ * "forgot a query parameter".
  */
 class GlobalExceptionHandlerTest {
 
@@ -37,6 +39,18 @@ class GlobalExceptionHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("VALIDATION_FAILED", response.getBody().error());
+    }
+
+    @Test
+    void missingQueryParameterIsValidationFailureRatherThanServerError() {
+        var response = handler.handleMissingParameter(
+                new MissingServletRequestParameterException("latitude", "Double"));
+
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertEquals("VALIDATION_FAILED", response.getBody().error());
+        assertEquals("latitude", response.getBody().field(),
+                "the caller needs to know which parameter was missing");
     }
 
     @Test
