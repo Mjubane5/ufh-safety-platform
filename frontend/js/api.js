@@ -287,8 +287,25 @@ function requireMockToken() {
 /**
  * POST /api/auth/register - public, student self-registration.
  */
-export async function register(studentNumber, fullName, email, password, phone) {
-  const body = { studentNumber, fullName, email, password, phone };
+/**
+ * POST /api/auth/register - public.
+ *
+ * healthInfo is optional: { conditions: string[], note: string|null }. Not
+ * yet part of the backend contract - the real endpoint currently ignores
+ * unknown JSON fields rather than rejecting the request (verified directly
+ * against a running backend), so sending it is safe, but nothing is stored
+ * or shown to a responder until the backend adds a column for it.
+ */
+export async function register(studentNumber, fullName, email, password, phone, healthInfo = null) {
+  const body = {
+    studentNumber,
+    fullName,
+    email,
+    password,
+    phone,
+    healthConditions: healthInfo?.conditions?.length ? healthInfo.conditions : null,
+    healthNote: healthInfo?.note ?? null,
+  };
 
   if (MOCK) {
     await delay();
@@ -379,6 +396,38 @@ export async function getCurrentUser() {
     setStoredUser(user);
   }
   return user;
+}
+
+/**
+ * POST /api/auth/forgot-password - public.
+ *
+ * Not yet a real backend endpoint (see docs/api-contract.md) - built ahead of
+ * it the same way the GBV and wellness pages were. Always resolves with the
+ * same generic message, mock or real, so the UI can't be used to check which
+ * emails are registered.
+ */
+export async function requestPasswordReset(email) {
+  if (MOCK) {
+    await delay();
+    return { message: "If that email is registered, a reset link has been sent." };
+  }
+
+  return request('/auth/forgot-password', { method: 'POST', body: { email } });
+}
+
+/**
+ * POST /api/auth/reset-password - public.
+ *
+ * Not yet a real backend endpoint. token comes from the query string of the
+ * emailed reset link (reset-password.html?token=...).
+ */
+export async function resetPassword(token, newPassword) {
+  if (MOCK) {
+    await delay();
+    return { message: 'Password updated. Sign in with your new password.' };
+  }
+
+  return request('/auth/reset-password', { method: 'POST', body: { token, newPassword } });
 }
 
 // ---------------------------------------------------------------------------

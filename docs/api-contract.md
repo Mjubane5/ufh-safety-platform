@@ -149,6 +149,55 @@ Any authenticated role. Lets the frontend restore session state on page reload.
 
 ---
 
+### POST /api/auth/forgot-password
+
+Public. Not yet implemented on the backend - the frontend calls this shape
+already (`docs/development-challenges.md` pattern: frontend built ahead of
+the endpoint), so this section is the spec for whoever builds it.
+
+**Request**
+```json
+{ "email": "202512345@ufh.ac.za" }
+```
+
+**Response 200**, unconditionally, whether or not the email is registered:
+```json
+{ "message": "If that email is registered, a reset link has been sent." }
+```
+
+Never returns 404 for an unknown email and never returns a different shape
+for a known vs. unknown one - that difference is exactly how an attacker
+enumerates which addresses have accounts. A missing/malformed `email` is
+still a normal 400 `VALIDATION_FAILED`, since that's a client mistake, not
+information about the target account.
+
+Sends a link like `https://<host>/reset-password.html?token=<opaque-token>`.
+The token needs a short expiry (an hour is plenty) and must be single-use.
+
+---
+
+### POST /api/auth/reset-password
+
+Public. Also not yet implemented; same "frontend built ahead" note as above.
+
+**Request**
+```json
+{ "token": "the opaque token from the emailed link", "newPassword": "..." }
+```
+
+**Response 200**
+```json
+{ "message": "Password updated. Sign in with your new password." }
+```
+
+**Errors:** 400 `VALIDATION_FAILED` for a weak password (same 8-character
+minimum as registration), 400 `INVALID_TOKEN` for a token that's wrong,
+already used, or expired - one generic message either way, not "expired" vs
+"already used", since distinguishing them tells an attacker something about
+timing they shouldn't get.
+
+---
+
 ## 3. Incidents
 
 The single pipeline. SOS is an incident with `type: "sos"` and forced high
