@@ -5,16 +5,21 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api")
 public class SafetyWalkController {
 
     private final SafetyWalkService safetyWalkService;
+    private final HotspotService hotspotService;
 
     public SafetyWalkController(
-            SafetyWalkService safetyWalkService) {
+            SafetyWalkService safetyWalkService,
+            HotspotService hotspotService) {
 
         this.safetyWalkService = safetyWalkService;
+        this.hotspotService = hotspotService;
     }
 
     @PostMapping("/patrols")
@@ -39,6 +44,15 @@ public class SafetyWalkController {
                 latitude,
                 longitude,
                 radiusMetres
+        );
+    }
+
+    @GetMapping("/hotspots")
+    public Map<String, Object> getHotspots() {
+
+        return Map.of(
+                "items",
+                hotspotService.getHotspots()
         );
     }
 }
