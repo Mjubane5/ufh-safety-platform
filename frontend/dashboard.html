@@ -33,6 +33,20 @@
     <!-- dashboard.js writes the student's name in here once GET /auth/me
          returns. It starts as the generic heading so the page is readable
          before that call finishes. -->
+    <!-- Deliberately above everything else on the page, including the
+         greeting. In an emergency this is the first thing a thumb finds. -->
+    <section class="sos-section" aria-labelledby="sos-heading">
+      <h2 id="sos-heading" class="visually-hidden">Emergency SOS</h2>
+      <button class="sos-button" id="sos-button" type="button" aria-describedby="sos-hint">
+        <span aria-hidden="true">🆘</span>
+        <span id="sos-button-label">SOS — Tap for emergency help</span>
+      </button>
+      <p class="field-hint" id="sos-hint">
+        Sends your location to campus control immediately, no form to fill in.
+        Needs a second tap to confirm, so a pocket press can't send one by accident.
+      </p>
+    </section>
+
     <section class="dashboard-intro" aria-labelledby="greeting">
       <div>
         <p class="eyebrow">Student safety hub</p>
