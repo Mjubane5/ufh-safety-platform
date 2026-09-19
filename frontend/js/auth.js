@@ -1,7 +1,9 @@
-// auth.js — behaviour for login.html, register.html, and staff-login.html.
+// auth.js — behaviour for login.html, register.html, staff-login.html,
+// forgot-password.html, and reset-password.html.
 //
 // One module serves all authentication flows. It wires up #login-form,
-// #staff-login-form, or #register-form depending on which is present on the page.
+// #staff-login-form, #register-form, #forgot-password-form, or
+// #reset-password-form depending on which is present on the page.
 //
 // This file never calls fetch(). Every network call goes through api.js —
 // that is the project rule, and it is why token and session handling are
@@ -11,7 +13,7 @@
 // messages, student names and email addresses are all attacker-influenced
 // text. They go on the page with textContent.
 
-import { register, login, logout, ApiError } from './api.js';
+import { register, login, logout, ApiError, requestPasswordReset, resetPassword } from './api.js';
 
 // Where a successful sign-in lands based on user role.
 const ROLE_HOME_URLS = {
@@ -404,6 +406,109 @@ function initRegisterForm(form) {
 }
 
 // ---------------------------------------------------------------------------
+// Forgot password page
+// ---------------------------------------------------------------------------
+
+function initForgotPasswordForm(form) {
+  const button = document.getElementById('submit-button');
+  let isSubmitting = false;
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (isSubmitting) return;
+
+    clearBanner();
+    clearAllFieldErrors(form);
+
+    const email = valueOf('email');
+    // Domain-restricted like login/register: this system only issues resets
+    // for its own accounts, and every real account is a @ufh.ac.za address.
+    const errors = validateLogin({ email, password: 'placeholder' }, { requireUfhDomain: true })
+      .filter((error) => error.field === 'email');
+    if (errors.length > 0) {
+      showValidationErrors(errors);
+      return;
+    }
+
+    isSubmitting = true;
+    setLoading(button, true, 'Sending…', 'Send reset link');
+
+    try {
+      const result = await requestPasswordReset(email);
+      // Same message shown regardless of whether the email is registered -
+      // that's the whole point, see the field hint in the response shape.
+      form.reset();
+      showBanner('success', 'Check your email',
+        result?.message ?? "If that email is registered, we've sent a reset link.");
+    } catch (err) {
+      handleRequestFailure(err, 'Could not send the reset link');
+    } finally {
+      setLoading(button, false, 'Sending…', 'Send reset link');
+      isSubmitting = false;
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Reset password page
+// ---------------------------------------------------------------------------
+
+function initResetPasswordForm(form) {
+  const button = document.getElementById('submit-button');
+  const context = document.getElementById('reset-context');
+  let isSubmitting = false;
+
+  const token = new URLSearchParams(window.location.search).get('token');
+  if (context) {
+    context.textContent = token
+      ? 'Enter a new password below.'
+      : "This link is missing its token, it won't work. Request a new one from the forgot password page.";
+  }
+  if (!token) {
+    button.disabled = true;
+  }
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (isSubmitting || !token) return;
+
+    clearBanner();
+    clearAllFieldErrors(form);
+
+    const password = document.getElementById('password').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+
+    const errors = [];
+    if (!password) {
+      errors.push({ field: 'password', message: 'Choose a new password.' });
+    } else if (password.length < MIN_PASSWORD_LENGTH) {
+      errors.push({ field: 'password', message: `Password must be at least ${MIN_PASSWORD_LENGTH} characters.` });
+    }
+    if (password && confirmPassword !== password) {
+      errors.push({ field: 'confirmPassword', message: 'Passwords do not match.' });
+    }
+    if (errors.length > 0) {
+      showValidationErrors(errors);
+      return;
+    }
+
+    isSubmitting = true;
+    setLoading(button, true, 'Updating…', 'Set new password');
+
+    try {
+      await resetPassword(token, password);
+      showBanner('success', 'Password updated', 'Sign in with your new password.');
+      form.reset();
+      button.disabled = true;
+    } catch (err) {
+      handleRequestFailure(err, 'Could not update your password');
+      setLoading(button, false, 'Updating…', 'Set new password');
+      isSubmitting = false;
+    }
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Start up
 // ---------------------------------------------------------------------------
 
@@ -412,6 +517,12 @@ if (loginForm) initLoginForm(loginForm);
 
 const staffLoginForm = document.getElementById('staff-login-form');
 if (staffLoginForm) initStaffLoginForm(staffLoginForm);
+
+const forgotPasswordForm = document.getElementById('forgot-password-form');
+if (forgotPasswordForm) initForgotPasswordForm(forgotPasswordForm);
+
+const resetPasswordForm = document.getElementById('reset-password-form');
+if (resetPasswordForm) initResetPasswordForm(resetPasswordForm);
 
 const registerForm = document.getElementById('register-form');
 if (registerForm) initRegisterForm(registerForm);

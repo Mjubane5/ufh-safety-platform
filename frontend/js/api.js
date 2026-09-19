@@ -398,6 +398,38 @@ export async function getCurrentUser() {
   return user;
 }
 
+/**
+ * POST /api/auth/forgot-password - public.
+ *
+ * Not yet a real backend endpoint (see docs/api-contract.md) - built ahead of
+ * it the same way the GBV and wellness pages were. Always resolves with the
+ * same generic message, mock or real, so the UI can't be used to check which
+ * emails are registered.
+ */
+export async function requestPasswordReset(email) {
+  if (MOCK) {
+    await delay();
+    return { message: "If that email is registered, a reset link has been sent." };
+  }
+
+  return request('/auth/forgot-password', { method: 'POST', body: { email } });
+}
+
+/**
+ * POST /api/auth/reset-password - public.
+ *
+ * Not yet a real backend endpoint. token comes from the query string of the
+ * emailed reset link (reset-password.html?token=...).
+ */
+export async function resetPassword(token, newPassword) {
+  if (MOCK) {
+    await delay();
+    return { message: 'Password updated. Sign in with your new password.' };
+  }
+
+  return request('/auth/reset-password', { method: 'POST', body: { token, newPassword } });
+}
+
 // ---------------------------------------------------------------------------
 // Incidents - contract section 3
 // ---------------------------------------------------------------------------
