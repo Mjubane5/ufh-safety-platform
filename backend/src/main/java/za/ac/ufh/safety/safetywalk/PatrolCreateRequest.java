@@ -1,0 +1,27 @@
+package za.ac.ufh.safety.safetywalk;
+
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.Size;
+
+public record PatrolCreateRequest(
+        @NotNull
+        @Positive
+        Long zoneId,
+
+        @NotNull
+        @DecimalMin("-90.0")
+        @DecimalMax("90.0")
+        Double latitude,
+
+        @NotNull
+        @DecimalMin("-180.0")
+        @DecimalMax("180.0")
+        Double longitude,
+
+        @Size(max = 500)
+        String note
+) {
+}
