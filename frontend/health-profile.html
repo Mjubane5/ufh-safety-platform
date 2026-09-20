@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Health conditions — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./dashboard.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Health conditions</span>
+        </span>
+      </a>
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype for CSC 200 / CSC 300. Not connected to any live emergency
+      service. All data shown here is synthetic.
+    </p>
+
+    <a href="./dashboard.html" class="auth-footer-link">&larr; Back to your reports</a>
+
+    <h1>Health conditions</h1>
+    <p class="text-meta">
+      Declared once at registration, editable any time here. Only shown to a
+      responder attending your emergency, never to campus control, GBV
+      officers, or anyone browsing reports.
+    </p>
+
+    <div id="banner-slot"></div>
+
+    <form class="form" id="health-profile-form" novalidate aria-busy="true">
+      <fieldset class="field" id="field-health">
+        <legend class="label">Health conditions a responder should know <span class="text-meta">(optional)</span></legend>
+        <label class="checkbox" for="health-asthma">
+          <input type="checkbox" id="health-asthma" name="healthCondition" value="asthma">
+          <span>Asthma</span>
+        </label>
+        <label class="checkbox" for="health-diabetes">
+          <input type="checkbox" id="health-diabetes" name="healthCondition" value="diabetes">
+          <span>Diabetes</span>
+        </label>
+        <label class="checkbox" for="health-epilepsy">
+          <input type="checkbox" id="health-epilepsy" name="healthCondition" value="epilepsy">
+          <span>Epilepsy</span>
+        </label>
+        <label class="checkbox" for="health-allergy">
+          <input type="checkbox" id="health-allergy" name="healthCondition" value="severe_allergy">
+          <span>Severe allergy (anaphylaxis risk)</span>
+        </label>
+        <label class="checkbox" for="health-heart">
+          <input type="checkbox" id="health-heart" name="healthCondition" value="heart_condition">
+          <span>Heart condition</span>
+        </label>
+
+        <label class="label" for="healthNote">Anything else worth a responder knowing</label>
+        <textarea
+          class="textarea"
+          id="healthNote"
+          name="healthNote"
+          maxlength="200"
+          placeholder="Short and specific, e.g. &quot;carries an EpiPen&quot;. Not your full medical history."></textarea>
+        <p class="field-hint" id="health-note-count">0 / 200 characters</p>
+      </fieldset>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" id="submit-button" type="submit">
+          Save health conditions
+        </button>
+      </div>
+    </form>
+  </main>
+
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/shell.js"></script>
+  <script type="module" src="./js/health-profile.js"></script>
+</body>
+</html>

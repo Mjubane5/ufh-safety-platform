@@ -39,6 +39,7 @@ Every user has exactly one role. Endpoints state which roles may call them.
 | `responder` | Receives assignments, updates incident status |
 | `campus_control` | Logs patrols, views all incidents, oversees dispatch |
 | `gbv_officer` | Sole role able to read GBV case content |
+| `scu_officer` | Sole role able to manage wellness bookings and student wellness messages |
 | `admin` | User management, audit log access |
 
 ### Standard error response
@@ -146,6 +147,52 @@ Any authenticated role. Lets the frontend restore session state on page reload.
   "role": "student"
 }
 ```
+
+---
+
+### GET /api/students/me/health
+
+Roles: `student`. Not yet implemented on the backend, same "frontend built
+ahead" note as the password-reset endpoints below.
+
+Declared once at registration, editable any time after. Backs the medical
+alert button on the dashboard, which only appears once a student has
+declared at least one condition or a note, and copies this into the incident
+description when pressed so a responder doesn't need to ask.
+
+**Response 200**
+```json
+{
+  "conditions": ["asthma", "severe_allergy"],
+  "note": "Carries an EpiPen"
+}
+```
+
+`conditions` is a fixed list, not free text: `asthma`, `diabetes`,
+`epilepsy`, `severe_allergy`, `heart_condition`. `note` is capped at 200
+characters - context for a responder in an emergency, not a medical file.
+Both empty (`{"conditions": [], "note": null}`) when nothing's been
+declared, not a 404 - "no profile yet" is a normal state, not an error.
+
+**Data protection, same POPIA reasoning as the registration field:** this is
+special personal information. It must never appear in `GET /api/incidents`
+or `GET /api/incidents/{id}` for anyone except the incident's own reporter,
+the responder actually assigned to it, and `campus_control`/`admin` - the
+same visibility rule incidents already have, not a wider one just because
+health data is involved.
+
+---
+
+### PUT /api/students/me/health
+
+Roles: `student`. Not yet implemented.
+
+**Request:** same shape as the response above.
+
+**Response 200:** the saved profile, same shape.
+
+**Errors:** 400 `VALIDATION_FAILED` for a `conditions` entry outside the
+fixed list, or a `note` over 200 characters.
 
 ---
 
@@ -751,6 +798,106 @@ Roles: `student`
 ```
 
 Booking status: `requested`, `confirmed`, `declined`, `cancelled`.
+
+---
+
+### PATCH /api/wellness/bookings/{bookingId}
+
+Roles: `scu_officer`, `admin`. Not yet implemented - frontend built ahead of
+it, same pattern as the rest of this section.
+
+**Request**
+```json
+{ "status": "confirmed" }
+```
+
+**Response 200:** the updated booking, same shape as the `POST` response.
+
+---
+
+### GET /api/wellness/queue
+
+Roles: `scu_officer`, `admin`. Not yet implemented.
+
+Every student with a booking or a message thread, most recent activity
+first - the SCU equivalent of the GBV case queue. `hasUnread` is true when
+the student's most recent message hasn't had a reply yet.
+
+**Response 200**
+```json
+{
+  "items": [
+    {
+      "studentUserId": 17,
+      "studentName": "A Student",
+      "lastActivityAt": "2026-08-23T02:00:00Z",
+      "hasUnread": true,
+      "bookings": [
+        { "bookingId": 31, "status": "requested", "preferredDate": "2026-08-26", "preferredSlot": "morning" }
+      ]
+    }
+  ]
+}
+```
+
+---
+
+### GET /api/wellness/messages
+
+Roles: `student`. Not yet implemented. Scoped to the caller automatically -
+a student only ever sees their own thread, there is no student-facing way
+to address a message to anyone else's.
+
+One ongoing thread per student rather than one per booking: simpler for
+both sides, and closer to how a real counselling unit actually works.
+
+**Response 200**
+```json
+{
+  "items": [
+    {
+      "messageId": 1,
+      "sender": "student",
+      "text": "Could I move Thursday's session?",
+      "sentAt": "2026-08-23T02:00:00Z"
+    }
+  ]
+}
+```
+
+`sender` is `student` or `scu`. Poll this every 5 seconds while a student
+has the conversation open, matching the interval already used elsewhere in
+this app rather than introducing a different one.
+
+---
+
+### POST /api/wellness/messages
+
+Roles: `student`.
+
+**Request**
+```json
+{ "text": "Could I move Thursday's session?" }
+```
+
+**Response 201:** the created message, same shape as one item above.
+
+---
+
+### GET /api/wellness/messages/{studentUserId}
+
+Roles: `scu_officer`, `admin`. Not yet implemented. Same response shape as
+the student-facing endpoint, for the one student named in the path.
+
+---
+
+### POST /api/wellness/messages/{studentUserId}
+
+Roles: `scu_officer`, `admin`.
+
+**Request:** same shape as the student-facing `POST`.
+
+**Response 201:** the created message, `sender: "scu"`.
 
 ---
 

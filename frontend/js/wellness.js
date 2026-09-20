@@ -1,10 +1,16 @@
-import { createWellnessBooking, getCurrentUser, getWellnessResources, isLoggedIn, logout, ApiError } from './api.js';
+import { createWellnessBooking, getCurrentUser, getWellnessResources, getWellnessMessages, sendWellnessMessage, isLoggedIn, logout, ApiError } from './api.js';
 
 const LOGIN_URL = './login.html';
+const CHAT_POLL_MS = 5000; // matches the interval already used elsewhere in this app
 const list = document.getElementById('resource-list');
 const message = document.getElementById('wellness-message');
 const bookingSection = document.getElementById('booking-section');
 const resourceSelect = document.getElementById('resource-id');
+const chatSection = document.getElementById('chat-section');
+const chatThread = document.getElementById('chat-thread');
+let currentUserId = null;
+let chatPollTimer = null;
+let renderedMessageCount = 0;
 
 function showBanner(title, text, kind = 'error') {
   const slot = document.getElementById('banner-slot');
@@ -66,6 +72,77 @@ function renderResources(resources) {
   });
 }
 
+// ---------------------------------------------------------------------------
+// Chat ("talk to SCU") - polling, not sockets, matching the team's own
+// decision log for every other real-time feature in this app.
+// ---------------------------------------------------------------------------
+
+function renderMessages(items) {
+  chatThread.replaceChildren();
+  if (items.length === 0) {
+    chatThread.appendChild(Object.assign(document.createElement('p'), {
+      className: 'empty-state',
+      textContent: 'No messages yet. Say hello, or ask about booking a session.',
+    }));
+    return;
+  }
+  items.forEach((item) => {
+    const bubble = document.createElement('div');
+    bubble.className = item.sender === 'student' ? 'chat-bubble chat-bubble-mine' : 'chat-bubble chat-bubble-theirs';
+    const text = document.createElement('span');
+    text.textContent = item.text;
+    bubble.appendChild(text);
+    const meta = document.createElement('span');
+    meta.className = 'chat-bubble-meta';
+    meta.textContent = item.sender === 'student' ? 'You' : 'SCU';
+    bubble.appendChild(meta);
+    chatThread.appendChild(bubble);
+  });
+  chatThread.scrollTop = chatThread.scrollHeight;
+}
+
+async function pollMessages() {
+  try {
+    const result = await getWellnessMessages();
+    const items = Array.isArray(result?.items) ? result.items : [];
+    // Cheap way to avoid rebuilding (and losing scroll position on) an
+    // unchanged thread every 5 seconds - only re-render when the count moves.
+    if (items.length !== renderedMessageCount) {
+      renderedMessageCount = items.length;
+      renderMessages(items);
+    }
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      stopChatPolling();
+      redirectToLogin();
+    }
+    // Any other failure: leave the existing thread showing, try again next tick.
+  }
+}
+
+function startChatPolling() {
+  pollMessages();
+  chatPollTimer = setInterval(pollMessages, CHAT_POLL_MS);
+}
+
+function stopChatPolling() {
+  if (chatPollTimer) {
+    clearInterval(chatPollTimer);
+    chatPollTimer = null;
+  }
+}
+
+// Polling a page nobody is looking at wastes requests for no benefit - pause
+// while the tab is hidden, catch up immediately when it's visible again.
+document.addEventListener('visibilitychange', () => {
+  if (!chatSection || chatSection.hidden) return;
+  if (document.hidden) {
+    stopChatPolling();
+  } else {
+    startChatPolling();
+  }
+});
+
 async function load() {
   if (!isLoggedIn()) {
     redirectToLogin();
@@ -76,7 +153,12 @@ async function load() {
     const resources = Array.isArray(result?.items) ? result.items : [];
     renderResources(resources);
     message.textContent = `${resources.length} support resource${resources.length === 1 ? '' : 's'} available.`;
-    if (user?.role === 'student' && resources.length > 0) bookingSection.hidden = false;
+    if (user?.role === 'student') {
+      currentUserId = user.userId;
+      if (resources.length > 0) bookingSection.hidden = false;
+      chatSection.hidden = false;
+      startChatPolling();
+    }
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       redirectToLogin();
@@ -111,6 +193,30 @@ document.getElementById('booking-form').addEventListener('submit', async (event)
     showBanner('Could not request booking', error instanceof ApiError ? error.message : 'Please try again.');
   } finally {
     button.disabled = false;
+  }
+});
+
+document.getElementById('chat-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const input = document.getElementById('chat-input');
+  const button = document.getElementById('chat-send-button');
+  const text = input.value.trim();
+  if (!text) return;
+
+  button.disabled = true;
+  try {
+    await sendWellnessMessage(text);
+    input.value = '';
+    await pollMessages();
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      redirectToLogin();
+      return;
+    }
+    showBanner('Could not send that message', error instanceof ApiError ? error.message : 'Please try again.');
+  } finally {
+    button.disabled = false;
+    input.focus();
   }
 });
 

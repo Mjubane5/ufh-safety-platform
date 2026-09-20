@@ -63,6 +63,20 @@
         </div>
       </form>
     </section>
+
+    <section id="chat-section" class="card" aria-labelledby="chat-heading" hidden>
+      <h2 id="chat-heading">Talk to the Student Counselling Unit</h2>
+      <p class="text-meta">
+        A private message thread with SCU staff. Not a live chat, replies
+        may take a while, same as email.
+      </p>
+      <div class="chat-thread" id="chat-thread" aria-live="polite"></div>
+      <form class="chat-composer" id="chat-form" novalidate>
+        <label class="visually-hidden" for="chat-input">Message</label>
+        <input class="input" id="chat-input" type="text" maxlength="500" placeholder="Type a message..." required>
+        <button class="btn btn-primary" id="chat-send-button" type="submit">Send</button>
+      </form>
+    </section>
   </main>
 
   <script type="module" src="./js/demo-notice.js"></script>

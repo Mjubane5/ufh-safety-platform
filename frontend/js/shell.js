@@ -8,6 +8,7 @@ const ROLE_HOME_URLS = {
   campus_control: './control-dashboard.html',
   responder: './responder-dashboard.html',
   gbv_officer: './gbv-officer.html',
+  scu_officer: './scu-officer.html',
   admin: './control-dashboard.html',
 };
 
@@ -16,6 +17,7 @@ const ROLE_LABELS = {
   campus_control: 'Campus Control',
   responder: 'Responder',
   gbv_officer: 'GBV Support Officer',
+  scu_officer: 'SCU Officer',
   admin: 'Administrator',
 };
 
@@ -25,6 +27,7 @@ const NAV_BY_ROLE = {
     ['Report Incident', './report.html'],
     ['Safety Map', './map.html'],
     ['Wellness', './wellness.html'],
+    ['Health Conditions', './health-profile.html'],
     ['Confidential GBV', './gbv.html'],
   ],
   campus_control: [
@@ -44,10 +47,15 @@ const NAV_BY_ROLE = {
     ['Wellness Units', './wellness.html'],
     ['Demo Switcher', './role-dashboard.html'],
   ],
+  scu_officer: [
+    ['Booking Queue', './scu-officer.html'],
+    ['Demo Switcher', './role-dashboard.html'],
+  ],
   admin: [
     ['Campus Control', './control-dashboard.html'],
     ['Responder Desk', './responder-dashboard.html'],
     ['GBV Queue', './gbv-officer.html'],
+    ['SCU Queue', './scu-officer.html'],
     ['Demo Switcher', './role-dashboard.html'],
   ],
 };
@@ -63,7 +71,7 @@ function createButton(label, className, onClick) {
 
 export function handleSignOut() {
   const lastRole = logout();
-  if (['campus_control', 'gbv_officer', 'responder', 'admin'].includes(lastRole)) {
+  if (['campus_control', 'gbv_officer', 'scu_officer', 'responder', 'admin'].includes(lastRole)) {
     window.location.replace('./staff-login.html');
   } else {
     window.location.replace('./login.html');
