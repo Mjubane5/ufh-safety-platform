@@ -34,33 +34,39 @@
          returns. It starts as the generic heading so the page is readable
          before that call finishes. -->
     <!-- Deliberately above everything else on the page, including the
-         greeting. In an emergency this is the first thing a thumb finds. -->
-    <section class="sos-section" aria-labelledby="sos-heading">
-      <h2 id="sos-heading" class="visually-hidden">Emergency SOS</h2>
-      <button class="sos-button" id="sos-button" type="button" aria-describedby="sos-hint">
-        <span aria-hidden="true">🆘</span>
-        <span id="sos-button-label">SOS — Tap for emergency help</span>
-      </button>
-      <p class="field-hint" id="sos-hint">
-        Sends your location to campus control immediately, no form to fill in.
-        Needs a second tap to confirm, so a pocket press can't send one by accident.
-      </p>
-    </section>
+         greeting. In an emergency this is the first thing a thumb finds.
+         Both buttons share this panel so they read as one grouped control
+         instead of two competing full-width buttons. -->
+    <section class="emergency-panel" aria-labelledby="emergency-panel-heading">
+      <p class="emergency-panel-label" id="emergency-panel-heading">Emergency actions</p>
 
-    <!-- Populated by dashboard.js only for a student who has declared a
-         health condition - see health-profile.html. Empty and untouched for
-         everyone else, not just hidden, so there's nothing in the markup to
-         explain if someone inspects the page. -->
-    <section class="sos-section" id="medical-alert-section" hidden aria-labelledby="medical-alert-heading">
-      <h2 id="medical-alert-heading" class="visually-hidden">Medical alert</h2>
-      <button class="sos-button sos-button-medical" id="medical-alert-button" type="button" aria-describedby="medical-alert-hint">
-        <span aria-hidden="true">⚕️</span>
-        <span id="medical-alert-button-label">Medical alert — Tap for help</span>
-      </button>
-      <p class="field-hint" id="medical-alert-hint">
-        Alerts campus control with your declared health conditions attached, so medical
-        responders know before they arrive. Needs a second tap to confirm.
-      </p>
+      <div class="sos-section" aria-labelledby="sos-heading">
+        <h2 id="sos-heading" class="visually-hidden">Emergency SOS</h2>
+        <button class="sos-button" id="sos-button" type="button" aria-describedby="sos-hint">
+          <span class="sos-button-icon" aria-hidden="true">🆘</span>
+          <span id="sos-button-label" class="sos-button-label">SOS — Tap for emergency help</span>
+        </button>
+        <p class="field-hint" id="sos-hint">
+          Sends your location to campus control immediately, no form to fill in.
+          Needs a second tap to confirm, so a pocket press can't send one by accident.
+        </p>
+      </div>
+
+      <!-- Populated by dashboard.js only for a student who has declared a
+           health condition - see health-profile.html. Empty and untouched for
+           everyone else, not just hidden, so there's nothing in the markup to
+           explain if someone inspects the page. -->
+      <div class="sos-section" id="medical-alert-section" hidden aria-labelledby="medical-alert-heading">
+        <h2 id="medical-alert-heading" class="visually-hidden">Medical alert</h2>
+        <button class="sos-button sos-button-medical" id="medical-alert-button" type="button" aria-describedby="medical-alert-hint">
+          <span class="sos-button-icon" aria-hidden="true">⚕️</span>
+          <span id="medical-alert-button-label" class="sos-button-label">Medical alert — Tap for help</span>
+        </button>
+        <p class="field-hint" id="medical-alert-hint">
+          Alerts campus control with your declared health conditions attached, so medical
+          responders know before they arrive. Needs a second tap to confirm.
+        </p>
+      </div>
     </section>
 
     <section class="dashboard-intro" aria-labelledby="greeting">

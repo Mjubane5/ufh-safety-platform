@@ -17,6 +17,20 @@ const CAMPUS_WAYPOINTS = [
   { lat: -32.78460, lng: 26.85120, label: 'Miriam Makeba Residence' },
 ];
 
+// A separate, reversed-ish path for demoing student movement (e.g. a student
+// walking away from where they reported, or being followed) - distinct from
+// the responder's route so the two markers don't just slide along the same
+// line. Only used while state.student.isSimulating is on; real device GPS
+// (see startLiveLocationWatch below) overrides this the moment it reports a
+// position.
+const STUDENT_WAYPOINTS = [
+  { lat: -32.78460, lng: 26.85120, label: 'Miriam Makeba Residence' },
+  { lat: -32.78430, lng: 26.85080, label: 'South Residence Path' },
+  { lat: -32.78380, lng: 26.85030, label: 'Freedom Square Crossing' },
+  { lat: -32.78330, lng: 26.84965, label: 'Central Library Walkway' },
+  { lat: -32.78270, lng: 26.84890, label: 'Sports Complex' },
+];
+
 const DEFAULT_STUDENT_POS = {
   lat: -32.78460,
   lng: 26.85120,
@@ -42,9 +56,9 @@ export function calculateDistanceMetres(lat1, lon1, lat2, lon2) {
 }
 
 /** Interpolate coordinates between waypoints given progress ratio 0.0 to 1.0 */
-export function getInterpolatedPosition(progress) {
+export function getInterpolatedPosition(progress, waypoints = CAMPUS_WAYPOINTS) {
   const clamped = Math.max(0, Math.min(1, progress));
-  const points = CAMPUS_WAYPOINTS;
+  const points = waypoints;
   const totalSegments = points.length - 1;
   const scaled = clamped * totalSegments;
   const index = Math.floor(scaled);
@@ -70,6 +84,10 @@ export function getTrackingState(incidentId = 41) {
     try {
       const state = JSON.parse(raw);
       if (state && (!incidentId || state.incidentId === incidentId)) {
+        // Backfill fields added after some browsers already had a saved
+        // state, so an older localStorage value doesn't crash on undefined.
+        if (typeof state.student.progress !== 'number') state.student.progress = 0;
+        if (typeof state.student.isSimulating !== 'boolean') state.student.isSimulating = false;
         return state;
       }
     } catch {
@@ -96,6 +114,12 @@ export function getTrackingState(incidentId = 41) {
       locationDescription: 'Miriam Makeba Residence, Block B entrance',
       lat: DEFAULT_STUDENT_POS.lat,
       lng: DEFAULT_STUDENT_POS.lng,
+      // progress/isSimulating: demo-only movement along STUDENT_WAYPOINTS,
+      // off by default. Real device GPS (startLiveLocationWatch) turns this
+      // off the moment it reports an actual position, so the two never
+      // fight over where the marker sits.
+      progress: 0,
+      isSimulating: false,
     },
     progress: 0.35, // 35% on the way
     speedKmh: 24,
@@ -205,6 +229,7 @@ export function createTrackingMap(target, options = {}) {
           <button type="button" class="btn btn-ghost btn-sm" id="btn-step-progress">Step forward (+15%)</button>
           <button type="button" class="btn btn-ghost btn-sm" id="btn-toggle-sim">Pause live feed</button>
           <button type="button" class="btn btn-ghost btn-sm" id="btn-reset-sim">Reset to dispatch</button>
+          <button type="button" class="btn btn-ghost btn-sm" id="btn-toggle-student-sim">${state.student.isSimulating ? 'Pause student movement' : 'Simulate student movement'}</button>
         </div>
       </div>
     </div>
@@ -291,6 +316,7 @@ export function createTrackingMap(target, options = {}) {
   const stepBtn = container.querySelector('#btn-step-progress');
   const resetBtn = container.querySelector('#btn-reset-sim');
   const updateLocBtn = container.querySelector('#btn-update-loc');
+  const toggleStudentSimBtn = container.querySelector('#btn-toggle-student-sim');
 
   function renderTelemetry() {
     const currentRespPos = getInterpolatedPosition(state.progress);
@@ -323,21 +349,34 @@ export function createTrackingMap(target, options = {}) {
 
   renderTelemetry();
 
-  // Timer loop for simulation
+  // Timer loop for simulation. Responder and student movement are
+  // independent - either, both, or neither can be running at once.
   let intervalId = null;
   function startSimulation() {
     if (intervalId) return;
     intervalId = setInterval(() => {
-      if (!state.isSimulating) return;
+      let changed = false;
 
-      if (state.progress < 0.98) {
-        state.progress = Math.min(1.0, state.progress + 0.025);
-        state.speedKmh = Math.floor(20 + Math.random() * 8);
-        saveTrackingState(state);
-        renderTelemetry();
-      } else {
-        state.progress = 1.0;
-        state.status = 'on_scene';
+      if (state.isSimulating) {
+        if (state.progress < 0.98) {
+          state.progress = Math.min(1.0, state.progress + 0.025);
+          state.speedKmh = Math.floor(20 + Math.random() * 8);
+        } else {
+          state.progress = 1.0;
+          state.status = 'on_scene';
+        }
+        changed = true;
+      }
+
+      if (state.student.isSimulating && state.student.progress < 1) {
+        state.student.progress = Math.min(1, state.student.progress + 0.04);
+        const studentPos = getInterpolatedPosition(state.student.progress, STUDENT_WAYPOINTS);
+        state.student.lat = studentPos.lat;
+        state.student.lng = studentPos.lng;
+        changed = true;
+      }
+
+      if (changed) {
         saveTrackingState(state);
         renderTelemetry();
       }
@@ -381,6 +420,17 @@ export function createTrackingMap(target, options = {}) {
     });
   }
 
+  if (toggleStudentSimBtn) {
+    toggleStudentSimBtn.addEventListener('click', () => {
+      state.student.isSimulating = !state.student.isSimulating;
+      toggleStudentSimBtn.textContent = state.student.isSimulating ? 'Pause student movement' : 'Simulate student movement';
+      if (state.student.isSimulating && state.student.progress >= 1) {
+        state.student.progress = 0; // restart the walk rather than sitting at the end
+      }
+      saveTrackingState(state);
+    });
+  }
+
   if (updateLocBtn) {
     updateLocBtn.addEventListener('click', () => {
       if (navigator.geolocation) {
@@ -390,6 +440,7 @@ export function createTrackingMap(target, options = {}) {
             state.student.lat = pos.coords.latitude;
             state.student.lng = pos.coords.longitude;
             state.student.locationDescription = 'Current device GPS position';
+            state.student.isSimulating = false; // a real position takes over from any demo walk
             saveTrackingState(state);
             renderTelemetry();
             adjustView();
@@ -455,4 +506,43 @@ export function createTrackingMap(target, options = {}) {
       renderTelemetry();
     },
   };
+}
+
+// ---------------------------------------------------------------------------
+// Live device GPS - continuously updates the student's real position while
+// an alert is active (started automatically alongside live listening, see
+// incident.js), instead of relying on the one-shot "Send My Exact GPS"
+// button. Cross-tab sync (the storage/ufh:tracking-updated events above)
+// carries each update straight through to any open student, responder, or
+// campus control tracking map - no separate plumbing needed here.
+// ---------------------------------------------------------------------------
+
+let liveWatchId = null;
+
+export function startLiveLocationWatch(incidentId) {
+  if (liveWatchId !== null || !navigator.geolocation) return false;
+
+  liveWatchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      const state = getTrackingState(incidentId);
+      state.student.lat = pos.coords.latitude;
+      state.student.lng = pos.coords.longitude;
+      state.student.locationDescription = 'Live device GPS';
+      state.student.isSimulating = false; // a real position always wins over the demo walk
+      saveTrackingState(state);
+    },
+    () => {
+      // Permission denied or position unavailable - the last known/reported
+      // position just stays put. Not fatal to the rest of the alert.
+    },
+    { enableHighAccuracy: true, maximumAge: 5000 },
+  );
+  return true;
+}
+
+export function stopLiveLocationWatch() {
+  if (liveWatchId !== null) {
+    navigator.geolocation.clearWatch(liveWatchId);
+    liveWatchId = null;
+  }
 }

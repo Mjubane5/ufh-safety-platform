@@ -186,6 +186,17 @@
   box-sizing: border-box;
 }
 
+/* The browser already hides a `hidden` element via its own built-in
+   stylesheet, but that default is just an ordinary `display: none` rule -
+   any class below that sets its own `display` (.btn, .sos-button, .card-list,
+   .sos-section...) has the same specificity and can silently win depending
+   on source order, so a hidden button or section keeps rendering. Restate it
+   here, before any component styles, so `hidden` always wins no matter what
+   `display` a component sets. */
+[hidden] {
+  display: none !important;
+}
+
 html {
   /* Respect the student's own browser font-size setting. */
   -webkit-text-size-adjust: 100%;
@@ -511,42 +522,86 @@ a:focus-visible,
    thick dark ring, uppercase, and the largest type on the page. Turn the
    screen greyscale and it is still obviously the emergency control â€” that is
    the point. Do not shrink it to fit a layout. */
+/* Emergency panel: groups the SOS and medical-alert controls into a single
+   card instead of two bare full-width buttons floating in the page flow.
+   That grouping, plus the smaller icon badge and softer button shape below,
+   is what replaced the old bevelled, uppercase, thick-bordered look. */
+.emergency-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  background: linear-gradient(180deg, var(--color-surface) 0%, var(--color-surface-sunken) 100%);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+}
+
+.emergency-panel-label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.sos-section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
 .sos-button {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: var(--space-3);
+  gap: var(--space-4);
   width: 100%;
-  min-height: 96px;
-  padding: var(--space-5);
-  font-size: var(--text-2xl);
+  min-height: var(--touch-target);
+  padding: var(--space-4) var(--space-5);
+  font-size: var(--text-lg);
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--color-text-inverse);
-  background-color: var(--color-emergency);
-  border: 4px solid var(--color-emergency-dark);
+  background: linear-gradient(155deg, var(--color-emergency) 0%, var(--color-emergency-dark) 100%);
+  border: none;
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-raised);
+  box-shadow: var(--shadow-card);
   cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.sos-button-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  font-size: var(--text-xl);
+  background-color: rgba(255, 255, 255, 0.16);
+  border-radius: var(--radius-pill);
+}
+
+.sos-button-label {
+  text-align: left;
 }
 
 .sos-button:hover {
-  background-color: var(--color-emergency-dark);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-raised);
 }
 
 .sos-button:focus-visible {
-  outline: 4px solid var(--color-text);
+  outline: 3px solid var(--color-text);
   outline-offset: 3px;
 }
 
 /* Primed state: the first tap armed it, a second tap within the window sends
-   it. The darker fill and thicker outline read as "this is now live" even to
+   it. The outline and stronger shadow read as "this is now live" even to
    someone glancing rather than reading the label. */
 .sos-button-armed {
-  background-color: var(--color-emergency-dark);
-  outline: 4px solid var(--color-text);
+  outline: 3px solid var(--color-text);
   outline-offset: 3px;
+  box-shadow: var(--shadow-raised);
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -566,17 +621,31 @@ a:focus-visible,
    tell them apart at a glance under stress. */
 .sos-button-medical {
   color: var(--color-gold-dark);
-  background-color: var(--color-gold-tint);
-  border-color: var(--color-gold);
+  background: linear-gradient(155deg, var(--color-gold-tint) 0%, var(--color-gold) 130%);
 }
 
-.sos-button-medical:hover {
-  background-color: var(--color-gold);
+.sos-button-medical .sos-button-icon {
+  background-color: rgba(138, 97, 0, 0.14);
 }
 
 .sos-button-medical.sos-button-armed {
-  background-color: var(--color-gold);
   outline-color: var(--color-gold-dark);
+}
+
+@media (min-width: 768px) {
+  .emergency-panel {
+    padding: var(--space-5);
+  }
+
+  .emergency-panel:has(#medical-alert-section:not([hidden])) {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    align-items: start;
+  }
+
+  .emergency-panel-label {
+    grid-column: 1 / -1;
+  }
 }
 
 /* --- Disabled -------------------------------------------------------------
@@ -1221,6 +1290,7 @@ a:focus-visible,
     gap: var(--space-3);
     justify-content: flex-end;
   }
+}
 
 /* ===========================================================================
    11. DEMONSTRATION NOTICE & EMERGENCY CONTACTS MODAL
@@ -2379,6 +2449,16 @@ a:focus-visible,
 
 .chat-composer .input {
   flex: 1;
+}
+
+.distress-monitor-preview {
+  width: 100%;
+  max-width: 20rem;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background-color: var(--color-text);
+  border-radius: var(--radius-md);
+  margin: var(--space-3) 0;
 }
 
 .scu-layout {
