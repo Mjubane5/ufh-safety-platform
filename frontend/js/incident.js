@@ -2,8 +2,9 @@
  * One incident, in full. Reads the id from ?id= in the query string.
  */
 
-import { getIncident, cancelIncident, isLoggedIn, logout, getCurrentUser, ApiError } from './api.js';
-import { createTrackingMap } from './tracking.js';
+import { getIncident, cancelIncident, isLoggedIn, logout, getCurrentUser, getIncidentSignals, appendIncidentSignal, ApiError } from './api.js';
+import { createTrackingMap, startLiveLocationWatch, stopLiveLocationWatch } from './tracking.js';
+import { startDistressMonitoring, stopDistressMonitoring, isDistressMonitoring } from './distress-detection.js';
 
 const LOGIN_URL = './login.html';
 const DASHBOARD_URL = './dashboard.html';
@@ -31,6 +32,13 @@ const TYPE_LABELS = {
 };
 
 const CANCELLABLE_STATUSES = ['reported', 'triaged', 'assigned', 'en_route', 'on_scene'];
+
+const DISTRESS_POLL_MS = 5000; // matches the interval used everywhere else in this app
+const SIGNAL_LABELS = {
+  transcript: 'Heard',
+  sound: 'Sound detected',
+  facial: 'Facial signal',
+};
 
 // ---------------------------------------------------------------------------
 // Wiring
@@ -131,6 +139,144 @@ function addDetailRow(container, label, value) {
 
 
 let trackingController = null;
+let currentUser = null;
+let distressPollTimer = null;
+let renderedSignalCount = 0;
+
+// ---------------------------------------------------------------------------
+// Live listening (distress-detection.js) - reporter-only controls, plus a
+// read-only log of whatever it has sent, visible to anyone who can see this
+// incident (reporter, assigned responder, campus control/admin).
+// ---------------------------------------------------------------------------
+
+function formatSignalEntry(item) {
+  if (item.type === 'transcript') return `"${item.text}"`;
+  const confidence = typeof item.confidence === 'number' ? ` (${Math.round(item.confidence * 100)}%)` : '';
+  return `${item.label}${confidence}`;
+}
+
+function renderDistressLog(items) {
+  const log = document.getElementById('distress-log');
+  if (!log) return;
+  log.replaceChildren();
+  if (items.length === 0) {
+    log.appendChild(el('p', 'empty-state', 'No live signals yet.'));
+    return;
+  }
+  items.forEach((item) => {
+    const bubble = el('div', 'chat-bubble chat-bubble-theirs');
+    const text = el('span', null, formatSignalEntry(item));
+    bubble.appendChild(text);
+    const meta = el('span', 'chat-bubble-meta', `${SIGNAL_LABELS[item.type] ?? item.type} · ${formatTime(item.createdAt)}`);
+    bubble.appendChild(meta);
+    log.appendChild(bubble);
+  });
+  log.scrollTop = log.scrollHeight;
+}
+
+async function pollDistressLog(incidentId) {
+  try {
+    const result = await getIncidentSignals(incidentId);
+    const items = Array.isArray(result?.items) ? result.items : [];
+    document.getElementById('distress-log-section').hidden = items.length === 0 && !isDistressMonitoring();
+    if (items.length !== renderedSignalCount) {
+      renderedSignalCount = items.length;
+      renderDistressLog(items);
+    }
+  } catch {
+    // Leave the existing log showing, try again next tick.
+  }
+}
+
+function startDistressPolling(incidentId) {
+  stopDistressPolling();
+  pollDistressLog(incidentId);
+  distressPollTimer = setInterval(() => pollDistressLog(incidentId), DISTRESS_POLL_MS);
+}
+
+function stopDistressPolling() {
+  if (distressPollTimer) {
+    clearInterval(distressPollTimer);
+    distressPollTimer = null;
+  }
+}
+
+function initDistressControls(incident, user) {
+  const controls = document.getElementById('distress-monitor-controls');
+  if (!controls) return;
+
+  const isReporter = user?.role === 'student' && incident?.reporter?.userId === user?.userId;
+  const isActive = CANCELLABLE_STATUSES.includes(incident?.status);
+  controls.hidden = !(isReporter && isActive);
+  if (controls.hidden) return;
+
+  const startButton = document.getElementById('distress-monitor-start');
+  const stopButton = document.getElementById('distress-monitor-stop');
+  const preview = document.getElementById('distress-monitor-preview');
+  const status = document.getElementById('distress-monitor-status');
+
+  async function sendSignal(type, payload) {
+    try {
+      await appendIncidentSignal(incident.incidentId, { type, ...payload });
+      await pollDistressLog(incident.incidentId);
+    } catch {
+      // A dropped signal is not worth interrupting monitoring for - the next
+      // one will go through, or the student can see the miss and speak up.
+    }
+  }
+
+  async function begin() {
+    startButton.disabled = true;
+    startButton.hidden = true;
+    status.textContent = 'Starting…';
+    const result = await startDistressMonitoring({
+      withCamera: true,
+      videoEl: preview,
+      onTranscript: (text) => sendSignal('transcript', { text }),
+      onSoundEvent: ({ label, confidence }) => sendSignal('sound', { label, confidence }),
+      onFacialSignal: ({ label, confidence }) => sendSignal('facial', { label, confidence }),
+      onStatus: (message) => { status.textContent = message; },
+    });
+
+    if (!result.ok) {
+      // Mic permission was denied or unavailable - leave a way to retry
+      // (e.g. after the student grants it in the browser's site settings)
+      // rather than silently giving up for the rest of the page's life.
+      startButton.hidden = false;
+      startButton.disabled = false;
+      return;
+    }
+    preview.hidden = !result.camera;
+    startButton.hidden = true;
+    stopButton.hidden = false;
+    document.getElementById('distress-log-section').hidden = false;
+    startLiveLocationWatch(incident.incidentId);
+  }
+
+  stopButton.addEventListener('click', () => {
+    stopDistressMonitoring();
+    stopLiveLocationWatch();
+    preview.hidden = true;
+    startButton.hidden = false;
+    startButton.disabled = false;
+    stopButton.hidden = true;
+    status.textContent = 'Stopped.';
+  });
+  startButton.addEventListener('click', begin);
+
+  // Releasing the mic/camera on navigation is not optional - leaving them
+  // held open after the student has moved off this page would be exactly
+  // the silent, always-on listening this feature is deliberately not.
+  window.addEventListener('beforeunload', () => {
+    if (isDistressMonitoring()) stopDistressMonitoring();
+    stopLiveLocationWatch();
+  });
+
+  // Starts as soon as this incident's page loads for its reporter - the
+  // browser's own microphone/camera permission prompts are still the real
+  // consent gate, this just skips the extra tap before reaching them.
+  begin();
+}
 
 function renderIncidentTracking(incident) {
   const slot = document.getElementById('incident-live-tracking');
@@ -215,7 +361,9 @@ function renderCancelControl(incident) {
     clearBanner();
     try {
       const updated = await cancelIncident(incident.incidentId, null);
+      if (isDistressMonitoring()) stopDistressMonitoring();
       renderIncident(updated);
+      initDistressControls(updated, currentUser);
     } catch (error) {
       button.disabled = false;
       if (error instanceof ApiError && error.status === 401) {
@@ -271,12 +419,18 @@ async function load() {
   }
 
   try {
-    const incident = await getIncident(incidentId);
+    const [incident, user] = await Promise.all([
+      getIncident(incidentId),
+      getCurrentUser().catch(() => null),
+    ]);
     if (!incident || typeof incident !== 'object') {
       renderFailure('Could not load report', 'The report data was not available.');
       return;
     }
+    currentUser = user;
     renderIncident(incident);
+    initDistressControls(incident, user);
+    startDistressPolling(incident.incidentId);
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       logout();

@@ -639,6 +639,55 @@ export async function cancelIncident(incidentId, reason = null) {
 }
 
 // ---------------------------------------------------------------------------
+// Live distress signals - not yet a real endpoint, see
+// docs/api-contract.md's "Incident live signals" section. Opt-in and
+// derived-only: a transcript line, or a sound/facial event label - never
+// raw audio or video. Produced by frontend/js/distress-detection.js.
+// ---------------------------------------------------------------------------
+
+const INCIDENT_SIGNALS_KEY = 'ufh.incidentSignals';
+
+/** GET /api/incidents/{incidentId}/signals - same visibility as the incident itself. */
+export async function getIncidentSignals(incidentId) {
+  if (MOCK) {
+    await delay(200); // short - this gets polled every few seconds
+    requireMockToken();
+    const all = readMockStore(INCIDENT_SIGNALS_KEY);
+    const mine = all.filter((s) => s.incidentId === Number(incidentId));
+    return { items: mine };
+  }
+
+  return request(`/incidents/${encodeURIComponent(incidentId)}/signals`, { auth: true });
+}
+
+/** POST /api/incidents/{incidentId}/signals - reporter only. */
+export async function appendIncidentSignal(incidentId, signal) {
+  if (MOCK) {
+    await delay(100);
+    requireMockToken();
+    const entry = {
+      signalId: Date.now() + Math.random(),
+      incidentId: Number(incidentId),
+      type: signal.type,
+      label: signal.label ?? null,
+      confidence: signal.confidence ?? null,
+      text: signal.text ?? null,
+      createdAt: new Date().toISOString(),
+    };
+    const all = readMockStore(INCIDENT_SIGNALS_KEY);
+    all.push(entry);
+    writeMockStore(INCIDENT_SIGNALS_KEY, all);
+    return entry;
+  }
+
+  return request(`/incidents/${encodeURIComponent(incidentId)}/signals`, {
+    method: 'POST',
+    body: signal,
+    auth: true,
+  });
+}
+
+// ---------------------------------------------------------------------------
 // Responders
 // ---------------------------------------------------------------------------
 

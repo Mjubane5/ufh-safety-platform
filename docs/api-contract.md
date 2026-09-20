@@ -429,6 +429,75 @@ The false-alarm path. Sets status to `cancelled` and retains the record.
 
 ---
 
+### GET /api/incidents/{incidentId}/signals — not yet implemented
+
+Roles: same visibility as `GET /api/incidents/{incidentId}` — `student`
+(own incident only), `responder` (assigned only), `campus_control`, `admin`.
+
+Polled every 5 seconds by `incident.html` while viewing an active incident,
+same interval as every other live view in this app (see the working
+agreement's decision log — polling, not sockets).
+
+**Response 200**
+```json
+{
+  "items": [
+    { "signalId": 1, "incidentId": 42, "type": "transcript", "label": null, "confidence": null, "text": "Someone help me", "createdAt": "2026-08-23T01:51:03Z" },
+    { "signalId": 2, "incidentId": 42, "type": "sound", "label": "Screaming", "confidence": 0.41, "text": null, "createdAt": "2026-08-23T01:51:05Z" },
+    { "signalId": 3, "incidentId": 42, "type": "facial", "label": "fearful", "confidence": 0.72, "text": null, "createdAt": "2026-08-23T01:51:07Z" }
+  ]
+}
+```
+
+`type` is one of `transcript`, `sound`, `facial`. Ordered oldest first.
+
+---
+
+### POST /api/incidents/{incidentId}/signals — not yet implemented
+
+Roles: `student` (own incident only) — only the reporter's own device can
+add to their own incident's log.
+
+Produced by `frontend/js/distress-detection.js`, which starts automatically
+on `incident.html` as soon as the reporter's SOS or medical alert has been
+sent (never as part of sending the alert itself — only once the incident
+already exists). It turns on the microphone and camera — the browser's own
+permission prompts are still the real consent gate — and sends only what it
+derives from them:
+
+- `transcript` — a line of speech-to-text from the browser's own Web Speech
+  API.
+- `sound` — a label from a short distress-relevant allowlist (screaming,
+  shouting, crying, and a few others), from a client-side pass of a
+  pretrained sound classifier (Google's YAMNet, run in the browser with
+  TensorFlow.js).
+- `facial` — an expression label, from a client-side pass of a pretrained
+  facial-expression model (`face-api.js`) over the camera feed, only when
+  the student opted in to the camera.
+
+**The raw audio and video never leave the student's device and are never
+recorded anywhere.** Only these derived, short text/label values are sent.
+Confidence thresholds for `sound` and `facial` are first-pass estimates —
+see the comment at the top of `distress-detection.js` — and should be
+retuned once the team can test with real recordings.
+
+**Request**
+```json
+{ "type": "sound", "label": "Screaming", "confidence": 0.41 }
+```
+or
+```json
+{ "type": "transcript", "text": "Someone help me" }
+```
+
+**Response 201** — the created signal, same shape as one item above.
+
+**Errors:** 403 if the caller is not the reporter, 404 if the incident does
+not exist or is not visible to the caller, 409 if the incident is already
+`resolved` or `cancelled`.
+
+---
+
 ## 4. Dispatch and routing
 
 ### POST /api/incidents/{incidentId}/assign

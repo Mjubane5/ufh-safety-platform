@@ -39,6 +39,34 @@
 
     <section id="incident-detail" aria-live="polite" aria-busy="true"></section>
 
+    <!-- Reporter-only controls: shown only to the student who filed this
+         report, only while it is still active. Everyone who can see this
+         incident (reporter, assigned responder, campus control) sees the
+         resulting log below once anything has been sent. -->
+    <section id="distress-monitor-controls" class="card" hidden aria-labelledby="distress-monitor-heading">
+      <h2 id="distress-monitor-heading">Live listening</h2>
+      <p class="text-meta">
+        Starts automatically now that your alert has been sent: your
+        microphone and camera turn on (your browser will ask you to allow
+        this) so campus control can hear what's happening, see a transcript,
+        and follow your live location. Only a transcript line, a sound
+        label, or a facial-expression label is ever sent - never the raw
+        audio or video, and nothing is recorded. You can stop this at any
+        time.
+      </p>
+      <video id="distress-monitor-preview" class="distress-monitor-preview" hidden autoplay muted playsinline></video>
+      <p class="field-hint" id="distress-monitor-status"></p>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="distress-monitor-start" type="button" hidden>Start listening</button>
+        <button class="btn btn-secondary" id="distress-monitor-stop" type="button" hidden>Stop listening</button>
+      </div>
+    </section>
+
+    <section id="distress-log-section" class="card" hidden aria-labelledby="distress-log-heading">
+      <h2 id="distress-log-heading">Live signals</h2>
+      <div id="distress-log" class="chat-thread" aria-live="polite"></div>
+    </section>
+
     <section id="cancel-slot" hidden></section>
   </main>
 
