@@ -47,6 +47,22 @@
       </p>
     </section>
 
+    <!-- Populated by dashboard.js only for a student who has declared a
+         health condition - see health-profile.html. Empty and untouched for
+         everyone else, not just hidden, so there's nothing in the markup to
+         explain if someone inspects the page. -->
+    <section class="sos-section" id="medical-alert-section" hidden aria-labelledby="medical-alert-heading">
+      <h2 id="medical-alert-heading" class="visually-hidden">Medical alert</h2>
+      <button class="sos-button sos-button-medical" id="medical-alert-button" type="button" aria-describedby="medical-alert-hint">
+        <span aria-hidden="true">⚕️</span>
+        <span id="medical-alert-button-label">Medical alert — Tap for help</span>
+      </button>
+      <p class="field-hint" id="medical-alert-hint">
+        Alerts campus control with your declared health conditions attached, so medical
+        responders know before they arrive. Needs a second tap to confirm.
+      </p>
+    </section>
+
     <section class="dashboard-intro" aria-labelledby="greeting">
       <div>
         <p class="eyebrow">Student safety hub</p>
@@ -75,6 +91,11 @@
         <span class="action-icon" aria-hidden="true">+</span>
         <span class="action-tile-title">Confidential report</span>
         <span class="action-tile-meta">Text-only GBV reporting and status</span>
+      </a>
+      <a class="action-tile" href="./health-profile.html">
+        <span class="action-icon" aria-hidden="true">+</span>
+        <span class="action-tile-title">Health conditions</span>
+        <span class="action-tile-meta">What a responder should know in an emergency</span>
       </a>
     </section>
 

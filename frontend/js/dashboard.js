@@ -7,7 +7,7 @@
 // No fetch() here. Everything goes through api.js.
 // No innerHTML here. Every server value reaches the page via textContent.
 
-import { getCurrentUser, getIncidents, isLoggedIn, logout, ApiError, submitIncident } from './api.js';
+import { getCurrentUser, getIncidents, isLoggedIn, logout, ApiError, submitIncident, getHealthProfile } from './api.js';
 import { createTrackingMap } from './tracking.js';
 
 const LOGIN_URL = './login.html';
@@ -545,13 +545,15 @@ function capturePosition() {
   });
 }
 
-function initSosButton() {
-  const button = document.getElementById('sos-button');
-  const label = document.getElementById('sos-button-label');
-  const hint = document.getElementById('sos-hint');
+// Shared by the SOS button and the medical alert button below - same
+// two-tap-confirm, GPS-in-parallel, send-regardless-of-fix behaviour either
+// way, they only differ in incident type and what goes in the description.
+function initEmergencyButton({ buttonId, labelId, hintId, idleLabel, confirmLabel, sendingLabel, incidentType, buildDescription }) {
+  const button = document.getElementById(buttonId);
+  const label = document.getElementById(labelId);
+  const hint = document.getElementById(hintId);
   if (!button || !label || !hint) return;
 
-  const idleLabel = label.textContent;
   const idleHint = hint.textContent;
   let armed = false;
   let disarmTimer = null;
@@ -570,7 +572,7 @@ function initSosButton() {
     // Start the GPS fix now, in parallel with the confirm countdown, so it
     // has a head start by the time (if) the student taps again.
     positionPromise = capturePosition();
-    label.textContent = 'Tap again to confirm SOS';
+    label.textContent = confirmLabel;
     hint.textContent = `Sending in ${SOS_CONFIRM_WINDOW_MS / 1000}s if you don't tap again. Tap anywhere else to cancel.`;
     button.classList.add('sos-button-armed');
     disarmTimer = setTimeout(disarm, SOS_CONFIRM_WINDOW_MS);
@@ -579,10 +581,10 @@ function initSosButton() {
   async function send() {
     clearTimeout(disarmTimer);
     button.disabled = true;
-    label.textContent = 'Sending SOS…';
+    label.textContent = sendingLabel;
     hint.textContent = 'Do not close this page.';
 
-    // Give a fix already in flight a little more time, but an SOS must not
+    // Give a fix already in flight a little more time, but this must not
     // hang indefinitely on GPS - three more seconds, then send regardless.
     const position = await Promise.race([
       positionPromise,
@@ -591,8 +593,8 @@ function initSosButton() {
 
     try {
       const incident = await submitIncident({
-        type: 'sos',
-        description: null,
+        type: incidentType,
+        description: buildDescription(),
         anonymous: false,
         latitude: position?.latitude ?? null,
         longitude: position?.longitude ?? null,
@@ -606,7 +608,7 @@ function initSosButton() {
         redirectToLogin();
         return;
       }
-      showBanner('Could not send your SOS',
+      showBanner('Could not send your alert',
         err instanceof ApiError ? err.message : 'Something went wrong. Please try again, or call 112 directly.');
     }
   }
@@ -619,12 +621,77 @@ function initSosButton() {
     }
   });
 
-  // Tapping anywhere else cancels an armed SOS rather than leaving it primed
-  // to fire on whatever gets tapped next.
+  // Tapping anywhere else cancels an armed alert rather than leaving it
+  // primed to fire on whatever gets tapped next.
   document.addEventListener('click', (event) => {
     if (armed && event.target !== button && !button.contains(event.target)) {
       disarm();
     }
+  });
+}
+
+function initSosButton() {
+  initEmergencyButton({
+    buttonId: 'sos-button',
+    labelId: 'sos-button-label',
+    hintId: 'sos-hint',
+    idleLabel: 'SOS — Tap for emergency help',
+    confirmLabel: 'Tap again to confirm SOS',
+    sendingLabel: 'Sending SOS…',
+    incidentType: 'sos',
+    buildDescription: () => null,
+  });
+}
+
+const CONDITION_LABELS = {
+  asthma: 'Asthma',
+  diabetes: 'Diabetes',
+  epilepsy: 'Epilepsy',
+  severe_allergy: 'Severe allergy (anaphylaxis risk)',
+  heart_condition: 'Heart condition',
+};
+
+/**
+ * Shows the medical alert button only for a student who has declared at
+ * least one condition or a note (see health-profile.html) - someone with
+ * nothing declared has nothing for the alert to usefully attach, and
+ * showing an empty-condition "medical alert" next to a real SOS button
+ * would just be a second, confusing way to do the same thing.
+ */
+async function initMedicalAlertButton() {
+  const section = document.getElementById('medical-alert-section');
+  if (!section) return;
+
+  let profile;
+  try {
+    profile = await getHealthProfile();
+  } catch (err) {
+    if (isSessionExpired(err)) redirectToLogin();
+    return; // any other failure: just don't show it, the SOS button still covers an emergency
+  }
+
+  const conditions = Array.isArray(profile?.conditions) ? profile.conditions : [];
+  const note = profile?.note ?? null;
+  if (conditions.length === 0 && !note) return;
+
+  section.hidden = false;
+
+  initEmergencyButton({
+    buttonId: 'medical-alert-button',
+    labelId: 'medical-alert-button-label',
+    hintId: 'medical-alert-hint',
+    idleLabel: 'Medical alert — Tap for help',
+    confirmLabel: 'Tap again to confirm medical alert',
+    sendingLabel: 'Sending medical alert…',
+    incidentType: 'medical',
+    buildDescription: () => {
+      const parts = [];
+      if (conditions.length > 0) {
+        parts.push(`Known conditions: ${conditions.map((c) => CONDITION_LABELS[c] ?? c).join(', ')}.`);
+      }
+      if (note) parts.push(note);
+      return parts.length > 0 ? parts.join(' ') : null;
+    },
   });
 }
 
@@ -651,6 +718,7 @@ if (!isLoggedIn()) {
 } else {
   initSignOut();
   initSosButton();
+  initMedicalAlertButton();
   initFilters();
   loadGreeting();
   loadIncidents();

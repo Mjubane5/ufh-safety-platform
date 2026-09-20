@@ -88,6 +88,13 @@ export const MOCK_PERSONAS = {
     phone: '0406082999',
     role: 'gbv_officer',
   },
+  scu_officer: {
+    userId: 301,
+    fullName: 'Ms. T. Radebe',
+    email: 'scu.unit@ufh.ac.za',
+    phone: '0406083000',
+    role: 'scu_officer',
+  },
   admin: {
     userId: 1,
     fullName: 'System Administrator',
@@ -341,6 +348,8 @@ export async function login(email, password, requestedRole = null) {
         targetRole = 'campus_control';
       } else if (lowerEmail.includes('gbv')) {
         targetRole = 'gbv_officer';
+      } else if (lowerEmail.includes('scu') || lowerEmail.includes('counsel')) {
+        targetRole = 'scu_officer';
       } else if (lowerEmail.includes('responder')) {
         targetRole = 'responder';
       } else if (lowerEmail.includes('admin')) {
@@ -396,6 +405,60 @@ export async function getCurrentUser() {
     setStoredUser(user);
   }
   return user;
+}
+
+// ---------------------------------------------------------------------------
+// Health profile - not yet in docs/api-contract.md or the backend
+// ---------------------------------------------------------------------------
+//
+// Declared once at registration (register.html), but a student's conditions
+// can change, so this lets them view/edit it any time from the dashboard
+// rather than only at signup. Same POPIA scoping as registration: a fixed
+// checklist plus a short note, never free-text medical history. The medical
+// alert button on the dashboard reads this to decide whether to show itself
+// and what to put in the incident description.
+//
+// MOCK mode persists to localStorage rather than an in-memory constant, like
+// every other mock function here does, so that this and the medical alert
+// button actually work together in a demo with no backend running.
+
+const HEALTH_PROFILE_KEY = 'ufh.healthProfile';
+
+/**
+ * GET /api/students/me/health - student only. Not yet a real endpoint.
+ * Returns { conditions: string[], note: string|null } - empty/null when
+ * nothing has been declared, never an error for "no profile yet".
+ */
+export async function getHealthProfile() {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const raw = localStorage.getItem(HEALTH_PROFILE_KEY);
+    if (!raw) return { conditions: [], note: null };
+    try {
+      return JSON.parse(raw);
+    } catch {
+      return { conditions: [], note: null };
+    }
+  }
+
+  return request('/students/me/health', { auth: true });
+}
+
+/**
+ * PUT /api/students/me/health - student only. Not yet a real endpoint.
+ */
+export async function updateHealthProfile(conditions, note) {
+  const body = { conditions: conditions ?? [], note: note || null };
+
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    localStorage.setItem(HEALTH_PROFILE_KEY, JSON.stringify(body));
+    return body;
+  }
+
+  return request('/students/me/health', { method: 'PUT', body, auth: true });
 }
 
 /**
@@ -796,11 +859,22 @@ export async function createWellnessBooking(resourceId, preferredDate, preferred
   if (MOCK) {
     await delay();
     requireMockToken();
-    return {
+    const user = getStoredUser() ?? MOCK_PERSONAS.student;
+    const booking = {
       bookingId: Math.floor(Math.random() * 900) + 10,
+      studentUserId: user.userId,
+      studentName: user.fullName,
+      resourceId,
+      preferredDate,
+      preferredSlot,
+      note,
       status: 'requested',
       createdAt: new Date().toISOString(),
     };
+    const all = readMockStore(WELLNESS_BOOKINGS_KEY);
+    all.push(booking);
+    writeMockStore(WELLNESS_BOOKINGS_KEY, all);
+    return booking;
   }
 
   return request('/wellness/bookings', {
@@ -808,6 +882,166 @@ export async function createWellnessBooking(resourceId, preferredDate, preferred
     body: { resourceId, preferredDate, preferredSlot, note },
     auth: true,
   });
+}
+
+// ---------------------------------------------------------------------------
+// SCU messaging and booking queue - not yet in docs/api-contract.md or the
+// backend. "Talk to SCU" alongside the existing "request a booking" flow.
+// One ongoing thread per student, not per booking - simpler for both sides
+// and matches how a real counselling unit would rather have one continuous
+// conversation than a fresh thread every time someone books.
+//
+// scu_officer is the sole role that can read message content or the booking
+// queue, same access-restriction shape as gbv_officer and confidential GBV
+// reports. Polling, not sockets - the team's own decision log already
+// settled that for every other real-time feature in this app.
+// ---------------------------------------------------------------------------
+
+const WELLNESS_MESSAGES_KEY = 'ufh.wellnessMessages';
+const WELLNESS_BOOKINGS_KEY = 'ufh.wellnessBookingsQueue';
+
+function readMockStore(key) {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeMockStore(key, items) {
+  localStorage.setItem(key, JSON.stringify(items));
+}
+
+/**
+ * GET /api/wellness/messages - student only. Not yet a real endpoint.
+ * Scoped to the caller automatically (their own token identifies them) -
+ * a student can only ever see their own thread with SCU.
+ */
+export async function getWellnessMessages() {
+  if (MOCK) {
+    await delay(200); // short - this gets polled every few seconds
+    requireMockToken();
+    const user = getStoredUser();
+    const mine = readMockStore(WELLNESS_MESSAGES_KEY)
+      .filter((m) => m.studentUserId === (user?.userId ?? MOCK_PERSONAS.student.userId));
+    return { items: mine };
+  }
+
+  return request('/wellness/messages', { auth: true });
+}
+
+/** POST /api/wellness/messages - student only. Not yet a real endpoint. */
+export async function sendWellnessMessage(text) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const user = getStoredUser() ?? MOCK_PERSONAS.student;
+    const message = {
+      messageId: Date.now(),
+      studentUserId: user.userId,
+      studentName: user.fullName,
+      sender: 'student',
+      text,
+      sentAt: new Date().toISOString(),
+    };
+    const all = readMockStore(WELLNESS_MESSAGES_KEY);
+    all.push(message);
+    writeMockStore(WELLNESS_MESSAGES_KEY, all);
+    return message;
+  }
+
+  return request('/wellness/messages', { method: 'POST', body: { text }, auth: true });
+}
+
+/**
+ * GET /api/wellness/queue - scu_officer only. Not yet a real endpoint.
+ * Every student who has either booked or sent a message, most recent
+ * activity first - the officer's equivalent of the GBV case queue.
+ */
+export async function getWellnessQueue() {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const messages = readMockStore(WELLNESS_MESSAGES_KEY);
+    const bookings = readMockStore(WELLNESS_BOOKINGS_KEY);
+    const byStudent = new Map();
+
+    messages.forEach((m) => {
+      const entry = byStudent.get(m.studentUserId) ?? { studentUserId: m.studentUserId, studentName: m.studentName, lastActivityAt: m.sentAt, hasUnread: false, bookings: [] };
+      if (m.sentAt > entry.lastActivityAt) entry.lastActivityAt = m.sentAt;
+      if (m.sender === 'student') entry.hasUnread = true;
+      byStudent.set(m.studentUserId, entry);
+    });
+    bookings.forEach((b) => {
+      const entry = byStudent.get(b.studentUserId) ?? { studentUserId: b.studentUserId, studentName: b.studentName, lastActivityAt: b.createdAt, hasUnread: false, bookings: [] };
+      entry.bookings.push(b);
+      byStudent.set(b.studentUserId, entry);
+    });
+
+    const items = Array.from(byStudent.values()).sort((a, b) => (a.lastActivityAt < b.lastActivityAt ? 1 : -1));
+    return { items };
+  }
+
+  return request('/wellness/queue', { auth: true });
+}
+
+/**
+ * GET /api/wellness/messages/{studentUserId} - scu_officer only.
+ * Same shape as the student-side getWellnessMessages, for one student.
+ */
+export async function getWellnessMessagesWithStudent(studentUserId) {
+  if (MOCK) {
+    await delay(200);
+    requireMockToken();
+    const mine = readMockStore(WELLNESS_MESSAGES_KEY).filter((m) => m.studentUserId === studentUserId);
+    return { items: mine };
+  }
+
+  return request(`/wellness/messages/${encodeURIComponent(studentUserId)}`, { auth: true });
+}
+
+/** POST /api/wellness/messages/{studentUserId} - scu_officer only. */
+export async function sendWellnessMessageToStudent(studentUserId, studentName, text) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const message = {
+      messageId: Date.now(),
+      studentUserId,
+      studentName,
+      sender: 'scu',
+      text,
+      sentAt: new Date().toISOString(),
+    };
+    const all = readMockStore(WELLNESS_MESSAGES_KEY);
+    all.push(message);
+    writeMockStore(WELLNESS_MESSAGES_KEY, all);
+    return message;
+  }
+
+  return request(`/wellness/messages/${encodeURIComponent(studentUserId)}`, { method: 'POST', body: { text }, auth: true });
+}
+
+/**
+ * PATCH /api/wellness/bookings/{bookingId} - scu_officer only.
+ * status: 'requested' | 'confirmed' | 'declined' | 'cancelled' - the same
+ * four values docs/api-contract.md already defines for a booking.
+ */
+export async function updateWellnessBookingStatus(bookingId, status) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const all = readMockStore(WELLNESS_BOOKINGS_KEY);
+    const booking = all.find((b) => b.bookingId === bookingId);
+    if (booking) {
+      booking.status = status;
+      writeMockStore(WELLNESS_BOOKINGS_KEY, all);
+    }
+    return booking ?? { bookingId, status };
+  }
+
+  return request(`/wellness/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', body: { status }, auth: true });
 }
 
 // ---------------------------------------------------------------------------

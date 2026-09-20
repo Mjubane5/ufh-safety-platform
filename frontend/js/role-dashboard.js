@@ -7,6 +7,7 @@ const ROLE_URLS = {
   campus_control: './control-dashboard.html',
   responder: './responder-dashboard.html',
   gbv_officer: './gbv-officer.html',
+  scu_officer: './scu-officer.html',
 };
 
 const ROLE_LABELS = {
@@ -14,6 +15,7 @@ const ROLE_LABELS = {
   campus_control: 'Campus Control',
   responder: 'Responder',
   gbv_officer: 'GBV Support Officer',
+  scu_officer: 'SCU Officer',
   admin: 'Administrator',
 };
 
