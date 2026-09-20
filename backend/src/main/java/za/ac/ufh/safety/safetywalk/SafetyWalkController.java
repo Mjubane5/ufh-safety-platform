@@ -13,13 +13,16 @@ public class SafetyWalkController {
 
     private final SafetyWalkService safetyWalkService;
     private final HotspotService hotspotService;
+    private final SafeRouteService safeRouteService;
 
     public SafetyWalkController(
             SafetyWalkService safetyWalkService,
-            HotspotService hotspotService) {
+            HotspotService hotspotService,
+            SafeRouteService safeRouteService) {
 
         this.safetyWalkService = safetyWalkService;
         this.hotspotService = hotspotService;
+        this.safeRouteService = safeRouteService;
     }
 
     @PostMapping("/patrols")
@@ -54,5 +57,12 @@ public class SafetyWalkController {
                 "items",
                 hotspotService.getHotspots()
         );
+    }
+
+    @PostMapping("/routes/safe")
+    public SafeRouteResponse getSafeRoute(
+            @Valid @RequestBody SafeRouteRequest request) {
+
+        return safeRouteService.findSafeRoute(request);
     }
 }

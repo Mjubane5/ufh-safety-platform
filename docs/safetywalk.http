@@ -1,0 +1,82 @@
+### ============================================================
+### UFH SAFETY PLATFORM - SAFETY WALK API TESTS
+### ============================================================
+
+
+### ============================================================
+### 1. LOGIN
+### ============================================================
+
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+Accept: application/json
+
+{
+  "email": "johan.vanwyk@example.ac.za",
+  "password": "DevPassword123!"
+}
+
+
+### ============================================================
+### 2. CURRENT USER
+### ============================================================
+
+GET http://localhost:8080/api/auth/me
+Accept: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+
+### ============================================================
+### 3. CREATE PATROL
+### ============================================================
+
+POST http://localhost:8080/api/patrols
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "zoneId": 3,
+  "latitude": -32.78400,
+  "longitude": 26.85010,
+  "note": "Routine safety patrol."
+}
+
+
+### ============================================================
+### 4. GET RECENT PATROLS
+### ============================================================
+
+GET http://localhost:8080/api/patrols/recent?latitude=-32.78400&longitude=26.85010&radiusMetres=500
+Accept: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+
+### ============================================================
+### 5. GET SAFETY HOTSPOTS
+### ============================================================
+
+GET http://localhost:8080/api/hotspots
+Accept: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+
+### ============================================================
+### 6. GET SAFE ROUTE
+### ============================================================
+
+POST http://localhost:8080/api/routes/safe
+Content-Type: application/json
+Accept: application/json
+Authorization: Bearer YOUR_TOKEN_HERE
+
+{
+  "from": {
+    "latitude": -32.78210,
+    "longitude": 26.84800
+  },
+  "to": {
+    "latitude": -32.78550,
+    "longitude": 26.85200
+  }
+}
