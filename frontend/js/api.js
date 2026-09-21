@@ -864,6 +864,109 @@ export async function getSafeRoute(from, to) {
 }
 
 // ---------------------------------------------------------------------------
+// Safe Walk sessions - not yet a real endpoint, see docs/api-contract.md's
+// "Safe Walk sessions" section. A student walking a POST /routes/safe route
+// with live location sharing on, visible to campus control while it's
+// active - not just an SOS after something has already gone wrong.
+// ---------------------------------------------------------------------------
+
+const SAFE_WALKS_KEY = 'ufh.safeWalks';
+
+/** POST /api/safewalks - student only. */
+export async function startSafeWalk({ origin, destination, route }) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const user = getStoredUser() ?? MOCK_PERSONAS.student;
+    const walk = {
+      walkId: Date.now(),
+      studentUserId: user.userId,
+      studentName: user.fullName,
+      origin,
+      destination,
+      currentLocation: origin,
+      safetyScore: route?.safetyScore ?? null,
+      status: 'active',
+      startedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    const all = readMockStore(SAFE_WALKS_KEY);
+    all.push(walk);
+    writeMockStore(SAFE_WALKS_KEY, all);
+    return walk;
+  }
+
+  return request('/safewalks', { method: 'POST', body: { origin, destination, route }, auth: true });
+}
+
+/** PATCH /api/safewalks/{walkId}/location - student, own walk only. */
+export async function updateSafeWalkLocation(walkId, location) {
+  if (MOCK) {
+    await delay(150); // short - this gets sent roughly every 5s while walking
+    requireMockToken();
+    const all = readMockStore(SAFE_WALKS_KEY);
+    const walk = all.find((w) => w.walkId === walkId);
+    if (walk && walk.status === 'active') {
+      walk.currentLocation = location;
+      writeMockStore(SAFE_WALKS_KEY, all);
+    }
+    return walk ?? { walkId, ...location };
+  }
+
+  return request(`/safewalks/${encodeURIComponent(walkId)}/location`, {
+    method: 'PATCH',
+    body: location,
+    auth: true,
+  });
+}
+
+/** POST /api/safewalks/{walkId}/arrived - student, own walk only. */
+export async function markSafeWalkArrived(walkId) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const all = readMockStore(SAFE_WALKS_KEY);
+    const walk = all.find((w) => w.walkId === walkId);
+    if (walk) {
+      walk.status = 'arrived';
+      writeMockStore(SAFE_WALKS_KEY, all);
+    }
+    return walk ?? { walkId, status: 'arrived' };
+  }
+
+  return request(`/safewalks/${encodeURIComponent(walkId)}/arrived`, { method: 'POST', auth: true });
+}
+
+/** POST /api/safewalks/{walkId}/cancel - student, own walk only. */
+export async function cancelSafeWalk(walkId) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const all = readMockStore(SAFE_WALKS_KEY);
+    const walk = all.find((w) => w.walkId === walkId);
+    if (walk) {
+      walk.status = 'cancelled';
+      writeMockStore(SAFE_WALKS_KEY, all);
+    }
+    return walk ?? { walkId, status: 'cancelled' };
+  }
+
+  return request(`/safewalks/${encodeURIComponent(walkId)}/cancel`, { method: 'POST', auth: true });
+}
+
+/** GET /api/safewalks/active - campus_control/admin only. */
+export async function getActiveSafeWalks() {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const all = readMockStore(SAFE_WALKS_KEY);
+    return { items: all.filter((w) => w.status === 'active') };
+  }
+
+  return request('/safewalks/active', { auth: true });
+}
+
+// ---------------------------------------------------------------------------
 // Wellness - contract section 8
 // ---------------------------------------------------------------------------
 

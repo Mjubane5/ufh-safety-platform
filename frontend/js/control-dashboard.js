@@ -2,11 +2,14 @@ import {
   assignIncident,
   getAvailableResponders,
   getIncidents,
+  getActiveSafeWalks,
   isLoggedIn,
   logout,
   ApiError,
 } from './api.js';
-import { createTrackingMap, getTrackingState, saveTrackingState } from './tracking.js';
+import { createTrackingMap, getTrackingState, saveTrackingState, calculateDistanceMetres } from './tracking.js';
+
+const SAFE_WALKS_POLL_MS = 5000; // matches the interval used everywhere else in this app
 
 const LOGIN_URL = './login.html';
 const TYPE_LABELS = {
@@ -23,6 +26,7 @@ const incidentContainer = document.getElementById('control-incidents');
 const responderContainer = document.getElementById('responder-roster');
 const message = document.getElementById('control-message');
 const trackingContainer = document.getElementById('control-live-tracking');
+const safeWalksContainer = document.getElementById('safe-walks-list');
 
 let incidents = [];
 let responders = [];
@@ -184,6 +188,73 @@ async function assignSelected(incident, select, button) {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Active Safe Walks - students currently sharing their live location on a
+// Safe Walk. Polled independently of the incident queue since a walk is not
+// an incident - most of them will simply arrive safely and disappear from
+// this list without ever becoming one.
+// ---------------------------------------------------------------------------
+
+function minutesAgo(isoString) {
+  const started = new Date(isoString).getTime();
+  if (Number.isNaN(started)) return null;
+  return Math.max(0, Math.round((Date.now() - started) / 60000));
+}
+
+function renderSafeWalks(items) {
+  safeWalksContainer.setAttribute('aria-busy', 'false');
+  safeWalksContainer.replaceChildren();
+  if (items.length === 0) {
+    safeWalksContainer.appendChild(el('p', 'empty-state', 'No students are on an active Safe Walk right now.'));
+    return;
+  }
+
+  const list = el('div', 'card-list');
+  items.forEach((walk) => {
+    const card = el('article', 'card');
+    card.appendChild(el('h3', null, walk.studentName ?? `Student ${walk.studentUserId}`));
+
+    const remaining = walk.currentLocation && walk.destination
+      ? calculateDistanceMetres(
+        walk.currentLocation.latitude,
+        walk.currentLocation.longitude,
+        walk.destination.latitude,
+        walk.destination.longitude,
+      )
+      : null;
+    card.appendChild(el('p', 'text-meta', remaining === null ? 'Distance remaining unavailable' : `${remaining} m to destination`));
+
+    const started = minutesAgo(walk.startedAt);
+    card.appendChild(el('p', 'text-meta', started === null ? 'Started time unavailable' : `Started ${started} min ago`));
+
+    if (Number.isFinite(walk.safetyScore)) {
+      card.appendChild(el('span', 'pill', `Safety score ${walk.safetyScore.toFixed(2)}`));
+    }
+    list.appendChild(card);
+  });
+  safeWalksContainer.appendChild(list);
+}
+
+async function pollSafeWalks() {
+  try {
+    const result = await getActiveSafeWalks();
+    renderSafeWalks(Array.isArray(result?.items) ? result.items : []);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      redirectToLogin();
+      return;
+    }
+    safeWalksContainer.setAttribute('aria-busy', 'false');
+    // Leave whatever was last shown rather than clearing it on one failed
+    // poll - the next tick will try again.
+  }
+}
+
+function startSafeWalksPolling() {
+  pollSafeWalks();
+  setInterval(pollSafeWalks, SAFE_WALKS_POLL_MS);
+}
+
 async function loadDashboard() {
   if (!isLoggedIn()) {
     redirectToLogin();
@@ -219,3 +290,4 @@ async function loadDashboard() {
 
 document.getElementById('signout-button').addEventListener('click', redirectToLogin);
 loadDashboard();
+startSafeWalksPolling();

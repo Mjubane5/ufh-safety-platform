@@ -1,13 +1,41 @@
-import { getCurrentUser, getHotspots, getRecentPatrols, getSafeRoute, isLoggedIn, logout, ApiError } from './api.js';
+import {
+  getCurrentUser,
+  getHotspots,
+  getRecentPatrols,
+  getSafeRoute,
+  startSafeWalk,
+  updateSafeWalkLocation,
+  markSafeWalkArrived,
+  cancelSafeWalk,
+  isLoggedIn,
+  logout,
+  ApiError,
+} from './api.js';
+import { calculateDistanceMetres } from './tracking.js';
 
 const LOGIN_URL = './login.html';
 const CAMPUS_CENTER = [-32.78331, 26.84971];
+const ARRIVAL_RADIUS_METRES = 40;
+const WALK_LOCATION_PUSH_MS = 5000; // matches the interval used everywhere else in this app
 const mapElement = document.getElementById('safety-map');
 const routeStatus = document.getElementById('route-status');
 const routeSummary = document.getElementById('route-summary');
+const walkStatusEl = document.getElementById('walk-status');
+const walkRemainingEl = document.getElementById('walk-remaining');
+const walkAccuracyEl = document.getElementById('walk-accuracy');
+const startWalkButton = document.getElementById('start-walk-button');
+const arrivedButton = document.getElementById('arrived-button');
+const cancelWalkButton = document.getElementById('cancel-walk-button');
 let map;
 let routeLine;
 let origin;
+let originMarker;
+let destination;
+let lastRoute;
+let currentWalkId = null;
+let walkWatchId = null;
+let lastLocationPushAt = 0;
+let destinationReached = false;
 
 function showBanner(title, message) {
   const slot = document.getElementById('banner-slot');
@@ -70,15 +98,19 @@ function setRouteSummary(route) {
   routeSummary.appendChild(text);
 }
 
-async function requestRoute(destination) {
+async function requestRoute(chosenDestination) {
   if (!origin) {
     routeStatus.textContent = 'Use your location before choosing a destination.';
+    return;
+  }
+  if (currentWalkId) {
+    routeStatus.textContent = 'A Safe Walk is active. Cancel it before choosing another destination.';
     return;
   }
 
   routeStatus.textContent = 'Finding a safer route...';
   try {
-    const route = await getSafeRoute(origin, destination);
+    const route = await getSafeRoute(origin, chosenDestination);
     if (!Array.isArray(route?.points) || route.points.length < 2) {
       routeStatus.textContent = 'No route was returned.';
       return;
@@ -91,6 +123,10 @@ async function requestRoute(destination) {
     map.fitBounds(routeLine.getBounds(), { padding: [24, 24] });
     routeStatus.textContent = 'Safer route found.';
     setRouteSummary(route);
+
+    destination = chosenDestination;
+    lastRoute = route;
+    startWalkButton.disabled = false;
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       redirectToLogin();
@@ -143,13 +179,135 @@ document.getElementById('location-button').addEventListener('click', () => {
   navigator.geolocation.getCurrentPosition(
     ({ coords }) => {
       origin = { latitude: coords.latitude, longitude: coords.longitude };
-      window.L.marker([coords.latitude, coords.longitude]).addTo(map).bindPopup('Your location').openPopup();
+      if (originMarker) map.removeLayer(originMarker);
+      originMarker = window.L.marker([coords.latitude, coords.longitude]).addTo(map).bindPopup('Your location').openPopup();
       map.setView([coords.latitude, coords.longitude], 16);
       routeStatus.textContent = 'Location set. Choose a destination on the map.';
     },
     () => { routeStatus.textContent = 'Location was unavailable. Choose a destination after trying again.'; },
     { enableHighAccuracy: true, timeout: 10000 },
   );
+});
+
+// ---------------------------------------------------------------------------
+// Safe Walk - live location sharing for a route already found above.
+// Always a deliberate tap to start and to confirm arrival; live tracking
+// stops the moment the student taps Arrived safe, cancels, or leaves this
+// page - never left running in the background.
+// ---------------------------------------------------------------------------
+
+function resetWalkUi() {
+  walkStatusEl.textContent = 'Not started';
+  walkRemainingEl.textContent = '--';
+  walkAccuracyEl.textContent = '--';
+  startWalkButton.hidden = false;
+  startWalkButton.disabled = !destination;
+  arrivedButton.hidden = true;
+  cancelWalkButton.hidden = true;
+}
+
+function stopWalkTracking() {
+  if (walkWatchId !== null) {
+    navigator.geolocation.clearWatch(walkWatchId);
+    walkWatchId = null;
+  }
+}
+
+async function handleWalkPosition(position) {
+  const { latitude, longitude, accuracy } = position.coords;
+  walkAccuracyEl.textContent = `${Math.round(accuracy)} m`;
+
+  if (originMarker) originMarker.setLatLng([latitude, longitude]);
+
+  const remaining = calculateDistanceMetres(latitude, longitude, destination.latitude, destination.longitude);
+  walkRemainingEl.textContent = remaining < 1000 ? `${Math.round(remaining)} m` : `${(remaining / 1000).toFixed(2)} km`;
+
+  if (remaining <= ARRIVAL_RADIUS_METRES && !destinationReached) {
+    destinationReached = true;
+    walkStatusEl.textContent = 'Destination reached - tap "Arrived safe"';
+  }
+
+  // Push to campus control roughly every 5s rather than on every GPS tick,
+  // which can fire much more often than that.
+  const now = Date.now();
+  if (now - lastLocationPushAt < WALK_LOCATION_PUSH_MS) return;
+  lastLocationPushAt = now;
+
+  try {
+    await updateSafeWalkLocation(currentWalkId, { latitude, longitude });
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      stopWalkTracking();
+      redirectToLogin();
+    }
+    // Any other failure: keep walking, try again on the next tick.
+  }
+}
+
+startWalkButton.addEventListener('click', async () => {
+  if (!origin || !destination) return;
+
+  startWalkButton.disabled = true;
+  try {
+    const walk = await startSafeWalk({ origin, destination, route: lastRoute });
+    currentWalkId = walk.walkId;
+    destinationReached = false;
+    lastLocationPushAt = 0;
+    walkStatusEl.textContent = 'Safe Walk active - sharing your live location';
+    startWalkButton.hidden = true;
+    arrivedButton.hidden = false;
+    cancelWalkButton.hidden = false;
+
+    if (navigator.geolocation) {
+      walkWatchId = navigator.geolocation.watchPosition(
+        handleWalkPosition,
+        () => { walkAccuracyEl.textContent = 'GPS unavailable'; },
+        { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 },
+      );
+    } else {
+      walkAccuracyEl.textContent = 'Location is not available in this browser.';
+    }
+  } catch (error) {
+    startWalkButton.disabled = false;
+    if (error instanceof ApiError && error.status === 401) {
+      redirectToLogin();
+      return;
+    }
+    routeStatus.textContent = error instanceof ApiError ? error.message : 'Could not start the Safe Walk.';
+  }
+});
+
+arrivedButton.addEventListener('click', async () => {
+  stopWalkTracking();
+  try {
+    await markSafeWalkArrived(currentWalkId);
+  } catch {
+    // The walk still ends locally even if this one call fails - the
+    // student should never be stuck unable to stop sharing their location.
+  }
+  currentWalkId = null;
+  resetWalkUi();
+  walkStatusEl.textContent = '✓ Arrived safe';
+  startWalkButton.disabled = true;
+});
+
+cancelWalkButton.addEventListener('click', async () => {
+  stopWalkTracking();
+  try {
+    await cancelSafeWalk(currentWalkId);
+  } catch {
+    // Same as above - always stop sharing locally regardless.
+  }
+  currentWalkId = null;
+  resetWalkUi();
+  walkStatusEl.textContent = 'Cancelled';
+});
+
+// Leaving the GPS watch running after navigating away would be exactly the
+// silent, always-on tracking this feature is not - same rule as
+// distress-detection.js's mic/camera in incident.js.
+window.addEventListener('beforeunload', () => {
+  if (currentWalkId) stopWalkTracking();
 });
 
 loadMapData();

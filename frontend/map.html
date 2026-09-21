@@ -41,6 +41,24 @@
         <div id="route-summary" aria-live="polite"></div>
       </div>
     </section>
+
+    <section class="card" aria-labelledby="safe-walk-heading">
+      <h2 id="safe-walk-heading">Safe Walk</h2>
+      <p class="text-meta">
+        Once you have a route, start a Safe Walk to share your live location
+        with campus control until you tap "Arrived safe" or cancel.
+      </p>
+      <dl class="detail-list">
+        <div class="detail-row"><dt>Status</dt><dd id="walk-status">Not started</dd></div>
+        <div class="detail-row"><dt>Distance remaining</dt><dd id="walk-remaining">--</dd></div>
+        <div class="detail-row"><dt>GPS accuracy</dt><dd id="walk-accuracy">--</dd></div>
+      </dl>
+      <div class="form-actions">
+        <button class="btn btn-primary" id="start-walk-button" type="button" disabled>Start Safe Walk</button>
+        <button class="btn btn-primary" id="arrived-button" type="button" hidden>Arrived safe</button>
+        <button class="btn btn-secondary" id="cancel-walk-button" type="button" hidden>Cancel walk</button>
+      </div>
+    </section>
   </main>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
