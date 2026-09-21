@@ -984,10 +984,10 @@ export async function getSafeRoute(from, to) {
 }
 
 // ---------------------------------------------------------------------------
-// Safe Walk sessions - not yet a real endpoint, see docs/api-contract.md's
-// "Safe Walk sessions" section. A student walking a POST /routes/safe route
-// with live location sharing on, visible to campus control while it's
-// active - not just an SOS after something has already gone wrong.
+// Safe Walk sessions - see docs/api-contract.md's "Safe Walk sessions"
+// section. A student walking a POST /routes/safe route with live location
+// sharing on, visible to campus control while it's active - not just an SOS
+// after something has already gone wrong.
 // ---------------------------------------------------------------------------
 
 const SAFE_WALKS_KEY = 'ufh.safeWalks';

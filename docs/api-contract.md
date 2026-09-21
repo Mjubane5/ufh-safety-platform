@@ -778,14 +778,15 @@ the Assignment — a panel will ask how it is calculated.
 
 ---
 
-### Safe Walk sessions — not yet implemented
+### Safe Walk sessions
 
 A Safe Walk is a student walking a route from `POST /api/routes/safe` with
 live location sharing turned on, so campus control can see it in progress —
-not just an SOS after something has already gone wrong. Frontend is
-MOCK-backed via localStorage for now (`frontend/js/map.js`,
-`frontend/js/control-dashboard.js`); these endpoints do not exist on the
-backend yet.
+not just an SOS after something has already gone wrong. Implemented in
+`backend/src/main/java/za/ac/ufh/safety/safetywalk/` (`SafeWalk`,
+`SafeWalkService`, `SafeWalkController`) and consumed by
+`frontend/js/map.js` (student side) and `frontend/js/control-dashboard.js`
+(campus control's live list).
 
 #### POST /api/safewalks
 

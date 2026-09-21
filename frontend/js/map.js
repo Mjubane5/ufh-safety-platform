@@ -24,6 +24,7 @@ const walkStatusEl = document.getElementById('walk-status');
 const walkRemainingEl = document.getElementById('walk-remaining');
 const walkAccuracyEl = document.getElementById('walk-accuracy');
 const startWalkButton = document.getElementById('start-walk-button');
+const simulateWalkButton = document.getElementById('simulate-walk-button');
 const arrivedButton = document.getElementById('arrived-button');
 const cancelWalkButton = document.getElementById('cancel-walk-button');
 let map;
@@ -34,6 +35,7 @@ let destination;
 let lastRoute;
 let currentWalkId = null;
 let walkWatchId = null;
+let simulationTimer = null;
 let lastLocationPushAt = 0;
 let destinationReached = false;
 
@@ -127,6 +129,7 @@ async function requestRoute(chosenDestination) {
     destination = chosenDestination;
     lastRoute = route;
     startWalkButton.disabled = false;
+    simulateWalkButton.disabled = false;
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
       redirectToLogin();
@@ -202,6 +205,8 @@ function resetWalkUi() {
   walkAccuracyEl.textContent = '--';
   startWalkButton.hidden = false;
   startWalkButton.disabled = !destination;
+  simulateWalkButton.hidden = false;
+  simulateWalkButton.disabled = !destination;
   arrivedButton.hidden = true;
   cancelWalkButton.hidden = true;
 }
@@ -210,6 +215,10 @@ function stopWalkTracking() {
   if (walkWatchId !== null) {
     navigator.geolocation.clearWatch(walkWatchId);
     walkWatchId = null;
+  }
+  if (simulationTimer !== null) {
+    clearInterval(simulationTimer);
+    simulationTimer = null;
   }
 }
 
@@ -244,19 +253,27 @@ async function handleWalkPosition(position) {
   }
 }
 
+/** Starts the walk session server-side and puts the shared UI into "active" state. Returns the created walk. */
+async function beginWalk() {
+  const walk = await startSafeWalk({ origin, destination, route: lastRoute });
+  currentWalkId = walk.walkId;
+  destinationReached = false;
+  lastLocationPushAt = 0;
+  walkStatusEl.textContent = 'Safe Walk active - sharing your live location';
+  startWalkButton.hidden = true;
+  simulateWalkButton.hidden = true;
+  arrivedButton.hidden = false;
+  cancelWalkButton.hidden = false;
+  return walk;
+}
+
 startWalkButton.addEventListener('click', async () => {
   if (!origin || !destination) return;
 
   startWalkButton.disabled = true;
+  simulateWalkButton.disabled = true;
   try {
-    const walk = await startSafeWalk({ origin, destination, route: lastRoute });
-    currentWalkId = walk.walkId;
-    destinationReached = false;
-    lastLocationPushAt = 0;
-    walkStatusEl.textContent = 'Safe Walk active - sharing your live location';
-    startWalkButton.hidden = true;
-    arrivedButton.hidden = false;
-    cancelWalkButton.hidden = false;
+    await beginWalk();
 
     if (navigator.geolocation) {
       walkWatchId = navigator.geolocation.watchPosition(
@@ -269,11 +286,95 @@ startWalkButton.addEventListener('click', async () => {
     }
   } catch (error) {
     startWalkButton.disabled = false;
+    simulateWalkButton.disabled = false;
     if (error instanceof ApiError && error.status === 401) {
       redirectToLogin();
       return;
     }
     routeStatus.textContent = error instanceof ApiError ? error.message : 'Could not start the Safe Walk.';
+  }
+});
+
+// ---------------------------------------------------------------------------
+// Simulated Safe Walk - for demonstrating the feature (to a panel, or on
+// control-dashboard.html on another screen) without actually walking
+// anywhere. Starts a real walk and feeds it synthetic positions stepped
+// along the already-computed route through the exact same
+// handleWalkPosition() a real GPS reading goes through, so campus control's
+// dashboard cannot tell the difference - which is the point.
+// ---------------------------------------------------------------------------
+
+const SIMULATION_STEP_MS = 1500;
+// The real route from POST /routes/safe is only 2-3 waypoints (origin,
+// maybe one detour, destination) - fine for drawing a line, too sparse to
+// watch move. Spread a fixed step budget across those waypoints,
+// proportional to each leg's share of the total distance, so a short leg
+// gets fewer steps than a long one instead of every leg getting the same
+// count regardless of length.
+const SIMULATION_TOTAL_STEPS = 18;
+
+function interpolateRoutePoints(points, totalSteps) {
+  if (points.length < 2) return points;
+
+  const legDistances = [];
+  let totalDistance = 0;
+  for (let i = 0; i < points.length - 1; i += 1) {
+    const d = calculateDistanceMetres(
+      points[i].latitude, points[i].longitude,
+      points[i + 1].latitude, points[i + 1].longitude,
+    );
+    legDistances.push(d);
+    totalDistance += d;
+  }
+
+  const path = [points[0]];
+  for (let i = 1; i < points.length; i += 1) {
+    const previous = points[i - 1];
+    const point = points[i];
+    const legSteps = totalDistance > 0
+      ? Math.max(1, Math.round((legDistances[i - 1] / totalDistance) * totalSteps))
+      : Math.ceil(totalSteps / (points.length - 1));
+    for (let step = 1; step <= legSteps; step += 1) {
+      const t = step / legSteps;
+      path.push({
+        latitude: previous.latitude + (point.latitude - previous.latitude) * t,
+        longitude: previous.longitude + (point.longitude - previous.longitude) * t,
+      });
+    }
+  }
+  return path;
+}
+
+simulateWalkButton.addEventListener('click', async () => {
+  if (!origin || !destination || !Array.isArray(lastRoute?.points) || lastRoute.points.length < 2) return;
+
+  startWalkButton.disabled = true;
+  simulateWalkButton.disabled = true;
+  try {
+    await beginWalk();
+    walkAccuracyEl.textContent = 'Simulated';
+
+    const path = interpolateRoutePoints(lastRoute.points, SIMULATION_TOTAL_STEPS);
+    let index = 0;
+
+    simulationTimer = setInterval(async () => {
+      index += 1;
+      if (index >= path.length) {
+        stopWalkTracking();
+        arrivedButton.click();
+        return;
+      }
+      const point = path[index];
+      await handleWalkPosition({ coords: { latitude: point.latitude, longitude: point.longitude, accuracy: 5 } });
+    }, SIMULATION_STEP_MS);
+  } catch (error) {
+    startWalkButton.disabled = false;
+    simulateWalkButton.disabled = false;
+    if (error instanceof ApiError && error.status === 401) {
+      redirectToLogin();
+      return;
+    }
+    routeStatus.textContent = error instanceof ApiError ? error.message : 'Could not start the simulated Safe Walk.';
   }
 });
 
