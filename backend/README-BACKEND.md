@@ -81,6 +81,15 @@ starting `MAIL_API_KEY or MAIL_FROM is not set...` and read the code from
 there. Only the real, deployed backend needs the two environment variables
 actually set.
 
+If you're running the packaged jar detached from a terminal (background
+process, a script, anything other than watching `spring-boot:run` live),
+that console output goes nowhere unless you redirect it yourself - there is
+no file it falls back to. Start it with stdout/stderr sent to a log file, e.g.
+`java -jar target\ufh-safety-backend-0.0.1-SNAPSHOT.jar > backend.log 2>&1`,
+and read the code from there instead. Otherwise the code is generated and
+correct, but genuinely unrecoverable, which looks identical to "no code was
+ever sent."
+
 ## Run backend
 
 From the `backend` directory:
