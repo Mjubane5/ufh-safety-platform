@@ -9,7 +9,7 @@ import {
   ApiError,
 } from './api.js';
 
-const LOGIN_URL = './login.html';
+const LOGIN_URL = './staff-login.html';
 const POLL_MS = 5000; // matches the interval used everywhere else in this app
 const STATUS_FILTERS = [
   { value: null, label: 'All' },
