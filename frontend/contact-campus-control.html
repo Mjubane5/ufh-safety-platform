@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact campus control — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./dashboard.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Contact campus control</span>
+        </span>
+      </a>
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype for CSC 200 / CSC 300. Not connected to any live emergency
+      service. All data shown here is synthetic.
+    </p>
+
+    <a href="./dashboard.html" class="auth-footer-link">&larr; Back to your reports</a>
+
+    <h1>Contact campus control</h1>
+    <p class="text-meta">
+      For non-emergency questions or issues - lost property, access requests,
+      noise complaints, anything that isn't happening right now. For an
+      emergency, use the SOS button on your dashboard instead - this is not
+      a live chat and replies may take a while.
+    </p>
+
+    <div id="banner-slot"></div>
+
+    <section id="chat-section" class="card" aria-labelledby="chat-heading">
+      <h2 id="chat-heading">Message campus control</h2>
+      <div class="chat-thread" id="chat-thread" aria-live="polite"></div>
+      <form class="chat-composer" id="chat-form" novalidate>
+        <label class="visually-hidden" for="chat-input">Message</label>
+        <input class="input" id="chat-input" type="text" maxlength="500" placeholder="Type a message..." required>
+        <button class="btn btn-primary" id="chat-send-button" type="submit">Send</button>
+      </form>
+    </section>
+  </main>
+
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/shell.js"></script>
+  <script type="module" src="./js/contact-campus-control.js"></script>
+</body>
+</html>

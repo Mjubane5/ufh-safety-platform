@@ -1197,6 +1197,106 @@ export async function updateWellnessBookingStatus(bookingId, status) {
 }
 
 // ---------------------------------------------------------------------------
+// Contact campus control - not yet in docs/api-contract.md or the backend.
+// Same "one ongoing thread per student" shape as the SCU messaging above,
+// for non-emergency questions/issues - SOS and incidents already have their
+// own dedicated flow and stay separate from this.
+// ---------------------------------------------------------------------------
+
+const CAMPUS_CONTROL_MESSAGES_KEY = 'ufh.campusControlMessages';
+
+/** GET /api/campus-control/messages - student only. Not yet a real endpoint. */
+export async function getCampusControlMessages() {
+  if (MOCK) {
+    await delay(200);
+    requireMockToken();
+    const user = getStoredUser();
+    const mine = readMockStore(CAMPUS_CONTROL_MESSAGES_KEY)
+      .filter((m) => m.studentUserId === (user?.userId ?? MOCK_PERSONAS.student.userId));
+    return { items: mine };
+  }
+
+  return request('/campus-control/messages', { auth: true });
+}
+
+/** POST /api/campus-control/messages - student only. Not yet a real endpoint. */
+export async function sendCampusControlMessage(text) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const user = getStoredUser() ?? MOCK_PERSONAS.student;
+    const message = {
+      messageId: Date.now(),
+      studentUserId: user.userId,
+      studentName: user.fullName,
+      sender: 'student',
+      text,
+      sentAt: new Date().toISOString(),
+    };
+    const all = readMockStore(CAMPUS_CONTROL_MESSAGES_KEY);
+    all.push(message);
+    writeMockStore(CAMPUS_CONTROL_MESSAGES_KEY, all);
+    return message;
+  }
+
+  return request('/campus-control/messages', { method: 'POST', body: { text }, auth: true });
+}
+
+/** GET /api/campus-control/queue - campus_control/admin only. Not yet a real endpoint. */
+export async function getCampusControlQueue() {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const messages = readMockStore(CAMPUS_CONTROL_MESSAGES_KEY);
+    const byStudent = new Map();
+    messages.forEach((m) => {
+      const entry = byStudent.get(m.studentUserId) ?? { studentUserId: m.studentUserId, studentName: m.studentName, lastActivityAt: m.sentAt, hasUnread: false };
+      if (m.sentAt > entry.lastActivityAt) entry.lastActivityAt = m.sentAt;
+      if (m.sender === 'student') entry.hasUnread = true;
+      byStudent.set(m.studentUserId, entry);
+    });
+    const items = Array.from(byStudent.values()).sort((a, b) => (a.lastActivityAt < b.lastActivityAt ? 1 : -1));
+    return { items };
+  }
+
+  return request('/campus-control/queue', { auth: true });
+}
+
+/** GET /api/campus-control/messages/{studentUserId} - campus_control/admin only. */
+export async function getCampusControlMessagesWithStudent(studentUserId) {
+  if (MOCK) {
+    await delay(200);
+    requireMockToken();
+    const mine = readMockStore(CAMPUS_CONTROL_MESSAGES_KEY).filter((m) => m.studentUserId === studentUserId);
+    return { items: mine };
+  }
+
+  return request(`/campus-control/messages/${encodeURIComponent(studentUserId)}`, { auth: true });
+}
+
+/** POST /api/campus-control/messages/{studentUserId} - campus_control/admin only. */
+export async function sendCampusControlMessageToStudent(studentUserId, studentName, text) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const message = {
+      messageId: Date.now(),
+      studentUserId,
+      studentName,
+      sender: 'campus_control',
+      text,
+      sentAt: new Date().toISOString(),
+    };
+    const all = readMockStore(CAMPUS_CONTROL_MESSAGES_KEY);
+    all.push(message);
+    writeMockStore(CAMPUS_CONTROL_MESSAGES_KEY, all);
+    return message;
+  }
+
+  return request(`/campus-control/messages/${encodeURIComponent(studentUserId)}`, { method: 'POST', body: { text }, auth: true });
+}
+
+// ---------------------------------------------------------------------------
 // Confidential GBV reporting - contract section 7
 // ---------------------------------------------------------------------------
 
