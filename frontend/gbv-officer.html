@@ -29,6 +29,33 @@
     <p class="text-meta" id="queue-message">Loading cases...</p>
     <div class="chips" id="status-filter" role="group" aria-label="Filter GBV cases"></div>
     <section id="case-list" class="card-list" aria-live="polite" aria-busy="true"></section>
+
+    <!-- Only reports submitted non-anonymously ever appear here - an
+         anonymous report has no chat, and this queue never shows a name,
+         only the reference code, same as the case list above. -->
+    <h2>Chat with reporters</h2>
+    <p class="text-meta" id="chat-queue-message">Loading conversations...</p>
+    <div class="scu-layout">
+      <section aria-labelledby="chat-codes-heading">
+        <h3 id="chat-codes-heading" class="visually-hidden">Reference codes</h3>
+        <div id="chat-code-list" class="card-list" aria-live="polite" aria-busy="true"></div>
+      </section>
+
+      <section id="chat-thread-panel" class="card" aria-labelledby="chat-thread-heading" hidden>
+        <h3 id="chat-thread-heading">Conversation</h3>
+        <p class="text-meta" id="chat-thread-code"></p>
+        <div class="chat-thread" id="officer-chat-thread" aria-live="polite"></div>
+        <form class="chat-composer" id="officer-chat-form" novalidate>
+          <label class="visually-hidden" for="officer-chat-input">Reply</label>
+          <input class="input" id="officer-chat-input" type="text" maxlength="500" placeholder="Type a reply..." required>
+          <button class="btn btn-primary" id="officer-chat-send-button" type="submit">Send</button>
+        </form>
+      </section>
+
+      <section id="chat-empty-panel" class="card">
+        <p class="empty-state">Select a reference code on the left to view that conversation.</p>
+      </section>
+    </div>
   </main>
 
   <script type="module" src="./js/demo-notice.js"></script>

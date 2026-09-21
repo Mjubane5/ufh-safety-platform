@@ -40,6 +40,7 @@ Every user has exactly one role. Endpoints state which roles may call them.
 | `campus_control` | Logs patrols, views all incidents, oversees dispatch |
 | `gbv_officer` | Sole role able to read GBV case content |
 | `scu_officer` | Sole role able to manage wellness bookings and student wellness messages |
+| `health_officer` | Sole role able to manage Campus Health Centre bookings and student health messages |
 | `admin` | User management, audit log access |
 
 ### Standard error response
@@ -846,7 +847,8 @@ Public, given a valid reference code.
 {
   "referenceCode": "GBV-4K7P-22XQ",
   "status": "under_review",
-  "lastUpdatedAt": "2026-08-23T08:00:00Z"
+  "lastUpdatedAt": "2026-08-23T08:00:00Z",
+  "anonymous": false
 }
 ```
 
@@ -854,6 +856,11 @@ Returns status only — never the report content, never officer names. Apply rat
 limiting so codes cannot be brute-forced, and record the limit in the report.
 
 GBV status values: `submitted`, `under_review`, `referred`, `closed`.
+
+`anonymous` tells the frontend whether to offer the chat in section 7a below —
+an anonymous report has no channel back to the reporter at all, by design, so
+it's never offered one. This doesn't weaken anonymity: the reporter already
+knows whether they checked that box.
 
 ---
 
@@ -915,6 +922,89 @@ Multipart upload, not JSON. Returns an ID to reference in the report body.
 Strip EXIF metadata on upload. Photographs carry GPS coordinates and device
 identifiers that can deanonymise a reporter — worth an explicit paragraph in the
 Security section of the Assignment.
+
+---
+
+## 7a. GBV chat — not yet implemented
+
+> Deliberately a different shape from every other chat in this app (SCU,
+> campus control): scoped to a report's `referenceCode`, not a student
+> account, and never carries a reporter's name anywhere an officer can see
+> it — the same rule `GET /api/gbv/reports` already follows. Only offered
+> for a report submitted with `anonymous: false`; an anonymous report has no
+> chat, ever, because there is no channel back to an anonymous reporter by
+> design.
+>
+> Frontend is MOCK-backed via localStorage for now (`frontend/js/gbv.js`,
+> `frontend/js/gbv-officer.js`); these endpoints do not exist on the backend
+> yet.
+
+### GET /api/gbv/reports/{referenceCode}/messages
+
+Public, given the reference code — same "the code is the credential" model
+as the status endpoint. **Errors:** 404 for an unknown code, 403 if the
+report is anonymous.
+
+**Response 200**
+```json
+{
+  "items": [
+    { "messageId": 1, "referenceCode": "GBV-4K7P-22XQ", "sender": "reporter", "text": "Has anyone reviewed this yet?", "sentAt": "2026-09-21T09:00:00Z" }
+  ]
+}
+```
+
+`sender` is `reporter` or `gbv_officer`. Poll every 5 seconds while open,
+matching the interval used everywhere else in this app.
+
+---
+
+### POST /api/gbv/reports/{referenceCode}/messages
+
+Public, same rules as above.
+
+**Request**
+```json
+{ "text": "Has anyone reviewed this yet?" }
+```
+
+**Response 201:** the created message, `sender: "reporter"`.
+
+---
+
+### GET /api/gbv/chat-queue
+
+Roles: `gbv_officer`, `admin`. Every non-anonymous report that has a
+message, most recent activity first — reference codes only, **never** a
+name, same rule as the case queue in section 7.
+
+**Response 200**
+```json
+{
+  "items": [
+    { "referenceCode": "GBV-4K7P-22XQ", "lastActivityAt": "2026-09-21T09:00:00Z", "hasUnread": true }
+  ]
+}
+```
+
+---
+
+### GET /api/gbv/reports/{referenceCode}/messages/officer
+
+Roles: `gbv_officer`, `admin`. Same response shape as the public endpoint
+above, for the one report named in the path. A separate path from the
+public one so the two can carry different auth/rate-limit rules even though
+the data returned is the same.
+
+---
+
+### POST /api/gbv/reports/{referenceCode}/messages/officer
+
+Roles: `gbv_officer`, `admin`.
+
+**Request:** same shape as the public `POST`.
+
+**Response 201:** the created message, `sender: "gbv_officer"`.
 
 ---
 
@@ -1142,6 +1232,83 @@ Roles: `campus_control`, `admin`.
 **Request:** same shape as the student-facing `POST`.
 
 **Response 201:** the created message, `sender: "campus_control"`.
+
+---
+
+## 8b. Campus Health Centre messaging — not yet implemented
+
+The Health Centre is one of the three `GET /api/wellness/resources` (section
+8) and keeps using that same booking flow - `resourceId` 3, created via
+`POST /api/wellness/bookings`, confirmed/declined/cancelled via
+`PATCH /api/wellness/bookings/{bookingId}`. Only the **messaging** and the
+**officer queue** are separate from SCU's, with their own `health_officer`
+role and their own portal (`frontend/health-officer.html`), so a
+physical-health question never lands in a counsellor's inbox or vice versa.
+Same one-thread-per-student, 5-second-polling shape as SCU messaging.
+Frontend is MOCK-backed via localStorage for now
+(`frontend/js/wellness.js`, `frontend/js/health-officer.js`).
+
+### GET /api/health/messages
+
+Roles: `student`. Scoped to the caller automatically, same as wellness messages.
+
+**Response 200**
+```json
+{
+  "items": [
+    { "messageId": 1, "studentUserId": 17, "studentName": "A Student", "sender": "student", "text": "Can I get a repeat prescription?", "sentAt": "2026-09-21T09:00:00Z" }
+  ]
+}
+```
+
+`sender` is `student` or `health_officer`.
+
+---
+
+### POST /api/health/messages
+
+Roles: `student`.
+
+**Request**
+```json
+{ "text": "Can I get a repeat prescription?" }
+```
+
+**Response 201:** the created message, same shape as one item above.
+
+---
+
+### GET /api/health/queue
+
+Roles: `health_officer`, `admin`. Every student with a Health Centre message
+or a `resourceId` 3 booking, most recent activity first - same shape as the
+SCU queue in section 8, filtered to this one resource.
+
+**Response 200**
+```json
+{
+  "items": [
+    { "studentUserId": 17, "studentName": "A Student", "lastActivityAt": "2026-09-21T09:00:00Z", "hasUnread": true, "bookings": [] }
+  ]
+}
+```
+
+---
+
+### GET /api/health/messages/{studentUserId}
+
+Roles: `health_officer`, `admin`. Same response shape as the student-facing
+endpoint, for the one student named in the path.
+
+---
+
+### POST /api/health/messages/{studentUserId}
+
+Roles: `health_officer`, `admin`.
+
+**Request:** same shape as the student-facing `POST`.
+
+**Response 201:** the created message, `sender: "health_officer"`.
 
 ---
 

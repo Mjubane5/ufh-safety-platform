@@ -22,6 +22,7 @@ const ROLE_HOME_URLS = {
   campus_control: './control-dashboard.html',
   gbv_officer: './gbv-officer.html',
   scu_officer: './scu-officer.html',
+  health_officer: './health-officer.html',
   admin: './control-dashboard.html',
 };
 
@@ -313,7 +314,7 @@ function initStaffLoginForm(form) {
       // Pass requestedRole so mock mode signs in as the chosen role cleanly
       const result = await login(email, password, requestedRole);
       const actualRole = result?.user?.role;
-      if (!['campus_control', 'gbv_officer', 'scu_officer', 'responder', 'admin'].includes(actualRole)
+      if (!['campus_control', 'gbv_officer', 'scu_officer', 'health_officer', 'responder', 'admin'].includes(actualRole)
           || (requestedRole && actualRole !== requestedRole && actualRole !== 'admin')) {
         logout();
         showBanner('error', 'Staff access not available', 'Choose the access area that matches your account, or contact an administrator.');

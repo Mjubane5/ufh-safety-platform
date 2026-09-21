@@ -95,6 +95,13 @@ export const MOCK_PERSONAS = {
     phone: '0406083000',
     role: 'scu_officer',
   },
+  health_officer: {
+    userId: 302,
+    fullName: 'Sr. B. Nqcobo',
+    email: 'health.centre@ufh.ac.za',
+    phone: '0406083010',
+    role: 'health_officer',
+  },
   admin: {
     userId: 1,
     fullName: 'System Administrator',
@@ -350,6 +357,8 @@ export async function login(email, password, requestedRole = null) {
         targetRole = 'gbv_officer';
       } else if (lowerEmail.includes('scu') || lowerEmail.includes('counsel')) {
         targetRole = 'scu_officer';
+      } else if (lowerEmail.includes('health') || lowerEmail.includes('clinic')) {
+        targetRole = 'health_officer';
       } else if (lowerEmail.includes('responder')) {
         targetRole = 'responder';
       } else if (lowerEmail.includes('admin')) {
@@ -1051,6 +1060,9 @@ export async function createWellnessBooking(resourceId, preferredDate, preferred
 
 const WELLNESS_MESSAGES_KEY = 'ufh.wellnessMessages';
 const WELLNESS_BOOKINGS_KEY = 'ufh.wellnessBookingsQueue';
+// Matches the resourceId in getWellnessResources() below - the one wellness
+// resource with its own officer/portal rather than sharing SCU's inbox.
+const HEALTH_CENTRE_RESOURCE_ID = 3;
 
 function readMockStore(key) {
   try {
@@ -1116,7 +1128,10 @@ export async function getWellnessQueue() {
     await delay();
     requireMockToken();
     const messages = readMockStore(WELLNESS_MESSAGES_KEY);
-    const bookings = readMockStore(WELLNESS_BOOKINGS_KEY);
+    // Campus Health Centre (resourceId 3) has its own officer and its own
+    // booking queue below - SCU only manages the counselling/peer-wellness
+    // resources, so its queue excludes health-centre bookings.
+    const bookings = readMockStore(WELLNESS_BOOKINGS_KEY).filter((b) => b.resourceId !== HEALTH_CENTRE_RESOURCE_ID);
     const byStudent = new Map();
 
     messages.forEach((m) => {
@@ -1194,6 +1209,120 @@ export async function updateWellnessBookingStatus(bookingId, status) {
   }
 
   return request(`/wellness/bookings/${encodeURIComponent(bookingId)}`, { method: 'PATCH', body: { status }, auth: true });
+}
+
+// ---------------------------------------------------------------------------
+// Campus Health Centre - not yet in docs/api-contract.md or the backend.
+// Health Centre bookings reuse getWellnessResources/createWellnessBooking/
+// updateWellnessBookingStatus above (resourceId 3) - only messaging is
+// separate here, with its own officer role and its own one-thread-per-
+// student inbox, kept apart from SCU's so a physical-health question never
+// lands in a counsellor's queue or vice versa.
+// ---------------------------------------------------------------------------
+
+const HEALTH_MESSAGES_KEY = 'ufh.healthMessages';
+
+/** GET /api/health/messages - student only. Not yet a real endpoint. */
+export async function getHealthMessages() {
+  if (MOCK) {
+    await delay(200);
+    requireMockToken();
+    const user = getStoredUser();
+    const mine = readMockStore(HEALTH_MESSAGES_KEY)
+      .filter((m) => m.studentUserId === (user?.userId ?? MOCK_PERSONAS.student.userId));
+    return { items: mine };
+  }
+
+  return request('/health/messages', { auth: true });
+}
+
+/** POST /api/health/messages - student only. Not yet a real endpoint. */
+export async function sendHealthMessage(text) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const user = getStoredUser() ?? MOCK_PERSONAS.student;
+    const message = {
+      messageId: Date.now(),
+      studentUserId: user.userId,
+      studentName: user.fullName,
+      sender: 'student',
+      text,
+      sentAt: new Date().toISOString(),
+    };
+    const all = readMockStore(HEALTH_MESSAGES_KEY);
+    all.push(message);
+    writeMockStore(HEALTH_MESSAGES_KEY, all);
+    return message;
+  }
+
+  return request('/health/messages', { method: 'POST', body: { text }, auth: true });
+}
+
+/**
+ * GET /api/health/queue - health_officer/admin only. Same shape as the SCU
+ * queue: every student with a health-centre message or a resourceId-3
+ * booking, most recent activity first.
+ */
+export async function getHealthQueue() {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const messages = readMockStore(HEALTH_MESSAGES_KEY);
+    const bookings = readMockStore(WELLNESS_BOOKINGS_KEY).filter((b) => b.resourceId === HEALTH_CENTRE_RESOURCE_ID);
+    const byStudent = new Map();
+
+    messages.forEach((m) => {
+      const entry = byStudent.get(m.studentUserId) ?? { studentUserId: m.studentUserId, studentName: m.studentName, lastActivityAt: m.sentAt, hasUnread: false, bookings: [] };
+      if (m.sentAt > entry.lastActivityAt) entry.lastActivityAt = m.sentAt;
+      if (m.sender === 'student') entry.hasUnread = true;
+      byStudent.set(m.studentUserId, entry);
+    });
+    bookings.forEach((b) => {
+      const entry = byStudent.get(b.studentUserId) ?? { studentUserId: b.studentUserId, studentName: b.studentName, lastActivityAt: b.createdAt, hasUnread: false, bookings: [] };
+      entry.bookings.push(b);
+      byStudent.set(b.studentUserId, entry);
+    });
+
+    const items = Array.from(byStudent.values()).sort((a, b) => (a.lastActivityAt < b.lastActivityAt ? 1 : -1));
+    return { items };
+  }
+
+  return request('/health/queue', { auth: true });
+}
+
+/** GET /api/health/messages/{studentUserId} - health_officer/admin only. */
+export async function getHealthMessagesWithStudent(studentUserId) {
+  if (MOCK) {
+    await delay(200);
+    requireMockToken();
+    const mine = readMockStore(HEALTH_MESSAGES_KEY).filter((m) => m.studentUserId === studentUserId);
+    return { items: mine };
+  }
+
+  return request(`/health/messages/${encodeURIComponent(studentUserId)}`, { auth: true });
+}
+
+/** POST /api/health/messages/{studentUserId} - health_officer/admin only. */
+export async function sendHealthMessageToStudent(studentUserId, studentName, text) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const message = {
+      messageId: Date.now(),
+      studentUserId,
+      studentName,
+      sender: 'health_officer',
+      text,
+      sentAt: new Date().toISOString(),
+    };
+    const all = readMockStore(HEALTH_MESSAGES_KEY);
+    all.push(message);
+    writeMockStore(HEALTH_MESSAGES_KEY, all);
+    return message;
+  }
+
+  return request(`/health/messages/${encodeURIComponent(studentUserId)}`, { method: 'POST', body: { text }, auth: true });
 }
 
 // ---------------------------------------------------------------------------
@@ -1298,29 +1427,62 @@ export async function sendCampusControlMessageToStudent(studentUserId, studentNa
 
 // ---------------------------------------------------------------------------
 // Confidential GBV reporting - contract section 7
+//
+// MOCK reports now actually persist (readMockStore/writeMockStore), rather
+// than every submission/status-check returning the same canned reference
+// code - needed so the chat below can be scoped to a real report rather
+// than a fake fixed one.
 // ---------------------------------------------------------------------------
+
+const GBV_REPORTS_KEY = 'ufh.gbvReports';
+const GBV_MESSAGES_KEY = 'ufh.gbvMessages';
+
+// No 0/O/1/I - easy to misread on a phone, easy to mistype from memory.
+const GBV_CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+
+function generateGbvReferenceCode() {
+  const part = () => Array.from({ length: 4 }, () => GBV_CODE_CHARS[Math.floor(Math.random() * GBV_CODE_CHARS.length)]).join('');
+  return `GBV-${part()}-${part()}`;
+}
 
 export async function submitGbvReport(report) {
   if (MOCK) {
     await delay();
-    return {
-      referenceCode: 'GBV-4K7P-22XQ',
+    const referenceCode = generateGbvReferenceCode();
+    const record = {
+      referenceCode,
       status: 'submitted',
+      description: report.description ?? null,
+      occurredAt: report.occurredAt ?? null,
+      latitude: report.latitude ?? null,
+      longitude: report.longitude ?? null,
+      anonymous: report.anonymous !== false,
+      contactPreference: report.contactPreference ?? 'none',
       submittedAt: new Date().toISOString(),
+      lastUpdatedAt: new Date().toISOString(),
     };
+    const all = readMockStore(GBV_REPORTS_KEY);
+    all.push(record);
+    writeMockStore(GBV_REPORTS_KEY, all);
+    return { referenceCode: record.referenceCode, status: record.status, submittedAt: record.submittedAt };
   }
 
   return request('/gbv/reports', { method: 'POST', body: report, auth: !report.anonymous });
 }
 
+/**
+ * `anonymous` is included alongside the documented status fields so the
+ * frontend knows whether to offer the chat below - an anonymous report has
+ * no way back to the reporter at all, by design, so it never gets one.
+ */
 export async function getGbvReportStatus(referenceCode) {
   if (MOCK) {
     await delay();
-    return {
-      referenceCode,
-      status: 'under_review',
-      lastUpdatedAt: new Date().toISOString(),
-    };
+    const found = readMockStore(GBV_REPORTS_KEY).find((r) => r.referenceCode === referenceCode);
+    if (!found) {
+      throw apiError(404, 'NOT_FOUND', 'No report was found for that reference code.', 'referenceCode');
+    }
+    return { referenceCode: found.referenceCode, status: found.status, lastUpdatedAt: found.lastUpdatedAt, anonymous: found.anonymous };
   }
 
   return request(`/gbv/reports/${encodeURIComponent(referenceCode)}/status`);
@@ -1330,36 +1492,104 @@ export async function getGbvReports(status = null, page = 1) {
   if (MOCK) {
     await delay();
     requireMockToken();
-    const items = [
-      {
-        referenceCode: 'GBV-4K7P-22XQ',
-        status: 'under_review',
-        description: 'Confidential report submitted for safety guidance.',
-        occurredAt: '2026-08-20T19:30:00Z',
-        latitude: null,
-        longitude: null,
-        anonymous: true,
-        contactPreference: 'email',
-        submittedAt: '2026-08-23T01:55:00Z',
-        lastUpdatedAt: '2026-08-23T08:00:00Z',
-      },
-      {
-        referenceCode: 'GBV-9M2R-55YT',
-        status: 'submitted',
-        description: 'Incident occurred near residence corridor.',
-        occurredAt: '2026-08-22T14:10:00Z',
-        latitude: -32.7842,
-        longitude: 26.8503,
-        anonymous: false,
-        contactPreference: 'phone',
-        submittedAt: '2026-08-22T15:00:00Z',
-        lastUpdatedAt: '2026-08-22T15:00:00Z',
-      },
-    ].filter((report) => !status || report.status === status);
+    const items = readMockStore(GBV_REPORTS_KEY).filter((report) => !status || report.status === status);
     return { items, page, pageSize: 20, totalItems: items.length };
   }
 
   const params = new URLSearchParams({ page: String(page) });
   if (status) params.set('status', status);
   return request(`/gbv/reports?${params.toString()}`, { auth: true });
+}
+
+// ---------------------------------------------------------------------------
+// GBV chat - not yet in docs/api-contract.md or the backend. Deliberately
+// NOT the same shape as SCU/campus-control messaging above: this is scoped
+// to one report's referenceCode, not a student account, and never carries a
+// reporter's name anywhere an officer can see it - the same
+// know-the-code-is-the-credential model the public status lookup already
+// uses, and the same "officers never see identity" rule
+// GET /api/gbv/reports already follows. Only offered for a report submitted
+// with anonymous: false; an anonymous report has no chat, ever.
+// ---------------------------------------------------------------------------
+
+/** GET /api/gbv/reports/{referenceCode}/messages - public, given the code, non-anonymous reports only. */
+export async function getGbvMessages(referenceCode) {
+  if (MOCK) {
+    await delay(200);
+    const report = readMockStore(GBV_REPORTS_KEY).find((r) => r.referenceCode === referenceCode);
+    if (!report) throw apiError(404, 'NOT_FOUND', 'No report was found for that reference code.', 'referenceCode');
+    if (report.anonymous) throw apiError(403, 'FORBIDDEN', 'Anonymous reports do not have a chat.', null);
+    const mine = readMockStore(GBV_MESSAGES_KEY).filter((m) => m.referenceCode === referenceCode);
+    return { items: mine };
+  }
+
+  return request(`/gbv/reports/${encodeURIComponent(referenceCode)}/messages`);
+}
+
+/** POST /api/gbv/reports/{referenceCode}/messages - public, same rules as above. */
+export async function sendGbvMessage(referenceCode, text) {
+  if (MOCK) {
+    await delay();
+    const report = readMockStore(GBV_REPORTS_KEY).find((r) => r.referenceCode === referenceCode);
+    if (!report) throw apiError(404, 'NOT_FOUND', 'No report was found for that reference code.', 'referenceCode');
+    if (report.anonymous) throw apiError(403, 'FORBIDDEN', 'Anonymous reports do not have a chat.', null);
+    const message = { messageId: Date.now(), referenceCode, sender: 'reporter', text, sentAt: new Date().toISOString() };
+    const all = readMockStore(GBV_MESSAGES_KEY);
+    all.push(message);
+    writeMockStore(GBV_MESSAGES_KEY, all);
+    return message;
+  }
+
+  return request(`/gbv/reports/${encodeURIComponent(referenceCode)}/messages`, { method: 'POST', body: { text } });
+}
+
+/** GET /api/gbv/chat-queue - gbv_officer/admin only. Reference codes only, never a name. */
+export async function getGbvChatQueue() {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const nonAnonymousCodes = new Set(
+      readMockStore(GBV_REPORTS_KEY).filter((r) => !r.anonymous).map((r) => r.referenceCode),
+    );
+    const byReport = new Map();
+    readMockStore(GBV_MESSAGES_KEY)
+      .filter((m) => nonAnonymousCodes.has(m.referenceCode))
+      .forEach((m) => {
+        const entry = byReport.get(m.referenceCode) ?? { referenceCode: m.referenceCode, lastActivityAt: m.sentAt, hasUnread: false };
+        if (m.sentAt > entry.lastActivityAt) entry.lastActivityAt = m.sentAt;
+        if (m.sender === 'reporter') entry.hasUnread = true;
+        byReport.set(m.referenceCode, entry);
+      });
+    const items = Array.from(byReport.values()).sort((a, b) => (a.lastActivityAt < b.lastActivityAt ? 1 : -1));
+    return { items };
+  }
+
+  return request('/gbv/chat-queue', { auth: true });
+}
+
+/** GET /api/gbv/reports/{referenceCode}/messages (officer view) - gbv_officer/admin only. */
+export async function getGbvMessagesForReport(referenceCode) {
+  if (MOCK) {
+    await delay(200);
+    requireMockToken();
+    const mine = readMockStore(GBV_MESSAGES_KEY).filter((m) => m.referenceCode === referenceCode);
+    return { items: mine };
+  }
+
+  return request(`/gbv/reports/${encodeURIComponent(referenceCode)}/messages/officer`, { auth: true });
+}
+
+/** POST /api/gbv/reports/{referenceCode}/messages (officer reply) - gbv_officer/admin only. */
+export async function sendGbvMessageToReport(referenceCode, text) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const message = { messageId: Date.now(), referenceCode, sender: 'gbv_officer', text, sentAt: new Date().toISOString() };
+    const all = readMockStore(GBV_MESSAGES_KEY);
+    all.push(message);
+    writeMockStore(GBV_MESSAGES_KEY, all);
+    return message;
+  }
+
+  return request(`/gbv/reports/${encodeURIComponent(referenceCode)}/messages/officer`, { method: 'POST', body: { text }, auth: true });
 }

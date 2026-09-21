@@ -8,6 +8,7 @@ const ROLE_URLS = {
   responder: './responder-dashboard.html',
   gbv_officer: './gbv-officer.html',
   scu_officer: './scu-officer.html',
+  health_officer: './health-officer.html',
 };
 
 const ROLE_LABELS = {
@@ -16,6 +17,7 @@ const ROLE_LABELS = {
   responder: 'Responder',
   gbv_officer: 'GBV Support Officer',
   scu_officer: 'SCU Officer',
+  health_officer: 'Health Centre Officer',
   admin: 'Administrator',
 };
 

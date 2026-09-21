@@ -1,6 +1,16 @@
-import { getCurrentUser, getGbvReports, isLoggedIn, logout, ApiError } from './api.js';
+import {
+  getCurrentUser,
+  getGbvReports,
+  getGbvChatQueue,
+  getGbvMessagesForReport,
+  sendGbvMessageToReport,
+  isLoggedIn,
+  logout,
+  ApiError,
+} from './api.js';
 
 const LOGIN_URL = './login.html';
+const POLL_MS = 5000; // matches the interval used everywhere else in this app
 const STATUS_FILTERS = [
   { value: null, label: 'All' },
   { value: 'submitted', label: 'Submitted' },
@@ -108,6 +118,187 @@ async function loadCases() {
   }
 }
 
+// ---------------------------------------------------------------------------
+// Chat with reporters - keyed by referenceCode, never a name. Only reports
+// submitted with anonymous: false ever appear here - see getGbvChatQueue().
+// ---------------------------------------------------------------------------
+
+const chatQueueMessage = document.getElementById('chat-queue-message');
+const chatCodeList = document.getElementById('chat-code-list');
+const chatThreadPanel = document.getElementById('chat-thread-panel');
+const chatEmptyPanel = document.getElementById('chat-empty-panel');
+const chatThreadCode = document.getElementById('chat-thread-code');
+const officerChatThread = document.getElementById('officer-chat-thread');
+
+let selectedCode = null;
+let chatQueuePollTimer = null;
+let chatThreadPollTimer = null;
+let renderedChatMessageCount = 0;
+
+function renderChatQueue(items) {
+  chatCodeList.setAttribute('aria-busy', 'false');
+  chatCodeList.replaceChildren();
+  if (items.length === 0) {
+    chatCodeList.appendChild(Object.assign(document.createElement('p'), {
+      className: 'empty-state',
+      textContent: 'No reporters have started a conversation yet.',
+    }));
+    return;
+  }
+
+  items.forEach((item) => {
+    const card = document.createElement('button');
+    card.type = 'button';
+    card.className = 'card card-clickable';
+    if (selectedCode === item.referenceCode) card.setAttribute('aria-current', 'true');
+
+    const header = document.createElement('div');
+    header.className = 'card-header';
+    const title = document.createElement('span');
+    title.className = 'card-title';
+    title.textContent = item.referenceCode;
+    header.appendChild(title);
+    if (item.hasUnread) {
+      const unread = document.createElement('span');
+      unread.className = 'pill pill-active';
+      unread.textContent = 'New';
+      header.appendChild(unread);
+    }
+    card.appendChild(header);
+    card.addEventListener('click', () => selectChatCode(item.referenceCode));
+    chatCodeList.appendChild(card);
+  });
+}
+
+async function pollChatQueue() {
+  try {
+    const result = await getGbvChatQueue();
+    const items = Array.isArray(result?.items) ? result.items : [];
+    chatQueueMessage.textContent = `${items.length} conversation${items.length === 1 ? '' : 's'}.`;
+    renderChatQueue(items);
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      stopChatQueuePolling();
+      redirectToLogin();
+      return;
+    }
+    chatCodeList.setAttribute('aria-busy', 'false');
+    chatQueueMessage.textContent = 'Conversations could not be loaded.';
+  }
+}
+
+function startChatQueuePolling() {
+  pollChatQueue();
+  chatQueuePollTimer = setInterval(pollChatQueue, POLL_MS);
+}
+
+function stopChatQueuePolling() {
+  if (chatQueuePollTimer) {
+    clearInterval(chatQueuePollTimer);
+    chatQueuePollTimer = null;
+  }
+}
+
+function renderOfficerChatMessages(items) {
+  officerChatThread.replaceChildren();
+  if (items.length === 0) {
+    officerChatThread.appendChild(Object.assign(document.createElement('p'), {
+      className: 'empty-state',
+      textContent: 'No messages in this conversation yet.',
+    }));
+    return;
+  }
+  items.forEach((item) => {
+    const bubble = document.createElement('div');
+    bubble.className = item.sender === 'gbv_officer' ? 'chat-bubble chat-bubble-mine' : 'chat-bubble chat-bubble-theirs';
+    const text = document.createElement('span');
+    text.textContent = item.text;
+    bubble.appendChild(text);
+    const meta = document.createElement('span');
+    meta.className = 'chat-bubble-meta';
+    meta.textContent = item.sender === 'gbv_officer' ? 'You' : 'Reporter';
+    bubble.appendChild(meta);
+    officerChatThread.appendChild(bubble);
+  });
+  officerChatThread.scrollTop = officerChatThread.scrollHeight;
+}
+
+async function pollChatThread() {
+  if (!selectedCode) return;
+  try {
+    const result = await getGbvMessagesForReport(selectedCode);
+    const items = Array.isArray(result?.items) ? result.items : [];
+    if (items.length !== renderedChatMessageCount) {
+      renderedChatMessageCount = items.length;
+      renderOfficerChatMessages(items);
+    }
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      stopChatThreadPolling();
+      redirectToLogin();
+    }
+  }
+}
+
+function startChatThreadPolling() {
+  stopChatThreadPolling();
+  chatThreadPollTimer = setInterval(pollChatThread, POLL_MS);
+}
+
+function stopChatThreadPolling() {
+  if (chatThreadPollTimer) {
+    clearInterval(chatThreadPollTimer);
+    chatThreadPollTimer = null;
+  }
+}
+
+async function selectChatCode(referenceCode) {
+  selectedCode = referenceCode;
+  renderedChatMessageCount = -1;
+  chatEmptyPanel.hidden = true;
+  chatThreadPanel.hidden = false;
+  chatThreadCode.textContent = referenceCode;
+  renderChatQueue((await getGbvChatQueue().catch(() => ({ items: [] })))?.items ?? []);
+  await pollChatThread();
+  startChatThreadPolling();
+}
+
+document.getElementById('officer-chat-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (!selectedCode) return;
+  const input = document.getElementById('officer-chat-input');
+  const button = document.getElementById('officer-chat-send-button');
+  const text = input.value.trim();
+  if (!text) return;
+
+  button.disabled = true;
+  try {
+    await sendGbvMessageToReport(selectedCode, text);
+    input.value = '';
+    await pollChatThread();
+    await pollChatQueue();
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 401) {
+      redirectToLogin();
+      return;
+    }
+    showError(error instanceof ApiError ? error.message : 'Could not send that reply.');
+  } finally {
+    button.disabled = false;
+    input.focus();
+  }
+});
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) {
+    stopChatQueuePolling();
+    stopChatThreadPolling();
+  } else {
+    startChatQueuePolling();
+    if (selectedCode) startChatThreadPolling();
+  }
+});
+
 async function start() {
   if (!isLoggedIn()) {
     redirectToLogin();
@@ -121,6 +312,7 @@ async function start() {
     }
     renderFilters();
     await loadCases();
+    startChatQueuePolling();
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) redirectToLogin();
     else showError('Your role could not be verified.');

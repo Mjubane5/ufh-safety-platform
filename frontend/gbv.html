@@ -67,6 +67,25 @@
         <button class="btn btn-secondary" type="submit">Check status</button>
       </form>
       <p id="status-result" class="text-meta" aria-live="polite"></p>
+
+      <!-- Only shown after a successful status check for a report that was
+           NOT submitted anonymously. Knowing the reference code is the same
+           credential the status check above already uses - nothing new to
+           log in with. An anonymous report never gets this: there is no
+           channel back to an anonymous reporter, by design. -->
+      <div id="gbv-chat-section" hidden>
+        <h3>Talk to the GBV unit about this report</h3>
+        <p class="text-meta">
+          Only you (with this reference code) and GBV officers can see this
+          thread. Not a live chat - replies may take a while.
+        </p>
+        <div class="chat-thread" id="gbv-chat-thread" aria-live="polite"></div>
+        <form class="chat-composer" id="gbv-chat-form" novalidate>
+          <label class="visually-hidden" for="gbv-chat-input">Message</label>
+          <input class="input" id="gbv-chat-input" type="text" maxlength="500" placeholder="Type a message..." required>
+          <button class="btn btn-primary" id="gbv-chat-send-button" type="submit">Send</button>
+        </form>
+      </div>
     </section>
   </main>
 

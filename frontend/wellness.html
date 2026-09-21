@@ -77,6 +77,23 @@
         <button class="btn btn-primary" id="chat-send-button" type="submit">Send</button>
       </form>
     </section>
+
+    <!-- Separate from the SCU thread above - a different officer, a
+         different inbox, so a physical-health question never lands in a
+         counsellor's queue or vice versa. -->
+    <section id="health-chat-section" class="card" aria-labelledby="health-chat-heading" hidden>
+      <h2 id="health-chat-heading">Talk to the Campus Health Centre</h2>
+      <p class="text-meta">
+        A private message thread with Health Centre staff. Not a live chat,
+        replies may take a while, same as email.
+      </p>
+      <div class="chat-thread" id="health-chat-thread" aria-live="polite"></div>
+      <form class="chat-composer" id="health-chat-form" novalidate>
+        <label class="visually-hidden" for="health-chat-input">Message</label>
+        <input class="input" id="health-chat-input" type="text" maxlength="500" placeholder="Type a message..." required>
+        <button class="btn btn-primary" id="health-chat-send-button" type="submit">Send</button>
+      </form>
+    </section>
   </main>
 
   <script type="module" src="./js/demo-notice.js"></script>
