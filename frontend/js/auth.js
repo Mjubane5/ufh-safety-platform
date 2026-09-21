@@ -13,7 +13,17 @@
 // messages, student names and email addresses are all attacker-influenced
 // text. They go on the page with textContent.
 
-import { register, login, logout, ApiError, requestPasswordReset, resetPassword } from './api.js';
+import {
+  register,
+  login,
+  logout,
+  ApiError,
+  requestPasswordReset,
+  resetPassword,
+  requestLoginCode,
+  resendLoginCode,
+  verifyLoginCode,
+} from './api.js';
 
 // Where a successful sign-in lands based on user role.
 const ROLE_HOME_URLS = {
@@ -250,7 +260,38 @@ function handleRequestFailure(err, bannerTitle) {
 
 function initLoginForm(form) {
   const button = document.getElementById('submit-button');
+  const codeForm = document.getElementById('login-code-form');
+  const codeHint = document.getElementById('login-code-hint');
+  const codeInput = document.getElementById('code');
+  const codeButton = document.getElementById('login-code-submit-button');
+  const resendButton = document.getElementById('login-code-resend-button');
+  const backButton = document.getElementById('login-code-back-button');
   let isSubmitting = false;
+  let pendingLoginId = null;
+
+  // `demoCode` only ever appears in MOCK mode - see the comment on
+  // requestLoginCode() in api.js. A real backend response never includes
+  // it, so this line simply won't have anything to show once the backend
+  // is real.
+  function showCodeStep(result) {
+    pendingLoginId = result.pendingLoginId;
+    codeHint.textContent = result.demoCode
+      ? `Sent to ${result.maskedEmail}. Demo mode - no real email service is wired up yet, so here it is instead: ${result.demoCode}.`
+      : `We've sent a 6-digit code to ${result.maskedEmail}. Enter it below to finish signing in.`;
+    form.hidden = true;
+    codeForm.hidden = false;
+    clearBanner();
+    codeInput.value = '';
+    codeInput.focus();
+  }
+
+  function backToCredentials() {
+    pendingLoginId = null;
+    codeForm.hidden = true;
+    form.hidden = false;
+    document.getElementById('password').value = '';
+    clearBanner();
+  }
 
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
@@ -269,17 +310,59 @@ function initLoginForm(form) {
     }
 
     isSubmitting = true;
-    setLoading(button, true, 'Signing in…', 'Sign in');
+    setLoading(button, true, 'Sending code…', 'Continue');
 
     try {
-      const result = await login(email, password, 'student');
-      window.location.href = homeUrlForRole(result?.user?.role);
+      const result = await requestLoginCode(email, password);
+      showCodeStep(result);
     } catch (err) {
       handleRequestFailure(err, 'Could not sign in');
-      setLoading(button, false, 'Signing in…', 'Sign in');
+    } finally {
+      setLoading(button, false, 'Sending code…', 'Continue');
       isSubmitting = false;
     }
   });
+
+  codeForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    if (isSubmitting || !pendingLoginId) return;
+
+    clearBanner();
+    clearFieldError('code');
+    const code = codeInput.value.trim();
+    if (!/^\d{6}$/.test(code)) {
+      setFieldError('code', 'Enter the 6-digit code from your email.');
+      return;
+    }
+
+    isSubmitting = true;
+    setLoading(codeButton, true, 'Verifying…', 'Verify and sign in');
+
+    try {
+      const result = await verifyLoginCode(pendingLoginId, code);
+      window.location.href = homeUrlForRole(result?.user?.role);
+    } catch (err) {
+      handleRequestFailure(err, 'Could not verify that code');
+      setLoading(codeButton, false, 'Verifying…', 'Verify and sign in');
+      isSubmitting = false;
+    }
+  });
+
+  resendButton.addEventListener('click', async () => {
+    if (!pendingLoginId || isSubmitting) return;
+    resendButton.disabled = true;
+    try {
+      const result = await resendLoginCode(pendingLoginId);
+      showCodeStep(result);
+      showBanner('success', 'Code resent', 'A new code has been sent.');
+    } catch (err) {
+      handleRequestFailure(err, 'Could not resend the code');
+    } finally {
+      resendButton.disabled = false;
+    }
+  });
+
+  backButton.addEventListener('click', backToCredentials);
 }
 
 // ---------------------------------------------------------------------------
