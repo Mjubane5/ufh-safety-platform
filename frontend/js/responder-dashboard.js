@@ -8,7 +8,7 @@ import {
   ApiError,
 } from './api.js';
 
-const LOGIN_URL = './login.html';
+const LOGIN_URL = './staff-login.html';
 const TYPE_LABELS = {
   sos: 'SOS', medical: 'Medical emergency', fire: 'Fire', theft: 'Theft',
   assault: 'Assault', accident: 'Accident', suspicious: 'Suspicious behaviour',
