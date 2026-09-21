@@ -26,6 +26,21 @@ public class AuthController {
         return authService.login(request);
     }
 
+    @PostMapping("/login/request-code")
+    public PendingLoginResponse requestLoginCode(@Valid @RequestBody LoginRequest request) {
+        return authService.requestLoginCode(request);
+    }
+
+    @PostMapping("/login/resend-code")
+    public PendingLoginResponse resendLoginCode(@Valid @RequestBody ResendLoginCodeRequest request) {
+        return authService.resendLoginCode(request.pendingLoginId());
+    }
+
+    @PostMapping("/login/verify-code")
+    public LoginResponse verifyLoginCode(@Valid @RequestBody VerifyLoginCodeRequest request) {
+        return authService.verifyLoginCode(request.pendingLoginId(), request.code());
+    }
+
     @GetMapping("/me")
     public UserSummary me(Authentication authentication) {
         return authService.currentUser(authentication.getName());
