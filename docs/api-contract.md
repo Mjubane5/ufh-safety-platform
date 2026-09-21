@@ -1069,6 +1069,82 @@ Roles: `scu_officer`, `admin`.
 
 ---
 
+## 8a. Contact campus control — not yet implemented
+
+Same "one ongoing thread per student" shape as wellness messaging above, for
+non-emergency questions and issues - lost property, access requests, that
+kind of thing. SOS and incidents already have their own dedicated flow
+(section 3) and stay separate from this; this is deliberately *not* a
+substitute for reporting something urgent. Frontend is MOCK-backed via
+localStorage for now (`frontend/js/contact-campus-control.js`,
+`frontend/js/campus-control-queue.js`).
+
+### GET /api/campus-control/messages
+
+Roles: `student`. Scoped to the caller automatically, same as wellness
+messages - a student can only ever see their own thread.
+
+**Response 200**
+```json
+{
+  "items": [
+    { "messageId": 1, "studentUserId": 17, "studentName": "A Student", "sender": "student", "text": "Where is the lost property office?", "sentAt": "2026-09-21T09:00:00Z" }
+  ]
+}
+```
+
+`sender` is `student` or `campus_control`. Poll every 5 seconds while the
+conversation is open, matching the interval used everywhere else in this app.
+
+---
+
+### POST /api/campus-control/messages
+
+Roles: `student`.
+
+**Request**
+```json
+{ "text": "Where is the lost property office?" }
+```
+
+**Response 201:** the created message, same shape as one item above.
+
+---
+
+### GET /api/campus-control/queue
+
+Roles: `campus_control`, `admin`. Every student who has sent a message, most
+recent activity first - the campus control equivalent of the SCU booking
+queue.
+
+**Response 200**
+```json
+{
+  "items": [
+    { "studentUserId": 17, "studentName": "A Student", "lastActivityAt": "2026-09-21T09:00:00Z", "hasUnread": true }
+  ]
+}
+```
+
+---
+
+### GET /api/campus-control/messages/{studentUserId}
+
+Roles: `campus_control`, `admin`. Same response shape as the student-facing
+endpoint, for the one student named in the path.
+
+---
+
+### POST /api/campus-control/messages/{studentUserId}
+
+Roles: `campus_control`, `admin`.
+
+**Request:** same shape as the student-facing `POST`.
+
+**Response 201:** the created message, `sender: "campus_control"`.
+
+---
+
 ## 9. Open questions for the group
 
 Resolve these before implementation starts and record the decisions here.

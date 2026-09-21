@@ -29,9 +29,11 @@ const NAV_BY_ROLE = {
     ['Wellness', './wellness.html'],
     ['Health Conditions', './health-profile.html'],
     ['Confidential GBV', './gbv.html'],
+    ['Contact Campus Control', './contact-campus-control.html'],
   ],
   campus_control: [
     ['Dispatch Queue', './control-dashboard.html'],
+    ['Contact Queue', './campus-control-queue.html'],
     ['Record Patrol', './patrol.html'],
     ['Safety Map', './map.html'],
     ['Demo Switcher', './role-dashboard.html'],
@@ -53,6 +55,7 @@ const NAV_BY_ROLE = {
   ],
   admin: [
     ['Campus Control', './control-dashboard.html'],
+    ['Contact Queue', './campus-control-queue.html'],
     ['Responder Desk', './responder-dashboard.html'],
     ['GBV Queue', './gbv-officer.html'],
     ['SCU Queue', './scu-officer.html'],
