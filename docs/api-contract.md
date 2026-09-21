@@ -695,6 +695,105 @@ the Assignment — a panel will ask how it is calculated.
 
 ---
 
+### Safe Walk sessions — not yet implemented
+
+A Safe Walk is a student walking a route from `POST /api/routes/safe` with
+live location sharing turned on, so campus control can see it in progress —
+not just an SOS after something has already gone wrong. Frontend is
+MOCK-backed via localStorage for now (`frontend/js/map.js`,
+`frontend/js/control-dashboard.js`); these endpoints do not exist on the
+backend yet.
+
+#### POST /api/safewalks
+
+Roles: `student`.
+
+**Request**
+```json
+{
+  "origin": { "latitude": -32.78210, "longitude": 26.84800 },
+  "destination": { "latitude": -32.78550, "longitude": 26.85200 },
+  "route": { "distanceMetres": 720, "estimatedSeconds": 540, "safetyScore": 0.78 }
+}
+```
+
+`route` is whatever `POST /api/routes/safe` returned for this origin/destination —
+sent back so the session records the safety score it started with, rather
+than the backend recomputing it.
+
+**Response 201**
+```json
+{
+  "walkId": 501,
+  "status": "active",
+  "origin": { "latitude": -32.78210, "longitude": 26.84800 },
+  "destination": { "latitude": -32.78550, "longitude": 26.85200 },
+  "currentLocation": { "latitude": -32.78210, "longitude": 26.84800 },
+  "safetyScore": 0.78,
+  "startedAt": "2026-09-21T08:00:00Z",
+  "updatedAt": "2026-09-21T08:00:00Z"
+}
+```
+
+#### PATCH /api/safewalks/{walkId}/location
+
+Roles: `student` (own walk only).
+
+Pushed roughly every 5 seconds while a walk is active — the same cadence
+every other live view in this app polls at, just in the send direction here.
+
+**Request**
+```json
+{ "latitude": -32.78400, "longitude": 26.85000 }
+```
+
+**Response 200** — the updated walk, same shape as above.
+**Errors:** 409 if the walk is not `active` (already arrived or cancelled).
+
+#### POST /api/safewalks/{walkId}/arrived
+
+Roles: `student` (own walk only). Sets `status` to `arrived`. Always a
+deliberate tap from the student, never inferred automatically just because
+the live location came within range of the destination — see the frontend's
+arrival-detection note.
+
+**Response 200** — the updated walk.
+
+#### POST /api/safewalks/{walkId}/cancel
+
+Roles: `student` (own walk only). Sets `status` to `cancelled`. The false-alarm
+equivalent for a walk — for example the student changed their route.
+
+**Response 200** — the updated walk.
+
+#### GET /api/safewalks/active
+
+Roles: `campus_control`, `admin`. Polled every 5 seconds by
+`control-dashboard.html`.
+
+**Response 200**
+```json
+{
+  "items": [
+    {
+      "walkId": 501,
+      "studentUserId": 17,
+      "studentName": "Sipho Ndlovu",
+      "destination": { "latitude": -32.78550, "longitude": 26.85200 },
+      "currentLocation": { "latitude": -32.78400, "longitude": 26.85000 },
+      "safetyScore": 0.78,
+      "startedAt": "2026-09-21T08:00:00Z",
+      "updatedAt": "2026-09-21T08:04:12Z"
+    }
+  ]
+}
+```
+
+Only `active` walks are listed — one already `arrived` or `cancelled` drops
+off this endpoint (it is not a live safety concern any more).
+
+---
+
 ## 7. Confidential GBV reporting
 
 > **Handle separately from ordinary incidents.** Different table, different
