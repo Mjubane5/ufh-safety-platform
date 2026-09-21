@@ -62,9 +62,11 @@ public class DemoDataSeeder implements CommandLineRunner {
         seedUser("201900002", "Sipho Dlamini", "sipho.dlamini@example.ac.za", "+27710000002", "student", encodedPassword);
         seedUser("201900003", "Aphiwe Ngcobo", "aphiwe.ngcobo@example.ac.za", null, "student", encodedPassword);
 
-        // 2. Seed Campus Control & GBV Officer
+        // 2. Seed Campus Control, GBV Officer, SCU Officer & Health Centre Officer
         seedUser(null, "Johan van Wyk", "johan.vanwyk@example.ac.za", "+27720000002", "campus_control", encodedPassword);
         seedUser(null, "Lerato Mahlangu", "lerato.mahlangu@example.ac.za", "+27720000003", "gbv_officer", encodedPassword);
+        seedUser(null, "Thandeka Radebe", "thandeka.radebe@example.ac.za", "+27720000007", "scu_officer", encodedPassword);
+        seedUser(null, "Bongiwe Nqcobo", "bongiwe.nqcobo@example.ac.za", "+27720000008", "health_officer", encodedPassword);
 
         // 3. Seed Responders and their duty status/locations
         seedResponder(
