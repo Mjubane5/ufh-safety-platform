@@ -9,6 +9,7 @@ const ROLE_HOME_URLS = {
   responder: './responder-dashboard.html',
   gbv_officer: './gbv-officer.html',
   scu_officer: './scu-officer.html',
+  health_officer: './health-officer.html',
   admin: './control-dashboard.html',
 };
 
@@ -18,6 +19,7 @@ const ROLE_LABELS = {
   responder: 'Responder',
   gbv_officer: 'GBV Support Officer',
   scu_officer: 'SCU Officer',
+  health_officer: 'Health Centre Officer',
   admin: 'Administrator',
 };
 
@@ -53,12 +55,17 @@ const NAV_BY_ROLE = {
     ['Booking Queue', './scu-officer.html'],
     ['Demo Switcher', './role-dashboard.html'],
   ],
+  health_officer: [
+    ['Booking Queue', './health-officer.html'],
+    ['Demo Switcher', './role-dashboard.html'],
+  ],
   admin: [
     ['Campus Control', './control-dashboard.html'],
     ['Contact Queue', './campus-control-queue.html'],
     ['Responder Desk', './responder-dashboard.html'],
     ['GBV Queue', './gbv-officer.html'],
     ['SCU Queue', './scu-officer.html'],
+    ['Health Queue', './health-officer.html'],
     ['Demo Switcher', './role-dashboard.html'],
   ],
 };
@@ -74,7 +81,7 @@ function createButton(label, className, onClick) {
 
 export function handleSignOut() {
   const lastRole = logout();
-  if (['campus_control', 'gbv_officer', 'scu_officer', 'responder', 'admin'].includes(lastRole)) {
+  if (['campus_control', 'gbv_officer', 'scu_officer', 'health_officer', 'responder', 'admin'].includes(lastRole)) {
     window.location.replace('./staff-login.html');
   } else {
     window.location.replace('./login.html');

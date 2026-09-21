@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Health Centre booking queue — UFH Safety Platform</title>
+  <link rel="stylesheet" href="./css/styles.css">
+</head>
+<body>
+  <header class="app-header">
+    <div class="app-header-inner">
+      <a class="brand" href="./health-officer.html">
+        <span class="brand-mark" aria-hidden="true">UFH</span>
+        <span class="brand-text">
+          <span class="brand-name">Fort Hare Safety</span>
+          <span class="brand-sub">Campus Health Centre</span>
+        </span>
+      </a>
+      <button class="btn btn-ghost" id="signout-button" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="page">
+    <p class="notice">
+      Prototype only. Student data is synthetic. Access is restricted to Health Centre staff and administrators.
+    </p>
+    <div id="banner-slot"></div>
+    <h1>Booking queue</h1>
+    <p class="text-meta" id="queue-message">Loading students...</p>
+
+    <div class="scu-layout">
+      <section aria-labelledby="students-heading">
+        <h2 id="students-heading" class="visually-hidden">Students</h2>
+        <div id="student-list" class="card-list" aria-live="polite" aria-busy="true"></div>
+      </section>
+
+      <section id="thread-panel" class="card" aria-labelledby="thread-heading" hidden>
+        <h2 id="thread-heading">Conversation</h2>
+        <p class="text-meta" id="thread-student-name"></p>
+
+        <div id="bookings-list" class="detail-list"></div>
+
+        <div class="chat-thread" id="chat-thread" aria-live="polite"></div>
+        <form class="chat-composer" id="chat-form" novalidate>
+          <label class="visually-hidden" for="chat-input">Reply</label>
+          <input class="input" id="chat-input" type="text" maxlength="500" placeholder="Type a reply..." required>
+          <button class="btn btn-primary" id="chat-send-button" type="submit">Send</button>
+        </form>
+      </section>
+
+      <section id="empty-panel" class="card">
+        <p class="empty-state">Select a student on the left to view their bookings and messages.</p>
+      </section>
+    </div>
+  </main>
+
+  <script type="module" src="./js/demo-notice.js"></script>
+  <script type="module" src="./js/shell.js"></script>
+  <script type="module" src="./js/health-officer.js"></script>
+</body>
+</html>
