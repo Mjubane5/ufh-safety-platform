@@ -65,9 +65,37 @@
 
         <div class="form-actions">
           <button class="btn btn-primary btn-block" id="submit-button" type="submit">
-            Sign in
+            Continue
           </button>
         </div>
+      </form>
+
+      <!-- Second step of sign-in: a 6-digit code emailed after the password
+           checks out, matching the "notify a student whenever they log in"
+           security requirement. Hidden until #login-form succeeds. -->
+      <form class="form" id="login-code-form" novalidate hidden>
+        <div class="field" id="field-login-code">
+          <label class="label label-required" for="code">Verification code</label>
+          <p class="field-hint" id="login-code-hint">We've sent a 6-digit code to your email.</p>
+          <input
+            class="input"
+            id="code"
+            name="code"
+            type="text"
+            inputmode="numeric"
+            autocomplete="one-time-code"
+            maxlength="6"
+            placeholder="123456"
+            required>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary btn-block" id="login-code-submit-button" type="submit">
+            Verify and sign in
+          </button>
+        </div>
+        <button class="btn btn-ghost btn-block" id="login-code-resend-button" type="button">Resend code</button>
+        <button class="btn btn-ghost btn-block" id="login-code-back-button" type="button">Use a different account</button>
       </form>
 
       <div class="staff-panel-footer">

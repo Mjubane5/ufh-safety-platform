@@ -393,6 +393,117 @@ export async function login(email, password, requestedRole = null) {
   return result;
 }
 
+// ---------------------------------------------------------------------------
+// Two-step student login - not yet in docs/api-contract.md's real backend,
+// see the "Two-step student login" section there. Sits in front of the
+// existing POST /api/auth/login above rather than replacing it - staff
+// (staff-login.html) still call login() directly and are unaffected.
+//
+// Password is checked (or, for now, ignored the same way MOCK login()
+// already ignores it) by request-code; the code from verify-code is what
+// actually issues the token. Deliberately mirrors login()'s own structure
+// (assign to `result`, finalize the session the same way at the end) so a
+// reader who understands one understands both.
+// ---------------------------------------------------------------------------
+
+const LOGIN_CODE_TTL_MS = 5 * 60 * 1000; // 5 minutes - short, since it's re-sendable on demand
+const LOGIN_CODE_MAX_ATTEMPTS = 5;
+let mockPendingLogin = null; // { pendingLoginId, email, code, expiresAt, attempts } - not persisted, one page's lifetime is enough
+
+function generateLoginCode() {
+  return String(Math.floor(100000 + Math.random() * 900000)); // always 6 digits
+}
+
+/** jo***@ufh.ac.za - never shows the full local part back to the page. */
+function maskEmail(value) {
+  const [local, domain] = String(value || '').split('@');
+  if (!local || !domain) return String(value || '');
+  const visible = local.slice(0, 2);
+  return `${visible}${'*'.repeat(Math.max(1, local.length - visible.length))}@${domain}`;
+}
+
+/**
+ * POST /api/auth/login/request-code - public, student only.
+ * Validates the password, then emails a 6-digit code instead of returning a
+ * token immediately.
+ */
+export async function requestLoginCode(email, password) {
+  if (MOCK) {
+    await delay();
+    const code = generateLoginCode();
+    mockPendingLogin = {
+      pendingLoginId: `pending.${Date.now()}`,
+      email,
+      code,
+      expiresAt: Date.now() + LOGIN_CODE_TTL_MS,
+      attempts: 0,
+    };
+    // No real email service exists yet (see docs/api-contract.md) - demoCode
+    // is returned ONLY so this flow is testable without one. A real backend
+    // must never do this: it emails the code and returns nothing that
+    // reveals it.
+    return { pendingLoginId: mockPendingLogin.pendingLoginId, maskedEmail: maskEmail(email), demoCode: code };
+  }
+
+  return request('/auth/login/request-code', { method: 'POST', body: { email, password } });
+}
+
+/** POST /api/auth/login/resend-code - public. Same response shape as request-code. */
+export async function resendLoginCode(pendingLoginId) {
+  if (MOCK) {
+    await delay();
+    if (!mockPendingLogin || mockPendingLogin.pendingLoginId !== pendingLoginId) {
+      throw apiError(400, 'INVALID_LOGIN_ATTEMPT', 'Start signing in again.', null);
+    }
+    mockPendingLogin.code = generateLoginCode();
+    mockPendingLogin.expiresAt = Date.now() + LOGIN_CODE_TTL_MS;
+    mockPendingLogin.attempts = 0;
+    return { pendingLoginId, maskedEmail: maskEmail(mockPendingLogin.email), demoCode: mockPendingLogin.code };
+  }
+
+  return request('/auth/login/resend-code', { method: 'POST', body: { pendingLoginId } });
+}
+
+/** POST /api/auth/login/verify-code - public. Same response shape as POST /api/auth/login. */
+export async function verifyLoginCode(pendingLoginId, code) {
+  let result;
+
+  if (MOCK) {
+    await delay();
+    if (!mockPendingLogin || mockPendingLogin.pendingLoginId !== pendingLoginId) {
+      throw apiError(400, 'INVALID_LOGIN_ATTEMPT', 'Start signing in again.', null);
+    }
+    if (Date.now() > mockPendingLogin.expiresAt) {
+      mockPendingLogin = null;
+      throw apiError(400, 'CODE_EXPIRED', 'That code has expired. Request a new one.', 'code');
+    }
+    mockPendingLogin.attempts += 1;
+    if (mockPendingLogin.attempts > LOGIN_CODE_MAX_ATTEMPTS) {
+      mockPendingLogin = null;
+      throw apiError(429, 'TOO_MANY_ATTEMPTS', 'Too many incorrect attempts. Request a new code.', 'code');
+    }
+    if (code !== mockPendingLogin.code) {
+      throw apiError(400, 'INVALID_CODE', 'That code is incorrect.', 'code');
+    }
+
+    const persona = MOCK_PERSONAS.student;
+    result = {
+      token: `mock.jwt.${persona.role}`,
+      expiresAt: '2026-08-23T09:50:00Z',
+      user: { userId: persona.userId, fullName: persona.fullName, role: persona.role, email: mockPendingLogin.email },
+    };
+    mockPendingLogin = null;
+  } else {
+    result = await request('/auth/login/verify-code', { method: 'POST', body: { pendingLoginId, code } });
+  }
+
+  setToken(result.token);
+  if (result.user) {
+    setStoredUser(result.user);
+  }
+  return result;
+}
+
 /**
  * GET /api/auth/me - any authenticated role.
  */

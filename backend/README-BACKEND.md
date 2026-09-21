@@ -48,6 +48,39 @@ $env:JWT_SECRET="pick-any-long-random-string-at-least-32-chars"
 Each of us can use a different value locally. A token signed with one key is
 rejected by a backend running another, so sign in again after changing it.
 
+## Two-step student login (email code)
+
+Student sign-in is now two steps: password, then a 6-digit code emailed to
+that student, entered on `login.html` before a session is issued. Staff
+logins (`staff-login.html`) are unaffected - they still call
+`POST /api/auth/login` directly.
+
+Sending the email uses [SendGrid](https://sendgrid.com)'s API over plain
+HTTP (no SDK dependency - see `SendGridEmailService.java`). To send real
+emails:
+
+1. Create a free SendGrid account (100 emails/day free, no card required for
+   the free tier at the time of writing) and verify a sender identity - the
+   address you'll set as `MAIL_FROM` below. This is an account only you can
+   create; ask in the group chat if you want to share one rather than each
+   making your own.
+2. Create an API key with **Mail Send** access under Settings → API Keys.
+3. Set these before running:
+
+```powershell
+$env:MAIL_API_KEY="SG.your-api-key-here"
+$env:MAIL_FROM="your-verified-sender@example.com"
+```
+
+**Nobody needs to do this to keep developing locally.** If `MAIL_API_KEY` is
+unset, the backend still starts and two-step login still works end to end -
+`SendGridEmailService` writes the code to the server's own console/log
+instead of emailing it (clearly labelled, and never sent over HTTP to the
+browser either way). Check the terminal running `spring-boot:run` for a line
+starting `MAIL_API_KEY or MAIL_FROM is not set...` and read the code from
+there. Only the real, deployed backend needs the two environment variables
+actually set.
+
 ## Run backend
 
 From the `backend` directory:

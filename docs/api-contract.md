@@ -134,6 +134,88 @@ Public.
 email" and "wrong password" — revealing which one is a security weakness worth
 noting in the report.
 
+Still used as-is by `staff-login.html` for every staff role. `login.html`
+(students) no longer calls this endpoint directly — see "Two-step student
+login" below, which sits in front of it and calls it internally once the
+emailed code is verified. Extending the two-step flow to staff roles too is
+a decision for the group, not assumed here.
+
+---
+
+## 2a. Two-step student login — not yet implemented
+
+> Added so a student is notified — and must act — every time their account
+> is used to sign in, not just warned after the fact. `login.html` now calls
+> `request-code` where it used to call `POST /api/auth/login` directly; the
+> token is only issued once `verify-code` succeeds.
+
+**Security expectations for whoever builds this on the backend** (the
+frontend/MOCK layer imitates these, but cannot enforce anything for real):
+- The code is 6 digits, expires in 5 minutes, and is single-use.
+- Rate-limit `request-code` and `resend-code` per account (e.g. one every
+  30 seconds) so this can't be used to spam a student's inbox.
+- Lock out `verify-code` after 5 wrong attempts for that `pendingLoginId`
+  and require a fresh code — never let it be brute-forced.
+- **No email-sending capability exists in this project yet.** This needs an
+  SMTP account or a transactional email API (SendGrid, Mailgun, etc.) with
+  its own credentials — a real infrastructure decision for the group, not
+  something to wire up silently. Until then, the MOCK frontend returns the
+  code directly in the response so the flow is testable — clearly labelled
+  as a demo shortcut in the UI, never presented as a real email. A real
+  backend must never do this: it emails the code and returns nothing that
+  reveals it.
+
+### POST /api/auth/login/request-code
+
+Public, student only. Validates the password the same way
+`POST /api/auth/login` does, then emails a 6-digit code instead of
+returning a token.
+
+**Request:** same shape as `POST /api/auth/login`.
+
+**Response 200**
+```json
+{
+  "pendingLoginId": "a1b2c3d4",
+  "maskedEmail": "jo***@ufh.ac.za"
+}
+```
+
+**Errors:** 401 for wrong credentials, same generic message as
+`POST /api/auth/login` for the same reason.
+
+---
+
+### POST /api/auth/login/resend-code
+
+Public. Issues a fresh code for an existing `pendingLoginId`, invalidating
+the previous one and resetting the attempt counter.
+
+**Request**
+```json
+{ "pendingLoginId": "a1b2c3d4" }
+```
+
+**Response 200:** same shape as `request-code`.
+
+**Errors:** 400 if `pendingLoginId` is unknown or already completed.
+
+---
+
+### POST /api/auth/login/verify-code
+
+Public. On success, returns exactly what `POST /api/auth/login` returns.
+
+**Request**
+```json
+{ "pendingLoginId": "a1b2c3d4", "code": "483920" }
+```
+
+**Response 200:** same shape as `POST /api/auth/login`.
+
+**Errors:** 400 `INVALID_CODE` (wrong code) or `CODE_EXPIRED`, 429
+`TOO_MANY_ATTEMPTS` after 5 wrong tries for this `pendingLoginId`.
+
 ---
 
 ### GET /api/auth/me

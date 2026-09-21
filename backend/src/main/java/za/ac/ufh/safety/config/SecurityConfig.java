@@ -51,7 +51,10 @@ public class SecurityConfig {
                 // files are opened up; every /api path below stays protected.
                 .requestMatchers(HttpMethod.GET,
                     "/", "/*.html", "/css/**", "/js/**", "/assets/**", "/favicon.ico").permitAll()
-                .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
+                .requestMatchers(HttpMethod.POST,
+                    "/api/auth/register", "/api/auth/login",
+                    "/api/auth/login/request-code", "/api/auth/login/resend-code", "/api/auth/login/verify-code")
+                    .permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
