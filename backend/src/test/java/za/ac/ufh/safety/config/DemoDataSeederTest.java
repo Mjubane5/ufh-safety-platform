@@ -48,8 +48,9 @@ class DemoDataSeederTest {
 
         seeder.run();
 
-        // 3 students + 2 staff + 4 responders = 9 users
-        verify(userRepository, times(9)).save(any(User.class));
+        // 3 students + 4 staff (campus_control, gbv_officer, scu_officer,
+        // health_officer) + 4 responders = 11 users
+        verify(userRepository, times(11)).save(any(User.class));
         // 4 responders
         verify(responderRepository, times(4)).save(any(Responder.class));
     }
