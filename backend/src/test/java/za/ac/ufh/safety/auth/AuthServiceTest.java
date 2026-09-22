@@ -17,6 +17,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -146,6 +147,49 @@ class AuthServiceTest {
 
         assertThat(response.token()).isNotBlank();
         assertThat(response.user().fullName()).isEqualTo("A Student");
+    }
+
+    // login.html has always labelled this field "student number or email" -
+    // these confirm the student-number half of that promise is now actually
+    // wired up, not just the email half.
+
+    @Test
+    void signsInWithAStudentNumberInsteadOfAnEmail() {
+        when(users.findByStudentNumber("202512345")).thenReturn(Optional.of(storedStudent()));
+
+        LoginResponse response = authService.login(new LoginRequest("  202512345  ", PASSWORD));
+
+        assertThat(response.token()).isNotBlank();
+        assertThat(response.user().fullName()).isEqualTo("A Student");
+        verify(users, never()).findByEmailIgnoreCase(anyString());
+    }
+
+    @Test
+    void tellsUnknownStudentNumberAndWrongPasswordApart_toNobody() {
+        when(users.findByStudentNumber("999999999")).thenReturn(Optional.empty());
+        when(users.findByStudentNumber("202512345")).thenReturn(Optional.of(storedStudent()));
+
+        ApiException unknownNumber = catchApiException(
+            () -> authService.login(new LoginRequest("999999999", PASSWORD)));
+        ApiException wrongPassword = catchApiException(
+            () -> authService.login(new LoginRequest("202512345", "not-the-password")));
+
+        assertThat(unknownNumber.getMessage()).isEqualTo(wrongPassword.getMessage());
+        assertThat(unknownNumber.getCode()).isEqualTo(wrongPassword.getCode());
+        assertThat(unknownNumber.getStatus()).isEqualTo(401);
+    }
+
+    @Test
+    void requestLoginCodeAlsoAcceptsAStudentNumber() {
+        when(users.findByStudentNumber("202512345")).thenReturn(Optional.of(storedStudent()));
+
+        PendingLoginResponse response = authService.requestLoginCode(new LoginRequest("202512345", PASSWORD));
+
+        assertThat(response.pendingLoginId()).isNotBlank();
+        // The masked value shown back is always the account's real email,
+        // regardless of which identifier shape was used to sign in.
+        assertThat(response.maskedEmail()).isEqualTo("20*******@ufh.ac.za");
+        verify(emailService).sendLoginCode(eq("202512345@ufh.ac.za"), anyString());
     }
 
     // --- Two-step login: requestLoginCode ---------------------------------

@@ -187,9 +187,21 @@ public class AuthService {
         return local.substring(0, visible) + "*".repeat(Math.max(1, local.length() - visible)) + domain;
     }
 
-    private User verifyCredentials(String rawEmail, String password) {
-        String email = rawEmail.trim().toLowerCase();
-        User user = users.findByEmailIgnoreCase(email).orElseThrow(this::invalidCredentials);
+    /**
+     * login.html has always accepted "a student number or an email" per its
+     * own label; before this, only the email half was ever wired up, so
+     * typing a student number failed with a generic "invalid credentials" -
+     * indistinguishable from a wrong password, so nobody could tell why.
+     * A bare student number (digits only, as enforced at registration) looks
+     * up by studentNumber; anything else is treated as an email, exactly as
+     * before.
+     */
+    private User verifyCredentials(String rawIdentifier, String password) {
+        String identifier = rawIdentifier.trim();
+        User user = (identifier.matches("\\d+")
+                ? users.findByStudentNumber(identifier)
+                : users.findByEmailIgnoreCase(identifier.toLowerCase()))
+            .orElseThrow(this::invalidCredentials);
         if (!passwordEncoder.matches(password, user.getPasswordHash())) {
             throw invalidCredentials();
         }
