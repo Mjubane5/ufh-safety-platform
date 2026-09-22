@@ -85,6 +85,24 @@ emails:
    Until then, tell first-time testers to check spam and mark the message
    "Not spam" - most providers then deliver that sender to the inbox for
    that recipient going forward.
+
+   **A step further than spam, seen against a real `@ufh.ac.za` account:**
+   SendGrid's Activity Feed can show a send as **Delivered** (the receiving
+   server accepted it, SMTP `250 OK`) while the recipient still never sees
+   it anywhere, not even in Junk. `Delivered` only means SendGrid's job is
+   done - what a Microsoft 365 tenant (which UFH's student mail is) does
+   with it next is invisible to SendGrid and to this app. Microsoft 365's
+   anti-phishing filtering has a separate **Quarantine**, distinct from the
+   Junk folder: a normal user often cannot see or release it themselves
+   (that needs a Microsoft 365 admin, at `security.microsoft.com/quarantine`,
+   or a quarantine digest email if the tenant has one enabled) - and an
+   email whose entire content is "your sign-in code is XXXXXX" is exactly
+   the shape of a real credential-phishing lure, which is likely why an
+   unfamiliar external sender's OTP email gets caught here particularly
+   often. If a tester sees `Delivered` in SendGrid but nothing in their
+   inbox *or* Junk, the next question is for UFH's own IT (or the tenant's
+   Microsoft 365 admin) about quarantine - not something to keep debugging
+   from this codebase's side.
 2. Create an API key with **Mail Send** access under Settings → API Keys.
 3. Set these before running:
 
