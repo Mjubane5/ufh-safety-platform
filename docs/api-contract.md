@@ -109,7 +109,11 @@ number malformed.
 
 Public.
 
-**Request**
+**Request** — `email` accepts a real email address, or (student accounts
+only) a bare student number, e.g. `"202512345"`. `AuthService.verifyCredentials`
+decides which lookup to use from the value's shape (digits only = student
+number); the field keeps the name `email` rather than being renamed, to avoid
+touching every other endpoint that shares this request shape.
 ```json
 {
   "email": "202512345@ufh.ac.za",

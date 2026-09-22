@@ -176,13 +176,32 @@ function looksLikeEmail(value) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 }
 
-function validateLogin({ email, password }, { requireUfhDomain = false } = {}) {
+// Matches the digits-only rule validateRegister already enforces on
+// studentNumber at registration - anything that shape is looked up as a
+// student number server-side, not an email (see AuthService.verifyCredentials).
+function looksLikeStudentNumber(value) {
+  return /^\d+$/.test(value);
+}
+
+// allowStudentNumber is only true on login.html: staff accounts have no
+// student number to look up by (staff-login.html stays email-only), and a
+// password reset link can only ever be sent to an email address anyway.
+function validateLogin({ email, password }, { requireUfhDomain = false, allowStudentNumber = false } = {}) {
   const errors = [];
+  const identifierLabel = allowStudentNumber ? 'student number or email' : 'email address';
 
   if (!email) {
-    errors.push({ field: 'email', message: 'Enter your email address.' });
+    errors.push({ field: 'email', message: `Enter your ${identifierLabel}.` });
+  } else if (allowStudentNumber && looksLikeStudentNumber(email)) {
+    // A bare student number is a valid identifier as-is - no email shape or
+    // domain check applies to it.
   } else if (!looksLikeEmail(email)) {
-    errors.push({ field: 'email', message: 'That does not look like an email address.' });
+    errors.push({
+      field: 'email',
+      message: allowStudentNumber
+        ? 'Enter your student number or a valid email address.'
+        : 'That does not look like an email address.',
+    });
   } else if (requireUfhDomain && !isUfhEmail(email)) {
     errors.push({ field: 'email', message: `Use your ${UFH_EMAIL_DOMAIN} student email.` });
   }
@@ -303,7 +322,7 @@ function initLoginForm(form) {
     const email = valueOf('email');
     const password = document.getElementById('password').value;
 
-    const errors = validateLogin({ email, password }, { requireUfhDomain: true });
+    const errors = validateLogin({ email, password }, { requireUfhDomain: true, allowStudentNumber: true });
     if (errors.length > 0) {
       showValidationErrors(errors);
       return;
