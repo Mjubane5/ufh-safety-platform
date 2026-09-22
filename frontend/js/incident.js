@@ -6,8 +6,20 @@ import { getIncident, cancelIncident, isLoggedIn, logout, getCurrentUser, getInc
 import { createTrackingMap, startLiveLocationWatch, stopLiveLocationWatch } from './tracking.js';
 import { startDistressMonitoring, stopDistressMonitoring, isDistressMonitoring } from './distress-detection.js';
 
+// Shared by students, responders and campus_control (an incident is
+// reachable from any of their dashboards) - a single hardcoded login page
+// sent staff to the student-only two-step form, which cannot sign a staff
+// account back in at all. redirectToLogin() below picks the right one from
+// logout()'s own return value instead (the role it read just before
+// clearing storage) - same fix, same pattern, as map.js.
 const LOGIN_URL = './login.html';
+const STAFF_LOGIN_URL = './staff-login.html';
 const DASHBOARD_URL = './dashboard.html';
+
+function redirectToLogin() {
+  const lastRole = logout();
+  window.location.replace(lastRole && lastRole !== 'student' ? STAFF_LOGIN_URL : LOGIN_URL);
+}
 
 const STATUS_LABELS = {
   reported: 'Reported',
@@ -51,10 +63,7 @@ const cancelSlot = document.getElementById('cancel-slot');
 const signOutButton = document.getElementById('signout-button');
 
 if (signOutButton) {
-  signOutButton.addEventListener('click', () => {
-    logout();
-    window.location.href = './login.html';
-  });
+  signOutButton.addEventListener('click', redirectToLogin);
 }
 
 // Adjust back link target based on viewer role
@@ -367,8 +376,7 @@ function renderCancelControl(incident) {
     } catch (error) {
       button.disabled = false;
       if (error instanceof ApiError && error.status === 401) {
-        logout();
-        window.location.replace(LOGIN_URL);
+        redirectToLogin();
         return;
       }
       if (error instanceof ApiError && error.status === 409) {
@@ -408,7 +416,7 @@ async function load() {
   renderLoading();
 
   if (!isLoggedIn()) {
-    window.location.replace(LOGIN_URL);
+    redirectToLogin();
     return;
   }
 
@@ -433,8 +441,7 @@ async function load() {
     startDistressPolling(incident.incidentId);
   } catch (error) {
     if (error instanceof ApiError && error.status === 401) {
-      logout();
-      window.location.replace(LOGIN_URL);
+      redirectToLogin();
       return;
     }
 

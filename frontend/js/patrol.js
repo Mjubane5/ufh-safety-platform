@@ -1,6 +1,8 @@
 import { createPatrol, isLoggedIn, logout, ApiError } from './api.js';
 
-const LOGIN_URL = './login.html';
+// Staff-only page (campus_control) - unlike map.html/incident.html this one
+// has no student use, so there is no role to detect: always the staff form.
+const LOGIN_URL = './staff-login.html';
 const form = document.getElementById('patrol-form');
 const zoneInput = document.getElementById('zone-id');
 const noteInput = document.getElementById('patrol-note');

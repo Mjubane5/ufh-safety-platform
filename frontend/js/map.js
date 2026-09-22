@@ -13,7 +13,13 @@ import {
 } from './api.js';
 import { calculateDistanceMetres } from './tracking.js';
 
+// Shared by students, campus_control and responders (see shell.js's
+// NAV_BY_ROLE) - a single hardcoded login page here sent staff straight to
+// the student form, which cannot sign a staff account back in at all
+// (docs/api-contract.md's two-step flow is student-only). redirectToLogin()
+// below picks the right one from logout()'s own return value instead.
 const LOGIN_URL = './login.html';
+const STAFF_LOGIN_URL = './staff-login.html';
 const CAMPUS_CENTER = [-32.78331, 26.84971];
 const ARRIVAL_RADIUS_METRES = 40;
 const WALK_LOCATION_PUSH_MS = 5000; // matches the interval used everywhere else in this app
@@ -58,8 +64,8 @@ function showBanner(title, message) {
 }
 
 function redirectToLogin() {
-  logout();
-  window.location.replace(LOGIN_URL);
+  const lastRole = logout();
+  window.location.replace(lastRole && lastRole !== 'student' ? STAFF_LOGIN_URL : LOGIN_URL);
 }
 
 function validCoordinate(value) {
