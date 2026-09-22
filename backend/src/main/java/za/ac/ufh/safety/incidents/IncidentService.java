@@ -130,6 +130,20 @@ public class IncidentService {
     }
 
     /**
+     * Same visibility rule as GET /api/incidents/{id} above, exposed for
+     * IncidentSignalService (same package) to reuse rather than duplicate -
+     * the contract gives incident signals the identical "who may view"
+     * rule, so it should not be able to drift from this one.
+     */
+    @Transactional(readOnly = true)
+    Incident requireVisibleIncident(String email, Long incidentId) {
+        User caller = requireUser(email);
+        Incident incident = requireIncident(incidentId);
+        requireCanView(caller, incident);
+        return incident;
+    }
+
+    /**
      * PATCH /api/incidents/{incidentId}/status.
      *
      * Campus control and admin can move any incident. A responder can only

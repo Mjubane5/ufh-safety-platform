@@ -394,8 +394,8 @@ export async function login(email, password, requestedRole = null) {
 }
 
 // ---------------------------------------------------------------------------
-// Two-step student login - not yet in docs/api-contract.md's real backend,
-// see the "Two-step student login" section there. Sits in front of the
+// Two-step student login - see docs/api-contract.md's "Two-step student
+// login" section. Sits in front of the
 // existing POST /api/auth/login above rather than replacing it - staff
 // (staff-login.html) still call login() directly and are unaffected.
 //
@@ -528,7 +528,7 @@ export async function getCurrentUser() {
 }
 
 // ---------------------------------------------------------------------------
-// Health profile - not yet in docs/api-contract.md or the backend
+// Health profile - see docs/api-contract.md's health profile section
 // ---------------------------------------------------------------------------
 //
 // Declared once at registration (register.html), but a student's conditions
@@ -545,7 +545,7 @@ export async function getCurrentUser() {
 const HEALTH_PROFILE_KEY = 'ufh.healthProfile';
 
 /**
- * GET /api/students/me/health - student only. Not yet a real endpoint.
+ * GET /api/students/me/health - student only.
  * Returns { conditions: string[], note: string|null } - empty/null when
  * nothing has been declared, never an error for "no profile yet".
  */
@@ -566,7 +566,7 @@ export async function getHealthProfile() {
 }
 
 /**
- * PUT /api/students/me/health - student only. Not yet a real endpoint.
+ * PUT /api/students/me/health - student only.
  */
 export async function updateHealthProfile(conditions, note) {
   const body = { conditions: conditions ?? [], note: note || null };
@@ -584,10 +584,8 @@ export async function updateHealthProfile(conditions, note) {
 /**
  * POST /api/auth/forgot-password - public.
  *
- * Not yet a real backend endpoint (see docs/api-contract.md) - built ahead of
- * it the same way the GBV and wellness pages were. Always resolves with the
- * same generic message, mock or real, so the UI can't be used to check which
- * emails are registered.
+ * Always resolves with the same generic message, mock or real, so the UI
+ * can't be used to check which emails are registered.
  */
 export async function requestPasswordReset(email) {
   if (MOCK) {
@@ -601,8 +599,8 @@ export async function requestPasswordReset(email) {
 /**
  * POST /api/auth/reset-password - public.
  *
- * Not yet a real backend endpoint. token comes from the query string of the
- * emailed reset link (reset-password.html?token=...).
+ * token comes from the query string of the emailed reset link
+ * (reset-password.html?token=...).
  */
 export async function resetPassword(token, newPassword) {
   if (MOCK) {
@@ -759,8 +757,8 @@ export async function cancelIncident(incidentId, reason = null) {
 }
 
 // ---------------------------------------------------------------------------
-// Live distress signals - not yet a real endpoint, see
-// docs/api-contract.md's "Incident live signals" section. Opt-in and
+// Live distress signals - see docs/api-contract.md's "Incident live
+// signals" section. Opt-in and
 // derived-only: a transcript line, or a sound/facial event label - never
 // raw audio or video. Produced by frontend/js/distress-detection.js.
 // ---------------------------------------------------------------------------
@@ -1157,8 +1155,8 @@ export async function createWellnessBooking(resourceId, preferredDate, preferred
 }
 
 // ---------------------------------------------------------------------------
-// SCU messaging and booking queue - not yet in docs/api-contract.md or the
-// backend. "Talk to SCU" alongside the existing "request a booking" flow.
+// SCU messaging and booking queue - see docs/api-contract.md section 8.
+// "Talk to SCU" alongside the existing "request a booking" flow.
 // One ongoing thread per student, not per booking - simpler for both sides
 // and matches how a real counselling unit would rather have one continuous
 // conversation than a fresh thread every time someone books.
@@ -1323,7 +1321,7 @@ export async function updateWellnessBookingStatus(bookingId, status) {
 }
 
 // ---------------------------------------------------------------------------
-// Campus Health Centre - not yet in docs/api-contract.md or the backend.
+// Campus Health Centre - see docs/api-contract.md section 8b.
 // Health Centre bookings reuse getWellnessResources/createWellnessBooking/
 // updateWellnessBookingStatus above (resourceId 3) - only messaging is
 // separate here, with its own officer role and its own one-thread-per-
@@ -1437,7 +1435,7 @@ export async function sendHealthMessageToStudent(studentUserId, studentName, tex
 }
 
 // ---------------------------------------------------------------------------
-// Contact campus control - not yet in docs/api-contract.md or the backend.
+// Contact campus control - see docs/api-contract.md section 8a.
 // Same "one ongoing thread per student" shape as the SCU messaging above,
 // for non-emergency questions/issues - SOS and incidents already have their
 // own dedicated flow and stay separate from this.
@@ -1637,7 +1635,7 @@ export async function updateGbvReportStatus(referenceCode, status) {
 }
 
 // ---------------------------------------------------------------------------
-// GBV chat - not yet in docs/api-contract.md or the backend. Deliberately
+// GBV chat - see docs/api-contract.md section 7a. Deliberately
 // NOT the same shape as SCU/campus-control messaging above: this is scoped
 // to one report's referenceCode, not a student account, and never carries a
 // reporter's name anywhere an officer can see it - the same

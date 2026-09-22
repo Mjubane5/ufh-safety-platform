@@ -11,11 +11,14 @@ public class IncidentController {
 
     private final IncidentService incidentService;
     private final IncidentAssignmentService assignmentService;
+    private final IncidentSignalService signalService;
 
     public IncidentController(IncidentService incidentService,
-                              IncidentAssignmentService assignmentService) {
+                              IncidentAssignmentService assignmentService,
+                              IncidentSignalService signalService) {
         this.incidentService = incidentService;
         this.assignmentService = assignmentService;
+        this.signalService = signalService;
     }
 
     // authentication.getName() is the email the JWT filter put there. The
@@ -67,5 +70,18 @@ public class IncidentController {
                                      @RequestBody(required = false) AssignIncidentRequest request) {
         AssignIncidentRequest body = request == null ? new AssignIncidentRequest(null) : request;
         return assignmentService.assign(authentication.getName(), incidentId, body);
+    }
+
+    @GetMapping("/{incidentId}/signals")
+    public IncidentSignalsResponse signals(Authentication authentication, @PathVariable Long incidentId) {
+        return signalService.list(authentication.getName(), incidentId);
+    }
+
+    @PostMapping("/{incidentId}/signals")
+    @ResponseStatus(HttpStatus.CREATED)
+    public IncidentSignalResponse appendSignal(Authentication authentication,
+                                               @PathVariable Long incidentId,
+                                               @Valid @RequestBody AppendSignalRequest request) {
+        return signalService.append(authentication.getName(), incidentId, request);
     }
 }
