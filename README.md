@@ -15,7 +15,7 @@ Report an incident, trigger an SOS, reach campus control, or get confidential GB
 [![Leaflet](https://img.shields.io/badge/Leaflet-OpenStreetMap-199900?style=flat-square&logo=leaflet&logoColor=white)](frontend/js/map.js)
 [![JavaScript](https://img.shields.io/badge/JavaScript-vanilla%2C%20no%20framework-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](frontend/js/api.js)
 <br/>
-[![Backend tests](https://img.shields.io/badge/backend%20tests-189%20passing-2f855a?style=flat-square&logo=junit5&logoColor=white)](backend/README-BACKEND.md#tests)
+[![Backend tests](https://img.shields.io/badge/backend%20tests-205%20passing-2f855a?style=flat-square&logo=junit5&logoColor=white)](backend/README-BACKEND.md#tests)
 [![Merged PRs](https://img.shields.io/badge/merged%20PRs-65-2f855a?style=flat-square&logo=github&logoColor=white)](https://github.com/Mjubane5/ufh-safety-platform/pulls?q=is%3Apr+is%3Amerged)
 [![Contributors](https://img.shields.io/badge/team-8%20students-2f855a?style=flat-square&logo=github&logoColor=white)](docs/team-working%20agreement_1.md)
 [![Hosted on Railway](https://img.shields.io/badge/hosted%20on-Railway-0B0D0E?style=flat-square&logo=railway&logoColor=white)](docs/hosting-railway.md)
@@ -242,7 +242,7 @@ Concrete choices, not abstract claims — each one is a specific file or test yo
 | **Right hash for the threat model** | Login codes and passwords use BCrypt (slow, on purpose — resists brute-forcing a *low-entropy* secret). Password-reset tokens use SHA-256 instead (`PasswordResetToken`'s class comment explains why: 256 bits of `SecureRandom` doesn't need a slow hash, and needs to be a direct, fast, queryable lookup key) |
 | **No-enumeration guarantees, tested** | Forgot-password returns the identical response for a registered and an unregistered email — asserted directly in `PasswordResetServiceTest.theResponseIsIdenticalForKnownAndUnknownEmails`, not just documented |
 | **Rate limiting where it matters most** | The public GBV status-lookup endpoint is rate-limited per caller IP (`GbvStatusLookupRateLimiter`) — brute-forcing a reference code by trying many at speed is the realistic attack, so limiting is scoped to the caller, not the code |
-| **Test strategy matched to the risk** | 186 pure unit tests (JUnit 5 + Mockito + AssertJ, no database) targeting the actual security boundaries — every role/endpoint combination, every 403-vs-404 decision, every idempotency case (cancelling an already-cancelled incident is a no-op, not an error) |
+| **Test strategy matched to the risk** | 205 pure unit tests (JUnit 5 + Mockito + AssertJ, no database) targeting the actual security boundaries — every role/endpoint combination, every 403-vs-404 decision, every idempotency case (cancelling an already-cancelled incident is a no-op, not an error) |
 | **Mobile-first, verified in-browser** | Every page built for a ~375px viewport first; UI fixes this project shipped (header wrapping, an invisible-at-desktop-width sign-out button) were caught by testing at real breakpoints in a browser, not assumed from the CSS |
 | **Honest documentation of real limitations** | Known gaps are written down where the next person will find them, not hidden — see `docs/api-contract.md`'s note on missing rate limiting for login codes, and `backend/README-BACKEND.md`'s documented SendGrid deliverability limitation, including the exact SMTP error code encountered and why |
 
@@ -256,6 +256,7 @@ Concrete choices, not abstract claims — each one is a specific file or test yo
 | Backend | Java 17, Spring Boot 3 | REST, JSON and JDBC handled for us; one deployable jar in production |
 | Database | MySQL 8 | Managed instance on Railway in production, a portable local instance for development |
 | Maps | Leaflet + OpenStreetMap | No API key, no quota, no billing |
+| Routing algorithm | C++, Dijkstra over a real OSM campus graph | Safe Walk and responder-dispatch routes follow actual footways and roads, not a straight line — falls back to simple geometry automatically if the compiled binary isn't present (see [algorithms/shortest_path](algorithms/shortest_path)) |
 | Auth | JWT bearer tokens, BCrypt password hashing | Two-step email verification for students; a fixed 8-hour token, no refresh — simple and adequate for a prototype |
 | Real-time-ish | 5-second polling everywhere it's needed | No socket reconnection logic to debug, and one consistent pattern across dispatch, chat, and Safe Walk tracking |
 | Email | SendGrid Mail Send API, plain HTTP | No SDK dependency — one JSON POST covers both the login code and the password-reset link |
@@ -294,7 +295,7 @@ cd backend
 .\mvnw test
 ```
 
-186 tests, pure JUnit 5 + Mockito + AssertJ, no database required. Every role boundary on every endpoint is asserted directly — not just "does it return 200," but "does the wrong role get exactly the 403 or 404 the contract specifies, and does an officer-facing response structurally exclude the fields it must never expose." See [Engineering practices](#engineering-practices) above for specific examples.
+205 tests, pure JUnit 5 + Mockito + AssertJ, no database required. Every role boundary on every endpoint is asserted directly — not just "does it return 200," but "does the wrong role get exactly the 403 or 404 the contract specifies, and does an officer-facing response structurally exclude the fields it must never expose." See [Engineering practices](#engineering-practices) above for specific examples.
 
 ---
 

@@ -239,7 +239,7 @@ already built.
 | Database | MySQL 8 | What the team already knows, and Railway offers it as a managed service. Render's free tier is Postgres-only, see §2 |
 | Maps | Leaflet + OpenStreetMap | No API key and no billing risk for a student project |
 | Hosting | Railway, one Docker service | Pivoted away from an earlier three-service draft once the Dockerfile started bundling frontend into the jar. Fewer moving parts, no CORS, one thing to redeploy |
-| Algorithms | C++, standalone | Deliberately kept out of the request path per the contract. It's a demonstration of the algorithm, not something the running app depends on |
+| Algorithms | C++ (`algorithms/shortest_path`) | Real Dijkstra shortest-path search over a campus footway/road graph built from OpenStreetMap data, invoked per request via `ProcessBuilder` from `CppRouteEngine` (Safe Walk routing, and the responder route in `POST /incidents/{id}/assign`). This is a disclosed departure from the original "not in the request path" plan: a precomputed-offline approach cannot serve an arbitrary student-clicked destination. The Java side never depends on it being present — `GeometricRouteEngine` (a straight line) is the automatic fallback if the compiled binary is missing, slow, or fails, so a broken C++ build degrades routing quality, never availability |
 | Analysis | Python, offline | Results get seeded into MySQL ahead of time rather than computed on request |
 
 ---

@@ -47,8 +47,13 @@ import java.util.Optional;
  * Comparing squared distances is fine — whichever is nearest by the square
  * is nearest by the root, and it avoids a Math.sqrt per candidate.
  *
- * The real shortest-path work over the campus footpath graph is the C++
- * module. This class only chooses *who*; the route between them comes later.
+ * The real shortest-path work over the campus footpath graph lives in
+ * algorithms/shortest_path (za.ac.ufh.safety.safetywalk.CppRouteEngine).
+ * This class only chooses *who* by straight-line distance; the actual route
+ * between them is calculated afterwards, in
+ * IncidentAssignmentService.buildRoute, once the choice is already made -
+ * recalculating a real path for every candidate just to pick one would be
+ * far more work than this decision needs.
  *
  * ---------------------------------------------------------------------------
  * The specification is NearestResponderSelectorTest, written before this code.
