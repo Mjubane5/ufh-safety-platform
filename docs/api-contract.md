@@ -142,28 +142,31 @@ a decision for the group, not assumed here.
 
 ---
 
-## 2a. Two-step student login — not yet implemented
+## 2a. Two-step student login
 
 > Added so a student is notified — and must act — every time their account
-> is used to sign in, not just warned after the fact. `login.html` now calls
+> is used to sign in, not just warned after the fact. `login.html` calls
 > `request-code` where it used to call `POST /api/auth/login` directly; the
 > token is only issued once `verify-code` succeeds.
 
-**Security expectations for whoever builds this on the backend** (the
-frontend/MOCK layer imitates these, but cannot enforce anything for real):
+**Implemented in `backend/src/main/java/za/ac/ufh/safety/auth/`**
+(`AuthService`, `LoginVerificationCode`, `SendGridEmailService`):
 - The code is 6 digits, expires in 5 minutes, and is single-use.
-- Rate-limit `request-code` and `resend-code` per account (e.g. one every
-  30 seconds) so this can't be used to spam a student's inbox.
-- Lock out `verify-code` after 5 wrong attempts for that `pendingLoginId`
-  and require a fresh code — never let it be brute-forced.
-- **No email-sending capability exists in this project yet.** This needs an
-  SMTP account or a transactional email API (SendGrid, Mailgun, etc.) with
-  its own credentials — a real infrastructure decision for the group, not
-  something to wire up silently. Until then, the MOCK frontend returns the
-  code directly in the response so the flow is testable — clearly labelled
-  as a demo shortcut in the UI, never presented as a real email. A real
-  backend must never do this: it emails the code and returns nothing that
-  reveals it.
+- `verify-code` locks out after 5 wrong attempts for that `pendingLoginId`
+  and requires a fresh code.
+- **Known gap:** `request-code`/`resend-code` have no rate limit per
+  account yet (unlike the GBV status lookup, which does - see section 7).
+  A caller who already knows a valid email/password could currently spam
+  that student's inbox by calling either endpoint repeatedly. Worth the
+  same per-caller sliding-window treatment before this goes anywhere near
+  real students.
+- Email is sent via SendGrid (`SendGridEmailService`) when `MAIL_API_KEY`/
+  `MAIL_FROM` are set; without them the backend still starts and the code is
+  written to the server's own log instead (dev-only fallback, clearly
+  labelled, never sent over HTTP to the browser either way) - see
+  `README-BACKEND.md`. Production (Railway) has both set and sends real
+  email; `README-BACKEND.md` also documents a known SendGrid deliverability
+  limitation (mail landing in spam without full Domain Authentication).
 
 ### POST /api/auth/login/request-code
 
@@ -235,8 +238,8 @@ Any authenticated role. Lets the frontend restore session state on page reload.
 
 ### GET /api/students/me/health
 
-Roles: `student`. Not yet implemented on the backend, same "frontend built
-ahead" note as the password-reset endpoints below.
+Roles: `student`. Implemented in
+`backend/src/main/java/za/ac/ufh/safety/healthprofile/`.
 
 Declared once at registration, editable any time after. Backs the medical
 alert button on the dashboard, which only appears once a student has
@@ -268,7 +271,7 @@ health data is involved.
 
 ### PUT /api/students/me/health
 
-Roles: `student`. Not yet implemented.
+Roles: `student`.
 
 **Request:** same shape as the response above.
 
@@ -281,9 +284,8 @@ fixed list, or a `note` over 200 characters.
 
 ### POST /api/auth/forgot-password
 
-Public. Not yet implemented on the backend - the frontend calls this shape
-already (`docs/development-challenges.md` pattern: frontend built ahead of
-the endpoint), so this section is the spec for whoever builds it.
+Public. Implemented in
+`backend/src/main/java/za/ac/ufh/safety/passwordreset/`.
 
 **Request**
 ```json
@@ -302,13 +304,16 @@ still a normal 400 `VALIDATION_FAILED`, since that's a client mistake, not
 information about the target account.
 
 Sends a link like `https://<host>/reset-password.html?token=<opaque-token>`.
-The token needs a short expiry (an hour is plenty) and must be single-use.
+The token is a 256-bit `SecureRandom` value, stored as a SHA-256 digest
+(not BCrypt - see `PasswordResetToken`'s class comment for why a fast,
+deterministic hash is the correct choice here, unlike password/OTP hashing),
+expires in 1 hour, and is marked used on redemption so it cannot be replayed.
 
 ---
 
 ### POST /api/auth/reset-password
 
-Public. Also not yet implemented; same "frontend built ahead" note as above.
+Public. Implemented alongside `forgot-password` above.
 
 **Request**
 ```json
@@ -512,7 +517,7 @@ The false-alarm path. Sets status to `cancelled` and retains the record.
 
 ---
 
-### GET /api/incidents/{incidentId}/signals — not yet implemented
+### GET /api/incidents/{incidentId}/signals
 
 Roles: same visibility as `GET /api/incidents/{incidentId}` — `student`
 (own incident only), `responder` (assigned only), `campus_control`, `admin`.
@@ -536,7 +541,7 @@ agreement's decision log — polling, not sockets).
 
 ---
 
-### POST /api/incidents/{incidentId}/signals — not yet implemented
+### POST /api/incidents/{incidentId}/signals
 
 Roles: `student` (own incident only) — only the reporter's own device can
 add to their own incident's log.

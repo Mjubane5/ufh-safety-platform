@@ -53,7 +53,8 @@ public class SecurityConfig {
                     "/", "/*.html", "/css/**", "/js/**", "/assets/**", "/favicon.ico").permitAll()
                 .requestMatchers(HttpMethod.POST,
                     "/api/auth/register", "/api/auth/login",
-                    "/api/auth/login/request-code", "/api/auth/login/resend-code", "/api/auth/login/verify-code")
+                    "/api/auth/login/request-code", "/api/auth/login/resend-code", "/api/auth/login/verify-code",
+                    "/api/auth/forgot-password", "/api/auth/reset-password")
                     .permitAll()
                 // GBV reporting must work for a reporter who never signs in
                 // at all - see docs/api-contract.md section 7. POST /reports
