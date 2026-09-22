@@ -79,12 +79,23 @@ public class SendGridEmailService implements EmailService {
             // domain we actually control the DNS for; Single Sender
             // Verification (what MAIL_FROM uses today) proves ownership of
             // one address, nothing more. See README-BACKEND.md.
+            //
+            // tracking_settings disabled: SendGrid's account-level default is
+            // click/open tracking on, which rewrites any link in the body
+            // through an unbranded sendgrid.net redirect domain and embeds an
+            // invisible open-tracking pixel - both are themselves spam
+            // signals, and neither is needed for a one-time code or a
+            // single-use reset link nobody is measuring engagement on.
             Map<String, Object> payload = Map.of(
                 "personalizations", List.of(Map.of("to", List.of(Map.of("email", toEmail)))),
                 "from", Map.of("email", fromEmail, "name", fromName),
                 "reply_to", Map.of("email", fromEmail, "name", fromName),
                 "subject", subject,
-                "content", List.of(Map.of("type", "text/plain", "value", body))
+                "content", List.of(Map.of("type", "text/plain", "value", body)),
+                "tracking_settings", Map.of(
+                    "click_tracking", Map.of("enable", false),
+                    "open_tracking", Map.of("enable", false)
+                )
             );
 
             HttpRequest request = HttpRequest.newBuilder(SENDGRID_ENDPOINT)
