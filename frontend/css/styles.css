@@ -970,7 +970,11 @@ a:focus-visible,
   display: flex;
   align-items: center;
   gap: var(--space-3);
-  min-width: 0;
+  /* Not 0: that let this flex item shrink smaller than .brand-text's own
+     min-width below, so the text overflowed out of .brand's box and
+     visually collided with .app-header-actions immediately after it
+     instead of pushing it onto a new line. The default (auto) respects
+     children's min-content, which is what actually makes wrapping work. */
   color: inherit;
   text-decoration: none;
 }
@@ -1013,8 +1017,25 @@ a:focus-visible,
 .brand-text {
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  /* Not 0: with white-space:nowrap + overflow:hidden below, a min-width of
+     0 lets the flex algorithm "solve" a too-narrow row by shrinking this to
+     nothing instead of wrapping .app-header-actions onto its own line -
+     the brand name would silently vanish rather than truncate. This floor
+     guarantees at least a few characters stay visible and forces the
+     actions block to wrap first. */
+  min-width: 7rem;
   line-height: 1.2;
+}
+
+.brand-name,
+.brand-sub {
+  /* Under space pressure (a long role name + Sign out squeezed against the
+     brand), letting this wrap instead of truncate made it wrap across two
+     or three lines and collide with the nav row below - never acceptable
+     for a header lockup. Ellipsis instead. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .brand-name {
@@ -1287,6 +1308,7 @@ a:focus-visible,
 
   .form-actions {
     display: flex;
+    flex-wrap: wrap;
     gap: var(--space-3);
     justify-content: flex-end;
   }
@@ -1363,6 +1385,12 @@ a:focus-visible,
 }
 
 .demo-banner {
+  /* demo-notice.js inserts a second copy of this banner immediately before
+     a page's submit button, which usually sits inside .form-actions (a flex
+     row). flex-basis:100% forces it onto its own line above the button
+     instead of squeezing in beside it - harmless where .demo-banner is not
+     inside a flex container, since flex-basis only applies to flex items. */
+  flex-basis: 100%;
   padding: 0.6rem 1rem;
   border-bottom: 1px solid var(--color-emergency);
   background: var(--color-emergency-tint);
@@ -2025,9 +2053,15 @@ a:focus-visible,
 }
 
 @media (min-width: 768px) {
-  .app-header-inner {
-    flex-wrap: nowrap;
-  }
+  /* flex-wrap intentionally stays "wrap" (the base rule) rather than being
+     forced to "nowrap" here: this assumed brand + full nav + user badge +
+     sign out always fit on one row at desktop widths, which is false for
+     a role with a long nav list (student has 7 links) at ordinary laptop
+     widths (~1024px) - the sign-out button was overflowing past the
+     viewport and, combined with html/body's overflow-x:hidden reset,
+     disappearing entirely with no way to reach it. Keeping wrap enabled
+     costs nothing on screens where everything already fits - it only
+     activates as a safety net when it genuinely doesn't. */
 
   .app-nav {
     order: initial;

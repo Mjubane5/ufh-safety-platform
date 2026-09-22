@@ -342,7 +342,11 @@ export function createTrackingMap(target, options = {}) {
     } else {
       const minutes = Math.max(1, Math.ceil((distance / 1000) / (state.speedKmh / 60)));
       if (etaTimeEl) etaTimeEl.textContent = `~${minutes} MINS (${distance}m)`;
-      if (overlayStatusEl) overlayStatusEl.textContent = `Unit advancing &middot; ${distance}m away &middot; Speed ~${state.speedKmh} km/h`;
+      // A literal "·" here, not the &middot; HTML entity: this is
+      // assigned via textContent (never innerHTML, per this project's XSS
+      // rule), which does not decode HTML entities - they would otherwise
+      // render as the literal six characters "&middot;" on screen.
+      if (overlayStatusEl) overlayStatusEl.textContent = `Unit advancing · ${distance}m away · Speed ~${state.speedKmh} km/h`;
       container.querySelector('#track-eta-badge')?.classList.remove('arrived');
     }
   }
