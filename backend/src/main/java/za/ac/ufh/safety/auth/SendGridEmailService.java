@@ -70,21 +70,43 @@ public class SendGridEmailService implements EmailService {
         }
 
         try {
-            // reply_to matching the verified sender is a small, genuine
-            // deliverability signal (a missing reply-to on a transactional
-            // email is itself something spam filters weigh against a
-            // message) - it does not fix the underlying cause of this
-            // landing in spam, which is that MAIL_FROM has no Domain
-            // Authentication (SPF/DKIM alignment) in SendGrid. That needs a
-            // domain we actually control the DNS for; Single Sender
-            // Verification (what MAIL_FROM uses today) proves ownership of
-            // one address, nothing more. See README-BACKEND.md.
+            // No reply_to: added in #60 as a theoretically-sound
+            // deliverability signal, removed here because a real test
+            // showed a working "arrives, lands in spam" outcome regress to
+            // "Delivered per SendGrid, arrives nowhere visible" shortly
+            // after it was added. Correlation, not proven causation - a
+            // reply_to header matching an already-verified sender is a
+            // completely standard thing to send, and Microsoft 365's
+            // filtering is not something either side of this project can
+            // fully observe or reproduce on demand - but it's the one
+            // variable that changed between those two outcomes, it's easy
+            // to remove, and removing it can't make anything worse. If mail
+            // still doesn't reach the inbox with this reverted, the header
+            // was never the cause and the real fix remains Domain
+            // Authentication (see below) or checking Microsoft 365
+            // Quarantine directly (see README-BACKEND.md).
+            //
+            // tracking_settings disabled: SendGrid's account-level default is
+            // click/open tracking on, which rewrites any link in the body
+            // through an unbranded sendgrid.net redirect domain and embeds an
+            // invisible open-tracking pixel - both are themselves spam
+            // signals, and neither is needed for a one-time code or a
+            // single-use reset link nobody is measuring engagement on.
+            //
+            // Neither of these touches the actual root cause: MAIL_FROM has
+            // no Domain Authentication (SPF/DKIM alignment) in SendGrid.
+            // That needs a domain we actually control the DNS for; Single
+            // Sender Verification (what MAIL_FROM uses today) proves
+            // ownership of one address, nothing more. See README-BACKEND.md.
             Map<String, Object> payload = Map.of(
                 "personalizations", List.of(Map.of("to", List.of(Map.of("email", toEmail)))),
                 "from", Map.of("email", fromEmail, "name", fromName),
-                "reply_to", Map.of("email", fromEmail, "name", fromName),
                 "subject", subject,
-                "content", List.of(Map.of("type", "text/plain", "value", body))
+                "content", List.of(Map.of("type", "text/plain", "value", body)),
+                "tracking_settings", Map.of(
+                    "click_tracking", Map.of("enable", false),
+                    "open_tracking", Map.of("enable", false)
+                )
             );
 
             HttpRequest request = HttpRequest.newBuilder(SENDGRID_ENDPOINT)
