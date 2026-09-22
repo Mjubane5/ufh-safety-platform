@@ -1,5 +1,6 @@
 package za.ac.ufh.safety.safetywalk;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -33,6 +34,14 @@ public class SafeRouteService {
     private final RouteEngine cppRouteEngine;
     private final RouteEngine geometricRouteEngine;
 
+    // Explicit @Autowired, not left implicit: this class also has a
+    // package-private constructor for tests (below), and Spring will not
+    // reliably pick "the public one" on its own once more than one
+    // constructor exists - without this it looks for a genuine no-arg
+    // constructor instead and fails to start. Learned the hard way (a
+    // production crash loop on IncidentAssignmentService, the same
+    // two-constructor pattern), not assumed.
+    @Autowired
     public SafeRouteService(
             HotspotRepository hotspots,
             CppRouteEngine cppRouteEngine,

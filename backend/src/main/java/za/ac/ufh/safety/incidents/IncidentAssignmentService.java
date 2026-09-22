@@ -2,6 +2,7 @@ package za.ac.ufh.safety.incidents;
 
 import java.util.ArrayList;
 import java.util.List;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.ac.ufh.safety.common.ApiException;
@@ -118,6 +119,13 @@ public class IncidentAssignmentService {
     private final RouteEngine cppRouteEngine;
     private final RouteEngine geometricRouteEngine;
 
+    // Explicit @Autowired, not left implicit: this class also has a
+    // package-private constructor for tests (below), and Spring will not
+    // reliably pick "the public one" on its own once more than one
+    // constructor exists - without this it looks for a genuine no-arg
+    // constructor instead and fails to start. Learned the hard way (a
+    // production crash loop), not assumed.
+    @Autowired
     public IncidentAssignmentService(IncidentRepository incidents,
                                      ResponderRepository responders,
                                      UserRepository users,
