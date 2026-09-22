@@ -1612,6 +1612,30 @@ export async function getGbvReports(status = null, page = 1) {
   return request(`/gbv/reports?${params.toString()}`, { auth: true });
 }
 
+/**
+ * PATCH /api/gbv/reports/{referenceCode}/status - gbv_officer/admin only.
+ * status: 'submitted' | 'under_review' | 'referred' | 'closed'.
+ */
+export async function updateGbvReportStatus(referenceCode, status) {
+  if (MOCK) {
+    await delay();
+    requireMockToken();
+    const all = readMockStore(GBV_REPORTS_KEY);
+    const report = all.find((r) => r.referenceCode === referenceCode);
+    if (!report) throw apiError(404, 'NOT_FOUND', 'No report was found for that reference code.', 'referenceCode');
+    report.status = status;
+    report.lastUpdatedAt = new Date().toISOString();
+    writeMockStore(GBV_REPORTS_KEY, all);
+    return { referenceCode: report.referenceCode, status: report.status, lastUpdatedAt: report.lastUpdatedAt, anonymous: report.anonymous };
+  }
+
+  return request(`/gbv/reports/${encodeURIComponent(referenceCode)}/status`, {
+    method: 'PATCH',
+    body: { status },
+    auth: true,
+  });
+}
+
 // ---------------------------------------------------------------------------
 // GBV chat - not yet in docs/api-contract.md or the backend. Deliberately
 // NOT the same shape as SCU/campus-control messaging above: this is scoped
