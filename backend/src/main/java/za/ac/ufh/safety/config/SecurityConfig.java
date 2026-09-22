@@ -55,6 +55,18 @@ public class SecurityConfig {
                     "/api/auth/register", "/api/auth/login",
                     "/api/auth/login/request-code", "/api/auth/login/resend-code", "/api/auth/login/verify-code")
                     .permitAll()
+                // GBV reporting must work for a reporter who never signs in
+                // at all - see docs/api-contract.md section 7. POST /reports
+                // still requires a token when anonymous is false; that check
+                // happens inside GbvReportService, since this matcher cannot
+                // see the request body. The officer-only GBV endpoints (the
+                // case queue, status updates, chat-queue, .../messages/officer)
+                // are deliberately NOT listed here and stay behind
+                // anyRequest().authenticated() below.
+                .requestMatchers(HttpMethod.POST, "/api/gbv/reports").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/gbv/reports/*/status").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/gbv/reports/*/messages").permitAll()
+                .requestMatchers(HttpMethod.POST, "/api/gbv/reports/*/messages").permitAll()
                 .anyRequest().authenticated()
             )
             .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {

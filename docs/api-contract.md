@@ -940,10 +940,30 @@ limiting so codes cannot be brute-forced, and record the limit in the report.
 
 GBV status values: `submitted`, `under_review`, `referred`, `closed`.
 
+Rate-limited per caller IP (10 requests/minute) so codes cannot be
+brute-forced by trying many at speed - a limit scoped to one code would not
+stop that, since the attack is trying many different codes, not repeating
+one. 429 `TOO_MANY_ATTEMPTS` once exceeded.
+
 `anonymous` tells the frontend whether to offer the chat in section 7a below —
 an anonymous report has no channel back to the reporter at all, by design, so
 it's never offered one. This doesn't weaken anonymity: the reporter already
 knows whether they checked that box.
+
+---
+
+### PATCH /api/gbv/reports/{referenceCode}/status
+
+Roles: `gbv_officer`, `admin`.
+
+**Request**
+```json
+{ "status": "under_review" }
+```
+
+**Response 200:** the same shape as the public status endpoint above
+(`referenceCode`, `status`, `lastUpdatedAt`, `anonymous`) - never report
+content, never officer names, even on the officer-only write path.
 
 ---
 
@@ -1008,7 +1028,7 @@ Security section of the Assignment.
 
 ---
 
-## 7a. GBV chat — not yet implemented
+## 7a. GBV chat
 
 > Deliberately a different shape from every other chat in this app (SCU,
 > campus control): scoped to a report's `referenceCode`, not a student
@@ -1018,9 +1038,9 @@ Security section of the Assignment.
 > chat, ever, because there is no channel back to an anonymous reporter by
 > design.
 >
-> Frontend is MOCK-backed via localStorage for now (`frontend/js/gbv.js`,
-> `frontend/js/gbv-officer.js`); these endpoints do not exist on the backend
-> yet.
+> Implemented in `backend/src/main/java/za/ac/ufh/safety/gbv/`
+> (`GbvChatService`, `GbvController`) and consumed by `frontend/js/gbv.js`
+> (reporter side) and `frontend/js/gbv-officer.js` (officer side).
 
 ### GET /api/gbv/reports/{referenceCode}/messages
 
@@ -1133,19 +1153,29 @@ Roles: `student`
 ```json
 {
   "bookingId": 31,
+  "studentUserId": 17,
+  "studentName": "A Student",
+  "resourceId": 1,
+  "preferredDate": "2026-08-26",
+  "preferredSlot": "morning",
+  "note": null,
   "status": "requested",
   "createdAt": "2026-08-23T02:00:00Z"
 }
 ```
 
-Booking status: `requested`, `confirmed`, `declined`, `cancelled`.
+Booking status: `requested`, `confirmed`, `declined`, `cancelled`. The
+response carries the full booking (not just `bookingId`/`status`/`createdAt`
+as an earlier draft of this contract showed) so the same shape can be
+reused for the queue below without a second, thinner DTO.
 
 ---
 
 ### PATCH /api/wellness/bookings/{bookingId}
 
-Roles: `scu_officer`, `admin`. Not yet implemented - frontend built ahead of
-it, same pattern as the rest of this section.
+Roles: `scu_officer` for `resourceId` 1/2, `health_officer` for `resourceId`
+3 (the Health Centre - section 8b), `admin` for either. One endpoint shared
+by both officer roles, split by which resource the booking is actually for.
 
 **Request**
 ```json
@@ -1158,11 +1188,13 @@ it, same pattern as the rest of this section.
 
 ### GET /api/wellness/queue
 
-Roles: `scu_officer`, `admin`. Not yet implemented.
+Roles: `scu_officer`, `admin`.
 
-Every student with a booking or a message thread, most recent activity
-first - the SCU equivalent of the GBV case queue. `hasUnread` is true when
-the student's most recent message hasn't had a reply yet.
+Every student with a booking (`resourceId` 1/2 only - the Health Centre has
+its own queue, section 8b) or a message thread, most recent activity first -
+the SCU equivalent of the GBV case queue. `hasUnread` is true from the
+moment any message from the student has been seen, and stays true for the
+rest of the thread - it is not reset by an officer reply.
 
 **Response 200**
 ```json
@@ -1174,7 +1206,7 @@ the student's most recent message hasn't had a reply yet.
       "lastActivityAt": "2026-08-23T02:00:00Z",
       "hasUnread": true,
       "bookings": [
-        { "bookingId": 31, "status": "requested", "preferredDate": "2026-08-26", "preferredSlot": "morning" }
+        { "bookingId": 31, "studentUserId": 17, "studentName": "A Student", "resourceId": 1, "preferredDate": "2026-08-26", "preferredSlot": "morning", "note": null, "status": "requested", "createdAt": "2026-08-23T02:00:00Z" }
       ]
     }
   ]
@@ -1185,7 +1217,7 @@ the student's most recent message hasn't had a reply yet.
 
 ### GET /api/wellness/messages
 
-Roles: `student`. Not yet implemented. Scoped to the caller automatically -
+Roles: `student`. Scoped to the caller automatically -
 a student only ever sees their own thread, there is no student-facing way
 to address a message to anyone else's.
 
@@ -1227,8 +1259,8 @@ Roles: `student`.
 
 ### GET /api/wellness/messages/{studentUserId}
 
-Roles: `scu_officer`, `admin`. Not yet implemented. Same response shape as
-the student-facing endpoint, for the one student named in the path.
+Roles: `scu_officer`, `admin`. Same response shape as the student-facing
+endpoint, for the one student named in the path.
 
 ---
 
@@ -1242,15 +1274,16 @@ Roles: `scu_officer`, `admin`.
 
 ---
 
-## 8a. Contact campus control — not yet implemented
+## 8a. Contact campus control
 
 Same "one ongoing thread per student" shape as wellness messaging above, for
 non-emergency questions and issues - lost property, access requests, that
 kind of thing. SOS and incidents already have their own dedicated flow
 (section 3) and stay separate from this; this is deliberately *not* a
-substitute for reporting something urgent. Frontend is MOCK-backed via
-localStorage for now (`frontend/js/contact-campus-control.js`,
-`frontend/js/campus-control-queue.js`).
+substitute for reporting something urgent. Implemented in
+`backend/src/main/java/za/ac/ufh/safety/campuscontrol/` and consumed by
+`frontend/js/contact-campus-control.js` (student side) and
+`frontend/js/campus-control-queue.js` (officer side).
 
 ### GET /api/campus-control/messages
 
@@ -1318,7 +1351,7 @@ Roles: `campus_control`, `admin`.
 
 ---
 
-## 8b. Campus Health Centre messaging — not yet implemented
+## 8b. Campus Health Centre messaging
 
 The Health Centre is one of the three `GET /api/wellness/resources` (section
 8) and keeps using that same booking flow - `resourceId` 3, created via
@@ -1328,8 +1361,10 @@ The Health Centre is one of the three `GET /api/wellness/resources` (section
 role and their own portal (`frontend/health-officer.html`), so a
 physical-health question never lands in a counsellor's inbox or vice versa.
 Same one-thread-per-student, 5-second-polling shape as SCU messaging.
-Frontend is MOCK-backed via localStorage for now
-(`frontend/js/wellness.js`, `frontend/js/health-officer.js`).
+Implemented in `backend/src/main/java/za/ac/ufh/safety/health/`
+(bookings still read from `WellnessBookingRepository` - see section 8) and
+consumed by `frontend/js/wellness.js` (student side) and
+`frontend/js/health-officer.js` (officer side).
 
 ### GET /api/health/messages
 

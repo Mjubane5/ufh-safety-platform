@@ -1,6 +1,7 @@
 import {
   getCurrentUser,
   getGbvReports,
+  updateGbvReportStatus,
   getGbvChatQueue,
   getGbvMessagesForReport,
   sendGbvMessageToReport,
@@ -18,6 +19,10 @@ const STATUS_FILTERS = [
   { value: 'referred', label: 'Referred' },
   { value: 'closed', label: 'Closed' },
 ];
+// Same four values as STATUS_FILTERS minus "All" - that one is a filter
+// option, not a real case status, so it does not belong in the update
+// control.
+const CASE_STATUSES = STATUS_FILTERS.filter((filter) => filter.value !== null);
 const list = document.getElementById('case-list');
 const message = document.getElementById('queue-message');
 let selectedStatus = null;
@@ -65,6 +70,45 @@ function row(label, value) {
   return wrapper;
 }
 
+function statusUpdateControl(item) {
+  const wrapper = document.createElement('label');
+  wrapper.className = 'field';
+  const labelText = document.createElement('span');
+  labelText.className = 'visually-hidden';
+  labelText.textContent = `Update status for ${item.referenceCode ?? 'this case'}`;
+  wrapper.appendChild(labelText);
+
+  const select = document.createElement('select');
+  select.className = 'input';
+  CASE_STATUSES.forEach(({ value, label }) => {
+    const option = document.createElement('option');
+    option.value = value;
+    option.textContent = label;
+    option.selected = value === item.status;
+    select.appendChild(option);
+  });
+
+  select.addEventListener('change', async () => {
+    const nextStatus = select.value;
+    select.disabled = true;
+    try {
+      await updateGbvReportStatus(item.referenceCode, nextStatus);
+      await loadCases();
+    } catch (error) {
+      select.value = item.status;
+      select.disabled = false;
+      if (error instanceof ApiError && error.status === 401) {
+        redirectToLogin();
+        return;
+      }
+      showError(error instanceof ApiError ? error.message : 'Could not update case status.');
+    }
+  });
+
+  wrapper.appendChild(select);
+  return wrapper;
+}
+
 function renderCases(items) {
   list.setAttribute('aria-busy', 'false');
   list.replaceChildren();
@@ -85,6 +129,7 @@ function renderCases(items) {
     status.className = 'pill';
     status.textContent = item.status ?? 'Unknown status';
     card.appendChild(status);
+    card.appendChild(statusUpdateControl(item));
     const description = document.createElement('p');
     description.className = 'detail-description';
     description.textContent = item.description ?? 'No description provided.';
