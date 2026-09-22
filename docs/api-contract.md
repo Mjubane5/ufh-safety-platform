@@ -618,7 +618,9 @@ for manual triage instead:
 - The same call **with an explicit `responderId` succeeds**. A dispatcher who
   has read the description and worked out where the student is may assign by
   hand. The `route` object is `null` in that response, because a route cannot
-  be calculated to an unknown destination.
+  be calculated to an unknown destination. It is also `null` when the
+  *responder's* own location is unknown, for the same reason — a route needs
+  both ends.
 
 **Response 200**
 ```json
@@ -639,7 +641,13 @@ for manual triage instead:
 ```
 
 `points` is an ordered polyline the frontend draws on the map. This is where
-the C++ shortest-path work surfaces in the product.
+the C++ shortest-path work (`algorithms/shortest_path`, wired in via
+`za.ac.ufh.safety.safetywalk.CppRouteEngine`) surfaces in the product —
+a real path over campus footways and roads, not a straight line. If the
+compiled engine is unavailable for any reason, the response still comes
+back with a straight-line route (`GeometricRouteEngine`) rather than a
+missing `route` — the same fallback Safe Walk routing uses; see
+`backend/README-BACKEND.md` and `algorithms/shortest_path/README.md`.
 
 **Errors:** 409 if already assigned, 409 if auto-assignment was requested for
 an incident with `locationSource: "none"`, 404 if no responder available.
@@ -784,6 +792,15 @@ Roles: any authenticated.
 
 `safetyScore` is 0.0 to 1.0, higher is safer. Document the weighting formula in
 the Assignment — a panel will ask how it is calculated.
+
+`points` follows real campus footways and roads via `algorithms/shortest_path`
+(the same C++ shortest-path engine the assignment route above uses), not a
+straight line — see that directory's README for the algorithm and where the
+graph data came from. If the compiled engine is unavailable, this falls back
+to a straight line with at most one detour waypoint around the single
+worst hotspot (`GeometricRouteEngine`) rather than failing the request —
+`safetyScore`/`avoidedHotspots` are computed the same way either way, against
+every segment of whichever polyline was actually returned.
 
 ---
 

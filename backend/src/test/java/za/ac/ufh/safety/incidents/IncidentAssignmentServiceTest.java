@@ -9,13 +9,19 @@ import za.ac.ufh.safety.common.ApiException;
 import za.ac.ufh.safety.responders.Responder;
 import za.ac.ufh.safety.responders.ResponderRepository;
 import za.ac.ufh.safety.responders.ResponderStatus;
+import za.ac.ufh.safety.safetywalk.RouteEngine;
+import za.ac.ufh.safety.safetywalk.SafeRouteResponse;
 import za.ac.ufh.safety.user.User;
 import za.ac.ufh.safety.user.UserRepository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -33,6 +39,8 @@ class IncidentAssignmentServiceTest {
     private IncidentRepository incidents;
     private ResponderRepository responders;
     private UserRepository users;
+    private RouteEngine cppRouteEngine;
+    private RouteEngine geometricRouteEngine;
     private IncidentAssignmentService service;
 
     @BeforeEach
@@ -40,9 +48,18 @@ class IncidentAssignmentServiceTest {
         incidents = mock(IncidentRepository.class);
         responders = mock(ResponderRepository.class);
         users = mock(UserRepository.class);
-        service = new IncidentAssignmentService(incidents, responders, users);
+        cppRouteEngine = mock(RouteEngine.class);
+        geometricRouteEngine = mock(RouteEngine.class);
+        service = new IncidentAssignmentService(incidents, responders, users, cppRouteEngine, geometricRouteEngine);
         when(incidents.save(any(Incident.class))).thenAnswer(call -> call.getArgument(0));
         when(responders.save(any(Responder.class))).thenAnswer(call -> call.getArgument(0));
+        // Most tests do not care about the route - a straight line from
+        // whichever engine "wins" is a fine default; the routing-specific
+        // tests below override this per case.
+        when(geometricRouteEngine.findPath(anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyList()))
+            .thenAnswer(call -> List.of(
+                new SafeRouteResponse.RoutePoint(call.getArgument(0), call.getArgument(1)),
+                new SafeRouteResponse.RoutePoint(call.getArgument(2), call.getArgument(3))));
     }
 
     private User user(long userId, String role, String fullName) {
@@ -241,5 +258,80 @@ class IncidentAssignmentServiceTest {
         assertThat(response.status()).isEqualTo(IncidentStatus.ASSIGNED);
         assertThat(response.responder().responderId()).isEqualTo(5L);
         assertThat(response.route()).isNull();
+    }
+
+    // -----------------------------------------------------------------------
+    // Routes - "the shortest path to the user's rescue"
+    // -----------------------------------------------------------------------
+
+    @Test
+    void theRouteIsPopulatedWhenBothTheResponderAndTheIncidentAreLocated() {
+        User control = user(2, "campus_control", "Control Room");
+        user(5, "responder", "Nomsa Khumalo");
+        locatedIncident(42);
+        responder(5, ResponderStatus.AVAILABLE, -32.78210, 26.84800);
+
+        AssignmentResponse response = service.assign(control.getEmail(), 42L, new AssignIncidentRequest(5L));
+
+        assertThat(response.route()).isNotNull();
+        assertThat(response.route().points()).hasSizeGreaterThanOrEqualTo(2);
+        assertThat(response.route().distanceMetres()).isGreaterThan(0);
+        assertThat(response.route().estimatedSeconds()).isGreaterThan(0);
+    }
+
+    @Test
+    void theRouteIsNullWhenTheChosenResponderHasNoKnownLocation() {
+        // A named responder with no location on file - off-grid, or never
+        // sent an update. The assignment itself must still succeed (the
+        // dispatcher made the call by hand), it just cannot carry a route.
+        User control = user(2, "campus_control", "Control Room");
+        user(5, "responder", "Nomsa Khumalo");
+        locatedIncident(42);
+        responder(5, ResponderStatus.AVAILABLE, null, null);
+
+        AssignmentResponse response = service.assign(control.getEmail(), 42L, new AssignIncidentRequest(5L));
+
+        assertThat(response.status()).isEqualTo(IncidentStatus.ASSIGNED);
+        assertThat(response.route()).isNull();
+        verify(cppRouteEngine, never()).findPath(anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyList());
+        verify(geometricRouteEngine, never()).findPath(anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyList());
+    }
+
+    @Test
+    void theCppEnginesRouteIsUsedWhenItProducesOne() {
+        User control = user(2, "campus_control", "Control Room");
+        user(5, "responder", "Nomsa Khumalo");
+        locatedIncident(42);
+        responder(5, ResponderStatus.AVAILABLE, -32.78210, 26.84800);
+
+        List<SafeRouteResponse.RoutePoint> cppPath = List.of(
+            new SafeRouteResponse.RoutePoint(-32.78210, 26.84800),
+            new SafeRouteResponse.RoutePoint(-32.78270, 26.84900),
+            new SafeRouteResponse.RoutePoint(LIBRARY_LAT, LIBRARY_LON));
+        when(cppRouteEngine.findPath(anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyList()))
+            .thenReturn(cppPath);
+
+        AssignmentResponse response = service.assign(control.getEmail(), 42L, new AssignIncidentRequest(5L));
+
+        assertThat(response.route().points()).hasSize(3);
+        verify(geometricRouteEngine, never()).findPath(anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyList());
+    }
+
+    @Test
+    void fallsBackToTheGeometricEngineWhenTheCppEngineThrows() {
+        User control = user(2, "campus_control", "Control Room");
+        user(5, "responder", "Nomsa Khumalo");
+        locatedIncident(42);
+        responder(5, ResponderStatus.AVAILABLE, -32.78210, 26.84800);
+
+        when(cppRouteEngine.findPath(anyDouble(), anyDouble(), anyDouble(), anyDouble(), anyList()))
+            .thenThrow(new RuntimeException("process could not start"));
+
+        AssignmentResponse response = service.assign(control.getEmail(), 42L, new AssignIncidentRequest(5L));
+
+        // A dispatch must never fail because a routing engine misbehaved -
+        // the assignment itself still succeeds, with the fallback's route.
+        assertThat(response.status()).isEqualTo(IncidentStatus.ASSIGNED);
+        assertThat(response.route()).isNotNull();
     }
 }

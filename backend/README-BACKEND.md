@@ -129,6 +129,17 @@ and read the code from there instead. Otherwise the code is generated and
 correct, but genuinely unrecoverable, which looks identical to "no code was
 ever sent."
 
+## Safe Walk / dispatch routing (optional, C++)
+
+Safe Walk routes and the responder route shown after `POST /incidents/{id}/assign`
+follow real campus footways and roads via a small C++ shortest-path engine
+(`algorithms/shortest_path`) — nobody needs a C++ toolchain to develop or run
+the backend, though: without a compiled binary, routing automatically falls
+back to a straight line (`GeometricRouteEngine`), same as before this module
+existed. See `algorithms/shortest_path/README.md` if you want to build and
+try the real one locally, or just to understand how production gets it (the
+root `Dockerfile` compiles it automatically on deploy).
+
 ## Run backend
 
 From the `backend` directory:

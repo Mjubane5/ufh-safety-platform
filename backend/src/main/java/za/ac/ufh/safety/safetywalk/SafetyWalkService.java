@@ -165,7 +165,7 @@ public class SafetyWalkService {
         );
     }
 
-    static double distanceMetres(
+    public static double distanceMetres(
             double lat1,
             double lon1,
             double lat2,

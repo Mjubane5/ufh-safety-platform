@@ -1,5 +1,6 @@
 package za.ac.ufh.safety.incidents;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -8,6 +9,11 @@ import za.ac.ufh.safety.responders.NearestResponderSelector;
 import za.ac.ufh.safety.responders.Responder;
 import za.ac.ufh.safety.responders.ResponderRepository;
 import za.ac.ufh.safety.responders.ResponderStatus;
+import za.ac.ufh.safety.safetywalk.CppRouteEngine;
+import za.ac.ufh.safety.safetywalk.GeometricRouteEngine;
+import za.ac.ufh.safety.safetywalk.RouteEngine;
+import za.ac.ufh.safety.safetywalk.SafeRouteResponse;
+import za.ac.ufh.safety.safetywalk.SafetyWalkService;
 import za.ac.ufh.safety.user.User;
 import za.ac.ufh.safety.user.UserRepository;
 
@@ -82,29 +88,59 @@ import za.ac.ufh.safety.user.UserRepository;
  * Routes
  * ---------------------------------------------------------------------------
  *
- * The real polyline comes from the C++ shortest-path module over the campus
- * footpath graph, which is not wired into the request path yet. Until then
- * return null for `route` in every case. Null says "no path calculated". An
- * empty points list would claim a path exists and draw nothing.
+ * The polyline comes from the same RouteEngine pair SafeRouteService uses
+ * for Safe Walk: CppRouteEngine (real shortest-path search over the campus
+ * footpath/road graph) tried first, GeometricRouteEngine (a straight line)
+ * as the fallback when the C++ engine is unavailable - see buildRoute()
+ * below and both engines' own class comments. `route` is still null
+ * whenever there is no destination (the incident has no coordinates) or no
+ * origin (the responder's own location is unknown) - a route genuinely
+ * cannot be calculated in either case, C++ engine or not. Null says "no
+ * path calculated"; an empty points list would claim a path exists and
+ * draw nothing.
  *
  * ---------------------------------------------------------------------------
- * The specification is IncidentAssignmentServiceTest, nine @Disabled tests.
- * Enable one, watch it fail, make it pass.
+ * The specification is IncidentAssignmentServiceTest.
  * ---------------------------------------------------------------------------
  */
 @Service
 public class IncidentAssignmentService {
 
+    // Matches SafeRouteService's own walking-pace assumption - this project
+    // has no separate figure for a responder's pace (on foot, bike, or
+    // vehicle all differ), so one documented estimate is used everywhere
+    // rather than inventing an unverified second one just for this path.
+    private static final double METRES_PER_SECOND = 1.33;
+
     private final IncidentRepository incidents;
     private final ResponderRepository responders;
     private final UserRepository users;
+    private final RouteEngine cppRouteEngine;
+    private final RouteEngine geometricRouteEngine;
 
     public IncidentAssignmentService(IncidentRepository incidents,
                                      ResponderRepository responders,
-                                     UserRepository users) {
+                                     UserRepository users,
+                                     CppRouteEngine cppRouteEngine,
+                                     GeometricRouteEngine geometricRouteEngine) {
         this.incidents = incidents;
         this.responders = responders;
         this.users = users;
+        this.cppRouteEngine = cppRouteEngine;
+        this.geometricRouteEngine = geometricRouteEngine;
+    }
+
+    /** Used by tests to force a specific pair of engines without a Spring context. */
+    IncidentAssignmentService(IncidentRepository incidents,
+                              ResponderRepository responders,
+                              UserRepository users,
+                              RouteEngine cppRouteEngine,
+                              RouteEngine geometricRouteEngine) {
+        this.incidents = incidents;
+        this.responders = responders;
+        this.users = users;
+        this.cppRouteEngine = cppRouteEngine;
+        this.geometricRouteEngine = geometricRouteEngine;
     }
 
     /**
@@ -138,10 +174,66 @@ public class IncidentAssignmentService {
             incident.getIncidentId(),
             incident.getStatus(),
             new AssignmentResponse.Responder(chosen.getResponderId(), nameOf(chosen)),
-            // Null until the C++ shortest-path module is wired in. Null says
-            // "no path calculated"; an empty points list would claim a path
-            // exists and then draw nothing.
-            null);
+            buildRoute(chosen, incident));
+    }
+
+    /**
+     * Null whenever a route genuinely cannot be calculated: no destination
+     * (the incident has no coordinates - the auto-assign path already
+     * refuses this earlier, but a dispatcher's explicit responderId can
+     * still reach here with one) or no origin (the responder's own
+     * location is unknown). Otherwise, the real path from CppRouteEngine,
+     * falling back to GeometricRouteEngine's straight line exactly like
+     * SafeRouteService does - see both classes' comments.
+     */
+    private AssignmentResponse.Route buildRoute(Responder responder, Incident incident) {
+        if (responder.getLatitude() == null || responder.getLongitude() == null
+                || incident.getLatitude() == null || incident.getLongitude() == null) {
+            return null;
+        }
+
+        double fromLatitude = responder.getLatitude();
+        double fromLongitude = responder.getLongitude();
+        double toLatitude = incident.getLatitude();
+        double toLongitude = incident.getLongitude();
+
+        List<SafeRouteResponse.RoutePoint> path = tryEngine(
+            cppRouteEngine, fromLatitude, fromLongitude, toLatitude, toLongitude);
+        if (path == null || path.size() < 2) {
+            path = tryEngine(geometricRouteEngine, fromLatitude, fromLongitude, toLatitude, toLongitude);
+        }
+        if (path == null || path.size() < 2) {
+            path = List.of(
+                new SafeRouteResponse.RoutePoint(fromLatitude, fromLongitude),
+                new SafeRouteResponse.RoutePoint(toLatitude, toLongitude));
+        }
+
+        double distanceMetres = 0.0;
+        List<AssignmentResponse.Point> points = new ArrayList<>(path.size());
+        for (int i = 0; i < path.size(); i++) {
+            SafeRouteResponse.RoutePoint point = path.get(i);
+            points.add(new AssignmentResponse.Point(point.latitude(), point.longitude()));
+            if (i > 0) {
+                SafeRouteResponse.RoutePoint previous = path.get(i - 1);
+                distanceMetres += SafetyWalkService.distanceMetres(
+                    previous.latitude(), previous.longitude(), point.latitude(), point.longitude());
+            }
+        }
+
+        int estimatedSeconds = (int) Math.ceil(distanceMetres / METRES_PER_SECOND);
+        return new AssignmentResponse.Route((int) Math.round(distanceMetres), estimatedSeconds, points);
+    }
+
+    /** A dispatch must never fail because a routing engine misbehaved - see SafeRouteService's identical guard. */
+    private static List<SafeRouteResponse.RoutePoint> tryEngine(
+            RouteEngine engine,
+            double fromLatitude, double fromLongitude,
+            double toLatitude, double toLongitude) {
+        try {
+            return engine.findPath(fromLatitude, fromLongitude, toLatitude, toLongitude, List.of());
+        } catch (RuntimeException e) {
+            return null;
+        }
     }
 
     /** Campus control and admin only. A student cannot dispatch anyone. */
