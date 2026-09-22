@@ -15,12 +15,12 @@ Report an incident, trigger an SOS, reach campus control, or get confidential GB
 [![Leaflet](https://img.shields.io/badge/Leaflet-OpenStreetMap-199900?style=flat-square&logo=leaflet&logoColor=white)](frontend/js/map.js)
 [![JavaScript](https://img.shields.io/badge/JavaScript-vanilla%2C%20no%20framework-F7DF1E?style=flat-square&logo=javascript&logoColor=black)](frontend/js/api.js)
 <br/>
-[![Backend tests](https://img.shields.io/badge/backend%20tests-186%20passing-2f855a?style=flat-square&logo=junit5&logoColor=white)](backend/README-BACKEND.md#tests)
+[![Backend tests](https://img.shields.io/badge/backend%20tests-189%20passing-2f855a?style=flat-square&logo=junit5&logoColor=white)](backend/README-BACKEND.md#tests)
 [![Merged PRs](https://img.shields.io/badge/merged%20PRs-65-2f855a?style=flat-square&logo=github&logoColor=white)](https://github.com/Mjubane5/ufh-safety-platform/pulls?q=is%3Apr+is%3Amerged)
 [![Contributors](https://img.shields.io/badge/team-8%20students-2f855a?style=flat-square&logo=github&logoColor=white)](docs/team-working%20agreement_1.md)
 [![Hosted on Railway](https://img.shields.io/badge/hosted%20on-Railway-0B0D0E?style=flat-square&logo=railway&logoColor=white)](docs/hosting-railway.md)
 
-[Live demo](https://ufh-safety-platform-production.up.railway.app) · [API contract](docs/api-contract.md) · [Backend setup](backend/README-BACKEND.md) · [Status report](docs/PROJECT-STATUS-REPORT.md)
+[Live demo](https://ufh-safety-platform-production.up.railway.app) · [API contract](docs/api-contract.md) · [Backend setup](backend/README-BACKEND.md) · [Status report](docs/PROJECT-STATUS-REPORT.md) · [Software documentation (PDF)](docs/SOFTWARE-DOCUMENTATION.pdf)
 
 </div>
 
@@ -331,6 +331,7 @@ ufh-safety-platform/
 
 | Document | What's in it |
 |---|---|
+| [`docs/SOFTWARE-DOCUMENTATION.pdf`](docs/SOFTWARE-DOCUMENTATION.pdf) | The full technical write-up: architecture, data design (ER diagram), request/security lifecycle, module-by-module design, testing strategy, and the engineering practices behind it |
 | [`docs/api-contract.md`](docs/api-contract.md) | Every endpoint: request/response shapes, roles, error cases. If code and this disagree, this document is right |
 | [`backend/README-BACKEND.md`](backend/README-BACKEND.md) | Local backend setup, the JWT signing key, SendGrid email (including a documented deliverability limitation) |
 | [`docs/PROJECT-STATUS-REPORT.md`](docs/PROJECT-STATUS-REPORT.md) | Problem statement, scope changes, architecture, contribution matrix, AI-assistance disclosure |
