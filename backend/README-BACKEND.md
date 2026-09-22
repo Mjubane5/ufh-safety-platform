@@ -60,10 +60,31 @@ HTTP (no SDK dependency - see `SendGridEmailService.java`). To send real
 emails:
 
 1. Create a free SendGrid account (100 emails/day free, no card required for
-   the free tier at the time of writing) and verify a sender identity - the
+   the free tier at the time of writing) and verify a sender identity under
+   Settings → Sender Authentication → Single Sender Verification - the
    address you'll set as `MAIL_FROM` below. This is an account only you can
    create; ask in the group chat if you want to share one rather than each
    making your own.
+
+   **Known limitation, not a bug:** Single Sender Verification only proves
+   you control that one address - it does not set up SPF/DKIM alignment for
+   its domain. On Railway right now `MAIL_FROM` is a `@gmail.com` address
+   sent *through* SendGrid rather than Gmail's own servers, which several
+   receiving mail systems (Microsoft 365 in particular, which UFH's student
+   mail runs on) treat as a spam/spoofing signal - the code email lands in
+   spam, not the inbox, even though it sends successfully. Confirmed live
+   via SendGrid's own Email Activity Feed (`app.sendgrid.com/email_logs`),
+   which is the authoritative source for delivery status - the app has no
+   visibility into what happens after SendGrid accepts a send.
+
+   The real fix is SendGrid's **Domain Authentication** (Settings → Sender
+   Authentication → Authenticate Your Domain), which needs a domain we
+   actually control the DNS for - not `gmail.com`, and not `ufh.ac.za`
+   since UFH's own IT controls that domain's DNS, not this team. That's a
+   cost/ownership decision for the group, not something fixable in code.
+   Until then, tell first-time testers to check spam and mark the message
+   "Not spam" - most providers then deliver that sender to the inbox for
+   that recipient going forward.
 2. Create an API key with **Mail Send** access under Settings → API Keys.
 3. Set these before running:
 

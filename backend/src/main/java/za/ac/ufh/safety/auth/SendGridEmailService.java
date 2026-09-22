@@ -70,9 +70,19 @@ public class SendGridEmailService implements EmailService {
         }
 
         try {
+            // reply_to matching the verified sender is a small, genuine
+            // deliverability signal (a missing reply-to on a transactional
+            // email is itself something spam filters weigh against a
+            // message) - it does not fix the underlying cause of this
+            // landing in spam, which is that MAIL_FROM has no Domain
+            // Authentication (SPF/DKIM alignment) in SendGrid. That needs a
+            // domain we actually control the DNS for; Single Sender
+            // Verification (what MAIL_FROM uses today) proves ownership of
+            // one address, nothing more. See README-BACKEND.md.
             Map<String, Object> payload = Map.of(
                 "personalizations", List.of(Map.of("to", List.of(Map.of("email", toEmail)))),
                 "from", Map.of("email", fromEmail, "name", fromName),
+                "reply_to", Map.of("email", fromEmail, "name", fromName),
                 "subject", subject,
                 "content", List.of(Map.of("type", "text/plain", "value", body))
             );
