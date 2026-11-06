@@ -6,7 +6,7 @@
 
 Report an incident, trigger an SOS, reach campus control, or get confidential GBV support and wellness care — one platform, five roles, one shared source of truth.
 
-[![Live demo](https://img.shields.io/badge/demo-online-2f855a?style=for-the-badge)](https://ufh-safety-platform-production.up.railway.app)
+[![Live demo](https://img.shields.io/badge/demo-online-2f855a?style=for-the-badge)](https://ufh-safety-platform.onrender.com)
 [![Status](https://img.shields.io/badge/status-academic%20prototype-b91c1c?style=for-the-badge)](#this-is-a-prototype)
 
 [![Java](https://img.shields.io/badge/Java-17-ED8B00?style=flat-square&logo=openjdk&logoColor=white)](backend/pom.xml)
@@ -18,9 +18,9 @@ Report an incident, trigger an SOS, reach campus control, or get confidential GB
 [![Backend tests](https://img.shields.io/badge/backend%20tests-205%20passing-2f855a?style=flat-square&logo=junit5&logoColor=white)](backend/README-BACKEND.md#tests)
 [![Merged PRs](https://img.shields.io/badge/merged%20PRs-65-2f855a?style=flat-square&logo=github&logoColor=white)](https://github.com/Mjubane5/ufh-safety-platform/pulls?q=is%3Apr+is%3Amerged)
 [![Contributors](https://img.shields.io/badge/team-8%20students-2f855a?style=flat-square&logo=github&logoColor=white)](docs/team-working%20agreement_1.md)
-[![Hosted on Railway](https://img.shields.io/badge/hosted%20on-Railway-0B0D0E?style=flat-square&logo=railway&logoColor=white)](docs/hosting-railway.md)
+[![Hosted on Render](https://img.shields.io/badge/hosted%20on-Render-46E3B7?style=flat-square&logo=render&logoColor=white)](https://ufh-safety-platform.onrender.com)
 
-[Live demo](https://ufh-safety-platform-production.up.railway.app) · [API contract](docs/api-contract.md) · [Backend setup](backend/README-BACKEND.md) · [Status report](docs/PROJECT-STATUS-REPORT.md) · [Software documentation (PDF)](docs/SOFTWARE-DOCUMENTATION.pdf)
+[Live demo](https://ufh-safety-platform.onrender.com) · [API contract](docs/api-contract.md) · [Backend setup](backend/README-BACKEND.md) · [Status report](docs/PROJECT-STATUS-REPORT.md) · [Software documentation (PDF)](docs/SOFTWARE-DOCUMENTATION.pdf)
 
 </div>
 
@@ -70,7 +70,7 @@ flowchart TB
         W["💬 SCU / Health officer"]
     end
 
-    subgraph Railway["Railway — single Docker service"]
+    subgraph Render["Render — single Docker service"]
         FE["Static frontend<br/>(plain HTML/CSS/JS)"]
         API["Spring Boot REST API<br/>JWT auth · role-scoped services"]
         FE -. served by .-> API
@@ -89,7 +89,7 @@ flowchart TB
     API -- OTP / reset link --> SG
     SG -- email --> S
 
-    style Railway fill:#0B0D0E,color:#fff,stroke:#333
+    style Render fill:#0B0D0E,color:#fff,stroke:#333
     style DB fill:#4479A1,color:#fff
     style SG fill:#1A82E2,color:#fff
 ```
@@ -254,13 +254,13 @@ Concrete choices, not abstract claims — each one is a specific file or test yo
 |---|---|---|
 | Frontend | Plain HTML, CSS, JavaScript — no framework | Every network call goes through one file (`api.js`), so the whole app works against a mock before the backend exists, and against the real thing after with zero page changes |
 | Backend | Java 17, Spring Boot 3 | REST, JSON and JDBC handled for us; one deployable jar in production |
-| Database | MySQL 8 | Managed instance on Railway in production, a portable local instance for development |
+| Database | MySQL 8 (TiDB Cloud, MySQL-compatible, in production) | Managed TiDB Cloud Starter instance in production, a portable local MySQL instance for development |
 | Maps | Leaflet + OpenStreetMap | No API key, no quota, no billing |
 | Routing algorithm | C++, Dijkstra over a real OSM campus graph | Safe Walk and responder-dispatch routes follow actual footways and roads, not a straight line — falls back to simple geometry automatically if the compiled binary isn't present (see [algorithms/shortest_path](algorithms/shortest_path)) |
 | Auth | JWT bearer tokens, BCrypt password hashing | Two-step email verification for students; a fixed 8-hour token, no refresh — simple and adequate for a prototype |
 | Real-time-ish | 5-second polling everywhere it's needed | No socket reconnection logic to debug, and one consistent pattern across dispatch, chat, and Safe Walk tracking |
 | Email | SendGrid Mail Send API, plain HTTP | No SDK dependency — one JSON POST covers both the login code and the password-reset link |
-| Hosting | Railway, single Docker service | The backend serves the built frontend from the same origin |
+| Hosting | Render, single Docker service | The backend serves the built frontend from the same origin |
 
 ---
 
